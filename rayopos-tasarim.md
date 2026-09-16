@@ -4,7 +4,11 @@
 ## 0. SIRADAKİ İŞ (16 Eyl 2026 güncellendi)
 
 > **Sıra (16 Eyl 2026 seans sonu):**
-> 1. **Mobilde birkaç düzenleme** — Ramazan seans başında ne olduğunu söyleyecek.
+> 1. **Garson adisyonu iptal/ikram edemiyor.** Ramazan kendi hesabıyla girip
+>    PIN ile garsona geçiyor; adisyonu iptal veya ikram etmek isteyince işlem
+>    reddediliyor, ekranda "new row violates row-level security policy for
+>    table adisyonlar" yazıyor (PATCH 403). İkramda ürünlere ikram yazısı
+>    geliyor ama adisyon açık kalıyor. Sıfırdan araştırılacak.
 > 2. **Kayıt kapatma SQL'i** — `sql/2026-09-16-kayit-kapat.sql` Supabase'de
 >    çalıştırılmadı (16 Eyl'de Supabase arızası vardı, panele girilemiyordu).
 >    Ramazan'a SQL Editor'de çalıştırt; o zamana kadar `isletme_kur` açık.
@@ -21,6 +25,29 @@
 > 5. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
 > 6. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (16 Eyl 2026, ikinci seans):**
+> - **Mobil masa ızgarası**: üç sütun, 118px kart; çizgiler kartların
+>   arasındaki boşluğun ortasından geçiyor, kartlar ayrı ve yuvarlak.
+>   Bölge şeridinin altına uçlara doğru sönen ayırıcı.
+> - **İkram hesap fişinde görünüyor**: tutar yerine "İkram" yazıyor,
+>   toplamlara girmiyor, birleştirmede normal satırla karışmıyor.
+>   Mutfak ve iptal fişi aynı kaldı.
+> - **İkramda "Kime yazılsın?" kalktı**, yerine iptaldeki gibi sebep
+>   soruluyor (masaüstü, adisyon detayı, mobil). Ödenmezler ayar/analiz
+>   ekranları duruyor, yeni kayıt almıyor (Ramazan kararı).
+> - **Telefonda bahşiş sekmesi taşması**: tahsilat sütunu artık daralabiliyor
+>   (`min-width: 0`), bahşiş düğmeleri alt alta.
+> - **Genel Yetkiler kaydedilemiyordu (403).** Kaydet bütün rollerin
+>   satırlarını silip yeniden yazıyordu; silme sırasında kaydeden kişinin
+>   kendi yetkisi de düşüyor ve veritabanı işlemi durduruyordu. Artık yalnız
+>   değişen satıra dokunuluyor, Yönetici sütunu da kayda giriyor. Geçmişte
+>   silinenler için `sql/2026-09-16-yonetici-yetkileri-onar.sql` (çalıştırıldı).
+> - **Hatalar artık görünür**: yetki kaydetme, adisyon iptali ve ikramda
+>   sunucunun kendi mesajı ekrana çıkıyor; ikramda kalem güncellemesi sessiz
+>   geçmiyor.
+> - **Not: göndermeden önce `npm.cmd run build`** — `tsc --noEmit` boşta kalan
+>   içe aktarımı yakalamıyor, Cloudflare derlemesi iki kez kırmızıya düştü.
 >
 > **Yapılanlar (16 Eyl 2026):**
 > - **Canlıya çıkış.** Cloudflare Pages + GitHub bağlı, `rayopos.pages.dev`
