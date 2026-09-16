@@ -1,39 +1,60 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (16 Eyl 2026 güncellendi)
+## 0. SIRADAKİ İŞ (17 Eyl 2026 güncellendi)
 
-> **Sıra (16 Eyl 2026 dördüncü seans sonu):**
-> 1. **Sessiz yazma hataları — kalan dosyalar.** `masalar.ts` (6) ve
->    `menu.ts` (26) bitti, ekranlarıyla birlikte. Kalanlar:
->    **`adisyonlar.ts` (14)** — para ve masa durumu burada, en dikkatli
->    bakılacak dosya; sonra `oturum.ts` (6), `personel.ts` (2),
->    `yazicilar.ts`, `mesguliyet.ts`, `medya.ts` (1'er).
->    Desen kurulu: `src/yazmaDenetimi.ts` → `yazmayiDenetle` (hata varsa
->    durdur) ve `satirDenetle` (`.select("id")` ile dönen satırı say —
->    satır güvenliği engellediğinde veritabanı hata bile vermiyor).
->    Veri katmanı fırlatıyor, ekran yakalayıp uyarı penceresinde gösteriyor;
->    ikisi birden yapılmazsa kullanıcı yine hiçbir şey görmüyor.
-> 2. **Yetki provası betiği.** Bir personeli seçip bütün ana işlemleri geri
+> **Sıra (17 Eyl 2026 seans sonu):**
+> 1. **Yetki provası betiği.** Bir personeli seçip bütün ana işlemleri geri
 >    alınan bir işlemde deneyen, "şunu yapabiliyor / şuna takılıyor" tablosu
->    veren SQL. 16 Eyl'de elle yapılan denemenin (bkz. aşağıdaki seans notu)
->    toplu hâli; her yeni yetkide tekrar çalıştırılır.
-> 3. **"Deneme Garson" hesabı.** En dar yetkiyle duran bir personel; sürüm
->    öncesi sipariş–ödeme–iptal turu onunla atılır. Bugüne kadarki testler
->    yönetici hesabıyla yapıldığı için kısıtlı kullanıcı hataları görünmüyordu.
-> 4. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
+>    veren SQL. 16 Eyl'de elle yapılan denemenin toplu hâli; her yeni yetkide
+>    tekrar çalıştırılır. **Artık asıl sırada bu var:** sessiz yazmalar
+>    konuşuyor ama denetimlerin gerçekten devreye girdiği tek durum kısıtlı
+>    yetkili kullanıcı, o da hiç denenmedi.
+> 2. **"Deneme Garson" hesabıyla tam tur.** Hesap açılmış durumda (garson,
+>    tüm bölgeler, PIN yok). Eksik olan tur: onunla giriş yapıp
+>    sipariş–ödeme–iptal–masa taşıma denenecek. Bugüne kadarki bütün testler
+>    yönetici hesabıyla yapıldı, kısıtlı kullanıcı hataları görünmüyordu.
+> 3. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
 >    Kod elendi: canlıdaki derleme, `_headers` ile birlikte temiz tarayıcıda
 >    sorunsuz açılıyor.
-> 5. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
+> 4. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
 >    10:33: "belgeler kayıt otoritesine iletildi"). Seans başında sor/WHOIS'e
 >    bak; gelince Cloudflare Pages'te özel alan adı olarak bağlanır. Erişim
 >    sorunu tekrarlarsa geçici olarak `pos.egzozcafe.com` bağlanabilir
 >    (ikisi de aynı Cloudflare hesabında).
-> 6. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
+> 5. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
-> 7. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 6. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (17 Eyl 2026):**
+> - **Sessiz yazma hataları maddesi bitti** — altı veri dosyasının hepsi
+>   denetimli. `adisyonlar.ts`'te 20 yazma kapatıldı: masasız adisyon
+>   aç/güncelle/sil, kuver–garsoniye, adisyon açma-güncelleme, boş adisyon
+>   silme, kalem silme/güncelleme, yeni tur ve kalem ekleme, tahsilat
+>   silme/güncelleme, `masaTasi`, `masaBirlestir`, `kalemTasi`,
+>   `bosAdisyonuTemizle`. Sonra `personel.ts` (bölge yazma hiç denetimsizdi),
+>   `yazicilar.ts` (**yazıcı sırası kaydetmede hiçbir kontrol yoktu**),
+>   `oturum.ts`, `mesguliyet.ts`, `medya.ts`.
+> - **Arka plan işlerinde uyarı değil günlük.** `mesguliyet.ts` ve
+>   `medya.ts`'te hata kullanıcıya pencere açmıyor, `console.error`'a düşüyor:
+>   masa meşguliyeti ve görsel silme kullanıcının başlattığı iş değil, orada
+>   uyarı çıkarmak gündelik işi böler. Ölçü bu: **kullanıcının bir tuşa
+>   basarak beklediği iş düşerse pencere, arka planda olan düşerse günlük.**
+> - **`oturum.ts`'te giriş ile çıkış ayrıldı.** `oturum_kisisini_birak`
+>   girişte düşerse giriş tamamlanmıyor (bırakılmazsa giren kişi öncekinin
+>   yetkileriyle çalışırdı); çıkışta düşerse çıkış sürüyor, altta bilet zaten
+>   iptal ediliyor.
+> - **Ekran tarafı:** Personel ekranı kaydetme/silme hatasını hiç
+>   göstermiyordu (uyarı penceresi eklendi), Salon'da paket sipariş silme ve
+>   Yazıcılar'da sıra taşıma ortak hata sarmalayıcısına alındı.
+> - **Tarayıcıdan tam tur test edildi** (Claude, Chrome ile canlı veride):
+>   masa taşı, birleştir, kalem taşı, sipariş kaydet, nakit öde+kapat, paket
+>   aç–kaydet–sil, sepeti boşaltıp kaydet, personel düzenle, yazıcı sırası,
+>   istasyon ekle–sil. Hepsi çalışıyor, konsol temiz. **Sınanamayan tek şey
+>   kısıtlı yetkili kullanıcı** — denetimlerin asıl devreye gireceği yer o,
+>   sıradaki iki madde bunun için.
 >
 > **Yapılanlar (16 Eyl 2026, dördüncü seans):**
 > - **Sessiz yazmalar konuşuyor (`masalar.ts`, `menu.ts`).** Yeni

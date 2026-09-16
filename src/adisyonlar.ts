@@ -10,6 +10,7 @@ import { kasayaGirerMi } from "./odemeTipleri";
 import { adisyonuCariyeYaz } from "./cari";
 import { hesapKopyasiYaz, salonKopyasiYaz } from "./hesapKopyasi";
 import { servisTutarlari, servisVar } from "./servis";
+import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
 import type { ServisGirdisi } from "./servis";
 import type { DenetimIslemi, DenetimKaydi } from "./denetim";
 import type { SepetKalemi, Tahsilat } from "./types";
@@ -455,12 +456,12 @@ export async function masasizAc(
     })
     .select("id")
     .single();
-  if (error) throw new Error(error.message);
+  yazmayiDenetle({ error }, "Adisyon açılamadı.");
   return (data as any).id as number;
 }
 
 export async function masasizGuncelle(adisyonId: number, musteri: MusteriBilgisi) {
-  const { error } = await supabase
+  const sonuc = await supabase
     .from("adisyonlar")
     .update({
       musteri_ad: musteri.ad?.trim() || null,
@@ -469,12 +470,14 @@ export async function masasizGuncelle(adisyonId: number, musteri: MusteriBilgisi
       musteri_id: musteri.musteriId ?? null,
       guncelleme: new Date().toISOString(),
     })
-    .eq("id", adisyonId);
-  if (error) throw new Error(error.message);
+    .eq("id", adisyonId)
+    .select("id");
+  satirDenetle(sonuc, "Müşteri bilgisi kaydedilemedi.");
 }
 
 export async function masasizSil(adisyonId: number) {
-  await supabase.from("adisyonlar").delete().eq("id", adisyonId);
+  const sonuc = await supabase.from("adisyonlar").delete().eq("id", adisyonId).select("id");
+  satirDenetle(sonuc, "Adisyon silinemedi.");
 }
 
 /** Salon ekranındaki "Paket & Gel Al" sekmesinin listesi. */
@@ -668,10 +671,12 @@ async function servisiTazele(adisyonId: number) {
     garsoniyeUygula: satir.garsoniye_uygula,
   });
 
-  await supabase
+  const sonuc = await supabase
     .from("adisyonlar")
     .update({ kuver_tutar: kuver, garsoniye_tutar: garsoniye })
-    .eq("id", adisyonId);
+    .eq("id", adisyonId)
+    .select("id");
+  satirDenetle(sonuc, "Kuver/garsoniye güncellenemedi.");
 }
 
 /**
@@ -788,12 +793,19 @@ export async function adisyonKaydet(
 
   // Boş adisyon: hiç kalem yoksa masayı işgal etmesin.
   if (veri.sepet.length === 0 && !kapat) {
-    if (adisyon) await supabase.from("adisyonlar").delete().eq("id", adisyon.id);
+    if (adisyon) {
+      const silme = await supabase
+        .from("adisyonlar")
+        .delete()
+        .eq("id", adisyon.id)
+        .select("id");
+      satirDenetle(silme, "Boş adisyon kapatılamadı.");
+    }
     return { sepet: [], indirim: 0, tahsilatlar: [] };
   }
 
   if (!adisyon) {
-    const { data } = await supabase
+    const acma = await supabase
       .from("adisyonlar")
       .insert({
         masa_id: masaId,
@@ -803,9 +815,10 @@ export async function adisyonKaydet(
       })
       .select("id, acilis, indirim")
       .single();
-    adisyon = data as { id: number; acilis: string; indirim: number };
+    satirDenetle({ ...acma, data: acma.data ? [acma.data] : null }, "Adisyon açılamadı.");
+    adisyon = acma.data as { id: number; acilis: string; indirim: number };
   } else {
-    await supabase
+    const guncelleme = await supabase
       .from("adisyonlar")
       .update({
         ...indirimAlanlari(veri),
@@ -813,7 +826,9 @@ export async function adisyonKaydet(
         ...servisAlanlari(veri),
         guncelleme: new Date().toISOString(),
       })
-      .eq("id", adisyon.id);
+      .eq("id", adisyon.id)
+      .select("id");
+    satirDenetle(guncelleme, "Adisyon güncellenemedi.");
   }
 
   return kalemleriYaz(adisyon.id, veri, kapat);
@@ -828,7 +843,7 @@ export async function masasizKaydet(
   veri: AdisyonVerisi,
   kapat = false
 ): Promise<AdisyonVerisi> {
-  await supabase
+  const sonuc = await supabase
     .from("adisyonlar")
     .update({
       ...indirimAlanlari(veri),
@@ -836,7 +851,9 @@ export async function masasizKaydet(
       ...servisAlanlari(veri),
       guncelleme: new Date().toISOString(),
     })
-    .eq("id", adisyonId);
+    .eq("id", adisyonId)
+    .select("id");
+  satirDenetle(sonuc, "Adisyon güncellenemedi.");
 
   return kalemleriYaz(adisyonId, veri, kapat);
 }
@@ -990,7 +1007,14 @@ async function kalemleriYaz(
   const bilinen = veri.bilinenIdler ?? defter?.kalemler;
   const gorulen = bilinen ? new Set(bilinen) : mevcutIdler;
   const silinecek = [...mevcutIdler].filter((id) => gorulen.has(id) && !kalanIdler.has(id));
-  if (silinecek.length) await supabase.from("adisyon_kalemleri").delete().in("id", silinecek);
+  if (silinecek.length) {
+    const sonuc = await supabase
+      .from("adisyon_kalemleri")
+      .delete()
+      .in("id", silinecek)
+      .select("id");
+    satirDenetle(sonuc, "Sepetten çıkarılan ürün silinemedi.");
+  }
 
   // Duran kalemler her kaydetmede tek tek güncelleniyordu: on kalemlik masada
   // on ayrı istek, her biri sunucuya gidiş dönüş. Artık yalnız gerçekten
@@ -1022,7 +1046,10 @@ async function kalemleriYaz(
   // Artırılan kalemin kayda giden (eski) adedi; dönen sepet de bunu göstersin.
   const eskiAdetler = new Map<number, number>();
 
-  const guncellemeler: Promise<unknown>[] = [];
+  const guncellemeler: Promise<{
+    error: { code?: string; message?: string } | null;
+    data: unknown;
+  }>[] = [];
   for (const k of veri.sepet) {
     if (!k.id || k.id < 0) continue;
 
@@ -1072,10 +1099,16 @@ async function kalemleriYaz(
     if (ayniKalem(oncekiKalemler.get(k.id), satir)) continue;
 
     guncellemeler.push(
-      Promise.resolve(supabase.from("adisyon_kalemleri").update(satir).eq("id", k.id))
+      Promise.resolve(
+        supabase.from("adisyon_kalemleri").update(satir).eq("id", k.id).select("id")
+      )
     );
   }
-  if (guncellemeler.length) await Promise.all(guncellemeler);
+  if (guncellemeler.length) {
+    for (const sonuc of await Promise.all(guncellemeler)) {
+      satirDenetle(sonuc, "Sepetteki değişiklik kaydedilemedi.");
+    }
+  }
 
   // Yeni kalemler bu kaydın turuna girer; geçici kimlikleri gerçeğiyle eşleşir.
   // Adedi artırılan kalemlerin farkı da buraya katılıyor: tezgâh açısından
@@ -1094,14 +1127,16 @@ async function kalemleriYaz(
   if (yeniler.length) {
     const sira = turlar.reduce((e, t) => Math.max(e, t.sira), 0) + 1;
     acilanTur = sira;
-    const { data: tur } = await supabase
+    const turSonucu = await supabase
       .from("turlar")
       .insert({ adisyon_id: adisyonId, sira })
       .select("id, siparis_no")
       .single();
+    yazmayiDenetle(turSonucu, "Sipariş turu açılamadı.");
+    const tur = turSonucu.data;
     const turId = (tur as any).id;
 
-    const { data: eklenen } = await supabase
+    const { data: eklenen, error: kalemHatasi } = await supabase
       .from("adisyon_kalemleri")
       .insert(
         yeniler.map((k) => ({
@@ -1123,6 +1158,7 @@ async function kalemleriYaz(
         }))
       )
       .select("id");
+    satirDenetle({ error: kalemHatasi, data: eklenen }, "Sipariş kaydedilemedi.");
 
     ((eklenen as any[]) ?? []).forEach((satir, i) => {
       const gecici = yeniler[i].id;
@@ -1191,10 +1227,12 @@ async function kalemleriYaz(
   );
 
   if (gidenler.length) {
-    await supabase
+    const silme = await supabase
       .from("tahsilatlar")
       .delete()
-      .in("id", gidenler.map((t) => t.id));
+      .in("id", gidenler.map((t) => t.id))
+      .select("id");
+    satirDenetle(silme, "Tahsilat silinemedi.");
 
     for (const t of gidenler) {
       denetimler.push({
@@ -1227,7 +1265,12 @@ async function kalemleriYaz(
           sebep: t.sebep,
         });
       }
-      await supabase.from("tahsilatlar").update(satir).eq("id", t.id);
+      const sonuc = await supabase
+        .from("tahsilatlar")
+        .update(satir)
+        .eq("id", t.id)
+        .select("id");
+      satirDenetle(sonuc, "Tahsilat güncellenemedi.");
       yazilanTahsilatlar.push(t);
     } else {
       const { data: eklenen, error: ekleHatasi } = await supabase
@@ -1461,10 +1504,12 @@ export async function masaTasi(kaynakMasaId: number, hedefMasaId: number) {
   // silinmiş oluyor ve deftere "nereden" bilgisi yazılamıyordu.
   const nereden = await adisyonYeri(kaynak.id);
 
-  await supabase
+  const tasima = await supabase
     .from("adisyonlar")
     .update({ masa_id: hedefMasaId, guncelleme: new Date().toISOString() })
-    .eq("id", kaynak.id);
+    .eq("id", kaynak.id)
+    .select("id");
+  satirDenetle(tasima, "Adisyon taşınamadı.");
 
   const nereye = await adisyonYeri(kaynak.id);
   await denetimYaz([
@@ -1507,18 +1552,29 @@ export async function masaBirlestir(kaynakMasaId: number, hedefMasaId: number) {
   let sira = ((hedefTurlar as any[]) ?? []).reduce((e, t) => Math.max(e, t.sira), 0);
   for (const tur of ((kaynakTurlar as any[]) ?? [])) {
     sira += 1;
-    await supabase.from("turlar").update({ adisyon_id: hedef.id, sira }).eq("id", tur.id);
+    const turSonucu = await supabase
+      .from("turlar")
+      .update({ adisyon_id: hedef.id, sira })
+      .eq("id", tur.id)
+      .select("id");
+    satirDenetle(turSonucu, "Siparişler hedef masaya aktarılamadı.");
   }
 
-  await supabase.from("tahsilatlar").update({ adisyon_id: hedef.id }).eq("adisyon_id", kaynak.id);
+  yazmayiDenetle(
+    await supabase.from("tahsilatlar").update({ adisyon_id: hedef.id }).eq("adisyon_id", kaynak.id),
+    "Tahsilatlar hedef masaya aktarılamadı."
+  );
 
   const toplamIndirim = Number(kaynak.indirim ?? 0) + Number(hedef.indirim ?? 0);
-  await supabase
+  const indirimSonucu = await supabase
     .from("adisyonlar")
     .update({ indirim: toplamIndirim, guncelleme: new Date().toISOString() })
-    .eq("id", hedef.id);
+    .eq("id", hedef.id)
+    .select("id");
+  satirDenetle(indirimSonucu, "Birleşen adisyonun indirimi yazılamadı.");
 
-  await supabase.from("adisyonlar").delete().eq("id", kaynak.id);
+  const silme = await supabase.from("adisyonlar").delete().eq("id", kaynak.id).select("id");
+  satirDenetle(silme, "Birleşen adisyon kapatılamadı.");
   await servisiTazele(hedef.id);
 
   // Kayıt hedefe yazılıyor; kaynak adisyon artık yok, ona bağlansaydı silinme
@@ -1564,12 +1620,13 @@ export async function kalemTasi(
 
   let hedef = await acikAdisyonBul(hedefMasaId);
   if (!hedef) {
-    const { data } = await supabase
+    const acma = await supabase
       .from("adisyonlar")
       .insert({ masa_id: hedefMasaId, indirim: 0 })
       .select("id, acilis, indirim")
       .single();
-    hedef = data as { id: number; acilis: string; indirim: number };
+    yazmayiDenetle(acma, "Hedef masada adisyon açılamadı.");
+    hedef = acma.data as { id: number; acilis: string; indirim: number };
   }
 
   const { data: hedefTurlar } = await supabase
@@ -1578,14 +1635,16 @@ export async function kalemTasi(
     .eq("adisyon_id", hedef.id);
   const sira = ((hedefTurlar as any[]) ?? []).reduce((e, t) => Math.max(e, t.sira), 0) + 1;
 
-  const { data: tur } = await supabase
+  const turSonucu = await supabase
     .from("turlar")
     .insert({ adisyon_id: hedef.id, sira })
     .select("id")
     .single();
+  yazmayiDenetle(turSonucu, "Hedef masada sipariş turu açılamadı.");
+  const tur = turSonucu.data;
 
   const k = kalem as any;
-  await supabase.from("adisyon_kalemleri").insert({
+  const ekleme = await supabase.from("adisyon_kalemleri").insert({
     tur_id: (tur as any).id,
     urun_id: k.urun_id,
     porsiyon_id: k.porsiyon_id,
@@ -1598,14 +1657,22 @@ export async function kalemTasi(
     durum: k.durum,
     not_metni: k.not_metni,
   });
+  yazmayiDenetle(ekleme, "Ürün hedef masaya yazılamadı.");
 
   if (tasinan < mevcutAdet) {
-    await supabase
+    const kalan = await supabase
       .from("adisyon_kalemleri")
       .update({ adet: mevcutAdet - tasinan })
-      .eq("id", kalemId);
+      .eq("id", kalemId)
+      .select("id");
+    satirDenetle(kalan, "Kaynak masadaki adet düşülemedi.");
   } else {
-    await supabase.from("adisyon_kalemleri").delete().eq("id", kalemId);
+    const silme = await supabase
+      .from("adisyon_kalemleri")
+      .delete()
+      .eq("id", kalemId)
+      .select("id");
+    satirDenetle(silme, "Ürün kaynak masadan silinemedi.");
   }
 
   await bosAdisyonuTemizle(kaynak.id);
@@ -1621,6 +1688,9 @@ async function bosAdisyonuTemizle(adisyonId: number) {
 
   const turlar = ((data as any[]) ?? []);
   const kalemVar = turlar.some((t) => (t.adisyon_kalemleri ?? []).length > 0);
-  if (!kalemVar) await supabase.from("adisyonlar").delete().eq("id", adisyonId);
+  if (!kalemVar) {
+    const silme = await supabase.from("adisyonlar").delete().eq("id", adisyonId).select("id");
+    satirDenetle(silme, "Boşalan adisyon kapatılamadı.");
+  }
 }
 

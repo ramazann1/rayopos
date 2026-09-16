@@ -57,5 +57,6 @@ export async function medyaYukle(dosya: File) {
  * ekranda görünmüyor.
  */
 export async function medyaSil(yol: string) {
-  await supabase.storage.from(KOVA).remove([yol]);
+  const { error } = await supabase.storage.from(KOVA).remove([yol]);
+  if (error) console.error("Görsel depodan silinemedi:", error.message);
 }

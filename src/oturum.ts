@@ -232,8 +232,12 @@ async function girisiTamamla(kimlik: string, sifre: string, kalici: boolean) {
   }
 
   // Yeni giriş her zaman kişinin kendisiyle başlıyor: aynı cihazda önceki
-  // vardiyadan kalmış bir PIN geçişi devralınmasın.
-  await supabase.rpc("oturum_kisisini_birak");
+  // vardiyadan kalmış bir PIN geçişi devralınmasın. Sessiz düşerse giren kişi
+  // öncekinin yetkileriyle çalışır — girişi tamamlamaktansa durmak doğru.
+  const { error: birakmaHatasi } = await supabase.rpc("oturum_kisisini_birak");
+  if (birakmaHatasi) {
+    throw new Error("Önceki kullanıcı bırakılamadı, giriş tamamlanmadı. Tekrar deneyin.");
+  }
 
   oturumKusagi++;
   acik = kisi;
@@ -268,8 +272,10 @@ export async function isletmeKur(
 
 export async function oturumuKapat() {
   // PIN'le geçilen kişi bilette kayıtlı duruyor; bilet devredilirken silinmezse
-  // sonraki kişi onun yetkileriyle çalışırdı.
-  await supabase.rpc("oturum_kisisini_birak");
+  // sonraki kişi onun yetkileriyle çalışırdı. Düşse bile çıkış sürüyor: altta
+  // bilet zaten iptal ediliyor, kullanıcıyı ekranda tutmanın anlamı yok.
+  const { error: birakmaHatasi } = await supabase.rpc("oturum_kisisini_birak");
+  if (birakmaHatasi) console.error("Oturum kişisi bırakılamadı:", birakmaHatasi.message);
   kilidiKaldir();
   localStorage.removeItem(GECICI_ANAHTARI);
   oturumKusagi++;

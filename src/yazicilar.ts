@@ -5,6 +5,7 @@ import type { SepetKalemi } from "./types";
 import { yerelBas } from "./yerelYazdirma";
 import { hataysaFirlat, onbellegiTazele, onbellekliGetir } from "./onbellek";
 import { tazeleyiciTanit } from "./tanimAbonelik";
+import { satirDenetle } from "./yazmaDenetimi";
 
 /** Yazıcının nasıl bağlandığı — ekranlarda bu sırayla listeleniyor. */
 export const BAGLANTILAR = [
@@ -222,20 +223,22 @@ export async function istasyonKaydet(
     pisirme: alanlar.pisirme,
     paketleme: alanlar.paketleme,
   };
-  const { error } = id
-    ? await supabase.from("istasyonlar").update(satir).eq("id", id)
+  const sonuc = id
+    ? await supabase.from("istasyonlar").update(satir).eq("id", id).select("id")
     : await supabase.from("istasyonlar").insert(satir);
-  if (error) {
+  if (sonuc.error) {
     throw new Error(
-      error.code === "23505" ? "Bu istasyon zaten var." : "İstasyon kaydedilemedi."
+      sonuc.error.code === "23505" ? "Bu istasyon zaten var." : "İstasyon kaydedilemedi."
     );
   }
+  if (id) satirDenetle(sonuc, "İstasyon kaydedilemedi.");
   await onbellegiTazele("istasyonlar", istasyonlariOku);
 }
 
 export async function istasyonSil(id: number) {
-  const { error } = await supabase.from("istasyonlar").delete().eq("id", id);
-  if (error) throw new Error("İstasyon silinemedi.");
+  const sonuc = await supabase.from("istasyonlar").delete().eq("id", id).select("id");
+  if (sonuc.error) throw new Error("İstasyon silinemedi.");
+  satirDenetle(sonuc, "İstasyon silinemedi.");
   await onbellegiTazele("istasyonlar", istasyonlariOku);
 }
 
@@ -296,8 +299,9 @@ export async function yaziciKaydet(id: number | null, alanlar: YaziciAlanlari) {
   let yaziciId = id;
 
   if (id) {
-    const { error } = await supabase.from("yazicilar").update(satir).eq("id", id);
-    if (error) throw kaydetmeHatasi(error);
+    const sonuc = await supabase.from("yazicilar").update(satir).eq("id", id).select("id");
+    if (sonuc.error) throw kaydetmeHatasi(sonuc.error);
+    satirDenetle(sonuc, "Yazıcı kaydedilemedi.");
   } else {
     const { data, error } = await supabase
       .from("yazicilar")
@@ -351,14 +355,20 @@ async function istasyonlariYaz(yaziciId: number, istasyonlar: number[]) {
 }
 
 export async function yaziciSil(id: number) {
-  const { error } = await supabase.from("yazicilar").delete().eq("id", id);
-  if (error) throw new Error("Yazıcı silinemedi.");
+  const sonuc = await supabase.from("yazicilar").delete().eq("id", id).select("id");
+  if (sonuc.error) throw new Error("Yazıcı silinemedi.");
+  satirDenetle(sonuc, "Yazıcı silinemedi.");
   yaziciOnbelleginiUnut();
 }
 
 export async function yaziciSirasiniKaydet(sirali: number[]) {
   for (let i = 0; i < sirali.length; i++) {
-    await supabase.from("yazicilar").update({ sira: i + 1 }).eq("id", sirali[i]);
+    const sonuc = await supabase
+      .from("yazicilar")
+      .update({ sira: i + 1 })
+      .eq("id", sirali[i])
+      .select("id");
+    satirDenetle(sonuc, "Yazıcı sırası kaydedilemedi.");
   }
 }
 

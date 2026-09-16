@@ -82,11 +82,14 @@ async function kalpAtisi(masaId: number, kisiId: number) {
 
 /** Masa bizdeyse bırakılıyor; başkasına geçtiyse onun işaretine dokunulmuyor. */
 async function isaretiKaldir(masaId: number, kisiId: number) {
-  await supabase
+  const { error } = await supabase
     .from("masa_mesguliyet")
     .delete()
     .eq("masa_id", masaId)
     .eq("kisi_id", kisiId);
+  // Satır dönmemesi olağan: masa bu arada başkasına geçmiş olabilir. Hata
+  // başka şey; kalırsa masa boşalmadığı hâlde boş sanılıyor.
+  if (error) console.error("Masa meşguliyeti kaldırılamadı:", error.message);
 }
 
 /**

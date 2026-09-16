@@ -583,8 +583,7 @@ export default function Yazicilar() {
     const hedef = yer + yon;
     if (hedef < 0 || hedef >= sirali.length) return;
     [sirali[yer], sirali[hedef]] = [sirali[hedef], sirali[yer]];
-    await yaziciSirasiniKaydet(sirali);
-    await tazele();
+    await calistir(() => yaziciSirasiniKaydet(sirali), "Sıra kaydedildi");
   };
 
   const istasyonYazicilari = (id: number) =>

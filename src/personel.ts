@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { yerelPinUnut } from "./cevrimdisiPin";
+import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
 
 export type Rol = {
   id: number;
@@ -170,11 +171,17 @@ async function pinYaz(personelId: number, pin?: string | null) {
 }
 
 async function bolgeleriYaz(personelId: number, bolgeIdler: number[]) {
-  await supabase.from("personel_bolgeleri").delete().eq("personel_id", personelId);
+  yazmayiDenetle(
+    await supabase.from("personel_bolgeleri").delete().eq("personel_id", personelId),
+    "Personelin bölgeleri güncellenemedi."
+  );
   if (bolgeIdler.length === 0) return;
-  await supabase
-    .from("personel_bolgeleri")
-    .insert(bolgeIdler.map((bolgeId) => ({ personel_id: personelId, bolge_id: bolgeId })));
+  yazmayiDenetle(
+    await supabase
+      .from("personel_bolgeleri")
+      .insert(bolgeIdler.map((bolgeId) => ({ personel_id: personelId, bolge_id: bolgeId }))),
+    "Personelin bölgeleri kaydedilemedi."
+  );
 }
 
 // Giriş hesabı veritabanı tarafında açılıyor: telefon numarasından üretilen
@@ -203,11 +210,12 @@ export async function personelEkle(alanlar: PersonelAlanlari, sira: number) {
 }
 
 export async function personelGuncelle(id: number, alanlar: PersonelAlanlari) {
-  const { error } = await supabase
+  const sonuc = await supabase
     .from("personel")
     .update(satirAlanlari(alanlar))
-    .eq("id", id);
-  if (error) throw new Error("Personel kaydedilemedi.");
+    .eq("id", id)
+    .select("id");
+  satirDenetle(sonuc, "Personel kaydedilemedi.");
   await bolgeleriYaz(id, alanlar.bolgeIdler);
   await pinYaz(id, alanlar.pin);
   await hesabiYaz(id, alanlar.sifre);
@@ -216,8 +224,8 @@ export async function personelGuncelle(id: number, alanlar: PersonelAlanlari) {
 // Yanlış açılan kaydı temizlemek için. İşten ayrılanı silmek yerine listeden
 // gizlemek doğru yol; ilerideki adisyon–garson bağı silmeyi zaten kısıtlayacak.
 export async function personelSil(id: number) {
-  const { error } = await supabase.from("personel").delete().eq("id", id);
-  if (error) throw new Error("Personel silinemedi.");
+  const sonuc = await supabase.from("personel").delete().eq("id", id).select("id");
+  satirDenetle(sonuc, "Personel silinemedi.");
 }
 
 // Telefon giriş bilgisi; iki kişide aynı numara varsa kimin girdiği belli olmaz.

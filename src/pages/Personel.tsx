@@ -250,6 +250,7 @@ export default function PersonelEkrani() {
   const [panel, setPanel] = useState<Personel | null | undefined>(undefined);
   const [silinecek, setSilinecek] = useState<Personel | null>(null);
   const [bildirim, setBildirim] = useState("");
+  const [uyari, setUyari] = useState("");
   const [ara, setAra] = useState("");
 
   const tazele = async () => setListe(await personeliGetir(true));
@@ -269,8 +270,13 @@ export default function PersonelEkrani() {
   }, []);
 
   const kaydet = async (alanlar: PersonelAlanlari) => {
-    if (panel) await personelGuncelle(panel.id, alanlar);
-    else await personelEkle(alanlar, liste.length + 1);
+    try {
+      if (panel) await personelGuncelle(panel.id, alanlar);
+      else await personelEkle(alanlar, liste.length + 1);
+    } catch (e) {
+      setUyari(e instanceof Error ? e.message : "Personel kaydedilemedi.");
+      return;
+    }
     setPanel(undefined);
     await tazele();
     setBildirim("Personel kaydedildi");
@@ -278,7 +284,13 @@ export default function PersonelEkrani() {
 
   const sil = async () => {
     if (!silinecek) return;
-    await personelSil(silinecek.id);
+    try {
+      await personelSil(silinecek.id);
+    } catch (e) {
+      setSilinecek(null);
+      setUyari(e instanceof Error ? e.message : "Personel silinemedi.");
+      return;
+    }
     setSilinecek(null);
     setPanel(undefined);
     await tazele();
@@ -378,6 +390,8 @@ export default function PersonelEkrani() {
           onKapat={() => setSilinecek(null)}
         />
       )}
+
+      {uyari && <OnayModal mesaj={uyari} tekTus onKapat={() => setUyari("")} />}
 
       {bildirim && <Bildirim mesaj={bildirim} onKapat={() => setBildirim("")} />}
     </>

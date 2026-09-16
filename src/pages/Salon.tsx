@@ -326,8 +326,12 @@ export default function Salon() {
   function siparisSil(a: MasasizAdisyon) {
     const sil = async () => {
       setOnay(null);
-      await masasizSil(a.id);
-      await yenile();
+      try {
+        await masasizSil(a.id);
+        await yenile();
+      } catch (e) {
+        setUyari(e instanceof Error ? e.message : "Sipariş silinemedi.");
+      }
     };
     if (a.adet === 0) {
       sil();
