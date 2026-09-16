@@ -773,6 +773,16 @@ export default function IsletmeAyarlari() {
   const [bildirim, setBildirim] = useState<string | null>(null);
   const [uyari, setUyari] = useState<string | null>(null);
 
+  // Yazma işlemleri artık başarısız olduğunda susmuyor; hatanın kendi cümlesi
+  // uyarı penceresinde çıksın diye bütün çağrılar buradan geçiyor.
+  const dene = async (is: () => Promise<void>) => {
+    try {
+      await is();
+    } catch (e) {
+      setUyari(e instanceof Error ? e.message : "İşlem tamamlanamadı.");
+    }
+  };
+
   const [masaPaneli, setMasaPaneli] = useState<Masa | null>(null);
   const [bolgePaneli, setBolgePaneli] = useState<Bolge | null | undefined>(undefined);
   const [topluAcik, setTopluAcik] = useState(false);
@@ -884,10 +894,12 @@ export default function IsletmeAyarlari() {
     const i = bolgeler.indexOf(bolge);
     const komsu = bolgeler[i + yon];
     if (!komsu) return;
-    await Promise.all([
-      bolgeGuncelle(bolge.id, { sira: i + yon + 1 }),
-      bolgeGuncelle(komsu.id, { sira: i + 1 }),
-    ]);
+    await dene(async () => {
+      await Promise.all([
+        bolgeGuncelle(bolge.id, { sira: i + yon + 1 }),
+        bolgeGuncelle(komsu.id, { sira: i + 1 }),
+      ]);
+    });
     await tazele(bolge.id);
   };
 
@@ -916,22 +928,35 @@ export default function IsletmeAyarlari() {
     setGorunum("plan");
     const konumsuz = masalar.filter((m) => !yerlesimiVar(m));
     if (konumsuz.length === 0) return;
-    await yerlesimTopluKaydet(otomatikDiz(masalar).filter((y) => konumsuz.some((m) => m.id === y.id)));
+    await dene(() =>
+      yerlesimTopluKaydet(otomatikDiz(masalar).filter((y) => konumsuz.some((m) => m.id === y.id)))
+    );
     await tazele(secili?.id);
   };
 
   const otomatikDizVeKaydet = async () => {
-    await yerlesimTopluKaydet(otomatikDiz(masalar));
+    try {
+      await yerlesimTopluKaydet(otomatikDiz(masalar));
+    } catch (e) {
+      setUyari(e instanceof Error ? e.message : "Masalar dizilemedi.");
+      return;
+    }
     await tazele(secili?.id);
     setBildirim("Masalar yeniden dizildi.");
   };
 
   const masaEklePanelsiz = async () => {
     if (!secili) return;
-    const id = await masaEkle(secili.id, {
-      ad: `Masa ${masalar.length + 1}`,
-      sira: masalar.length + 1,
-    });
+    let id: number;
+    try {
+      id = await masaEkle(secili.id, {
+        ad: `Masa ${masalar.length + 1}`,
+        sira: masalar.length + 1,
+      });
+    } catch (e) {
+      setUyari(e instanceof Error ? e.message : "Masa eklenemedi.");
+      return;
+    }
     // Yeni masa eklenir eklenmez düzenleme paneli açılıyor; adı ve kapasitesi
     // hemen girilsin diye.
     const veri = await tazele(secili.id);
@@ -1073,7 +1098,7 @@ export default function IsletmeAyarlari() {
                         acik={secili?.planModu ?? false}
                         degistir={async (acik) => {
                           if (!secili) return;
-                          await bolgeGuncelle(secili.id, { plan_modu: acik });
+                          await dene(() => bolgeGuncelle(secili.id, { plan_modu: acik }));
                           await tazele(secili.id);
                         }}
                       />
@@ -1082,7 +1107,7 @@ export default function IsletmeAyarlari() {
                       masalar={masalar}
                       duzenlenebilir
                       onYerlesim={async (id, y) => {
-                        await yerlesimKaydet(id, y);
+                        await dene(() => yerlesimKaydet(id, y));
                         await tazele(secili?.id);
                       }}
                       icerik={(m) => (
@@ -1536,7 +1561,12 @@ export default function IsletmeAyarlari() {
           onKapat={() => setMasaPaneli(null)}
           onSil={() => masayiSil(masaPaneli)}
           onKaydet={async (alanlar) => {
-            await masaGuncelle(masaPaneli.id, alanlar);
+            try {
+              await masaGuncelle(masaPaneli.id, alanlar);
+            } catch (e) {
+              setUyari(e instanceof Error ? e.message : "Masa kaydedilemedi.");
+              return;
+            }
             setMasaPaneli(null);
             await tazele(masaPaneli.bolgeId);
             setBildirim("Masa kaydedildi");
@@ -1549,7 +1579,12 @@ export default function IsletmeAyarlari() {
           bolgeAd={secili.ad}
           onKapat={() => setTopluAcik(false)}
           onEkle={async (onEk, adet, sekil) => {
-            await topluMasaEkle(secili.id, onEk, adet, masalar.length + 1, sekil);
+            try {
+              await topluMasaEkle(secili.id, onEk, adet, masalar.length + 1, sekil);
+            } catch (e) {
+              setUyari(e instanceof Error ? e.message : "Masalar eklenemedi.");
+              return;
+            }
             setTopluAcik(false);
             await tazele(secili.id);
             setBildirim(`${adet} masa eklendi`);
@@ -1565,8 +1600,13 @@ export default function IsletmeAyarlari() {
           onSil={bolgePaneli ? () => bolgeyiSil(bolgePaneli) : undefined}
           onKaydet={async (ad) => {
             let hedefId = bolgePaneli?.id;
-            if (bolgePaneli) await bolgeGuncelle(bolgePaneli.id, { ad });
-            else hedefId = await bolgeEkle(ad, bolgeler.length + 1);
+            try {
+              if (bolgePaneli) await bolgeGuncelle(bolgePaneli.id, { ad });
+              else hedefId = await bolgeEkle(ad, bolgeler.length + 1);
+            } catch (e) {
+              setUyari(e instanceof Error ? e.message : "Bölge kaydedilemedi.");
+              return;
+            }
             setBolgePaneli(undefined);
             await tazele(hedefId);
             setBildirim("Bölge kaydedildi");
@@ -1579,7 +1619,13 @@ export default function IsletmeAyarlari() {
           mesaj={`${silinecekBolge.ad} bölgesi ve içindeki ${silinecekBolge.masalar.length} masa silinsin mi?`}
           tehlikeli
           onOnay={async () => {
-            await bolgeSil(silinecekBolge.id);
+            try {
+              await bolgeSil(silinecekBolge.id);
+            } catch (e) {
+              setSilinecekBolge(null);
+              setUyari(e instanceof Error ? e.message : "Bölge silinemedi.");
+              return;
+            }
             setSilinecekBolge(null);
             await tazele();
             setBildirim("Bölge silindi");
@@ -1593,7 +1639,13 @@ export default function IsletmeAyarlari() {
           mesaj={`${silinecekMasa.ad} masası silinsin mi?`}
           tehlikeli
           onOnay={async () => {
-            await masaSil(silinecekMasa.id);
+            try {
+              await masaSil(silinecekMasa.id);
+            } catch (e) {
+              setSilinecekMasa(null);
+              setUyari(e instanceof Error ? e.message : "Masa silinemedi.");
+              return;
+            }
             setSilinecekMasa(null);
             await tazele();
             setBildirim("Masa silindi");

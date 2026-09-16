@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { hataysaFirlat, onbellekliGetir } from "./onbellek";
-import { tazeleyiciTanit } from "./tanimAbonelik";
+import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
+import { tanimTazele, tazeleyiciTanit } from "./tanimAbonelik";
 import { ayarlar } from "./isletmeAyarlari";
 import type { Bolge, Masa } from "./types";
 
@@ -50,27 +51,37 @@ async function bolgeleriOku(): Promise<Bolge[]> {
   }));
 }
 
+// Yazdıktan sonra cihazdaki kopya tazelenmezse ekran eski listeyi okuyor:
+// silinen bölge sayfa yenilenene kadar yerinde duruyordu.
+const tanimiTazele = () => tanimTazele(BOLGE_ANAHTAR);
+
 export async function masaGetir(id: number): Promise<Masa | null> {
   const { data } = await supabase.from("masalar").select(MASA_ALANLARI).eq("id", id).maybeSingle();
   return data ? masayaCevir(data) : null;
 }
 
 export async function bolgeEkle(ad: string, sira: number): Promise<number> {
-  const { data } = await supabase.from("bolgeler").insert({ ad, sira }).select("id").single();
-  return (data as any).id;
+  const sonuc = await supabase.from("bolgeler").insert({ ad, sira }).select("id").single();
+  yazmayiDenetle(sonuc, "Bölge eklenemedi.");
+  await tanimiTazele();
+  return (sonuc.data as any).id;
 }
 
 export async function bolgeGuncelle(
   id: number,
   alanlar: Partial<{ ad: string; sira: number; plan_modu: boolean }>
 ) {
-  await supabase.from("bolgeler").update(alanlar).eq("id", id);
+  const sonuc = await supabase.from("bolgeler").update(alanlar).eq("id", id).select("id");
+  satirDenetle(sonuc, "Bölge kaydedilemedi.");
+  await tanimiTazele();
 }
 
 // Bölge silinince masaları da gider (veritabanında cascade); üstünde açık
 // adisyon olan masa varsa ekran zaten silmeye izin vermez.
 export async function bolgeSil(id: number) {
-  await supabase.from("bolgeler").delete().eq("id", id);
+  const sonuc = await supabase.from("bolgeler").delete().eq("id", id).select("id");
+  satirDenetle(sonuc, "Bölge silinemedi.");
+  await tanimiTazele();
 }
 
 type MasaAlanlari = {
@@ -93,8 +104,8 @@ export type Yerlesim = {
   yukseklik: number;
 };
 
-export async function yerlesimKaydet(id: number, y: Yerlesim) {
-  await supabase
+async function yerlesimYaz(id: number, y: Yerlesim) {
+  const sonuc = await supabase
     .from("masalar")
     .update({
       konum_x: Math.round(y.konumX),
@@ -102,21 +113,31 @@ export async function yerlesimKaydet(id: number, y: Yerlesim) {
       genislik: Math.round(y.genislik),
       yukseklik: Math.round(y.yukseklik),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
+  satirDenetle(sonuc, "Masanın yeri kaydedilemedi.");
+}
+
+export async function yerlesimKaydet(id: number, y: Yerlesim) {
+  await yerlesimYaz(id, y);
+  await tanimiTazele();
 }
 
 /** Otomatik dizmede ve ilk açılışta çok masa birden yazılıyor. */
 export async function yerlesimTopluKaydet(kayitlar: (Yerlesim & { id: number })[]) {
-  await Promise.all(kayitlar.map(({ id, ...y }) => yerlesimKaydet(id, y)));
+  await Promise.all(kayitlar.map(({ id, ...y }) => yerlesimYaz(id, y)));
+  await tanimiTazele();
 }
 
 export async function masaEkle(bolgeId: number, alanlar: Partial<MasaAlanlari> & { ad: string }) {
-  const { data } = await supabase
+  const sonuc = await supabase
     .from("masalar")
     .insert({ bolge_id: bolgeId, ...alanlar })
     .select("id")
     .single();
-  return (data as any).id as number;
+  yazmayiDenetle(sonuc, "Masa eklenemedi.");
+  await tanimiTazele();
+  return (sonuc.data as any).id as number;
 }
 
 // Toplu ekleme: "Masa 1, Masa 2, ..." — 20 masalı bir bölgeyi tek tek girmek
@@ -134,15 +155,21 @@ export async function topluMasaEkle(
     sira: baslangicSira + i,
     sekil,
   }));
-  await supabase.from("masalar").insert(satirlar);
+  const sonuc = await supabase.from("masalar").insert(satirlar).select("id");
+  satirDenetle(sonuc, "Masalar eklenemedi.");
+  await tanimiTazele();
 }
 
 export async function masaGuncelle(id: number, alanlar: Partial<MasaAlanlari>) {
-  await supabase.from("masalar").update(alanlar).eq("id", id);
+  const sonuc = await supabase.from("masalar").update(alanlar).eq("id", id).select("id");
+  satirDenetle(sonuc, "Masa kaydedilemedi.");
+  await tanimiTazele();
 }
 
 export async function masaSil(id: number) {
-  await supabase.from("masalar").delete().eq("id", id);
+  const sonuc = await supabase.from("masalar").delete().eq("id", id).select("id");
+  satirDenetle(sonuc, "Masa silinemedi.");
+  await tanimiTazele();
 }
 
 // Silmeden önce sorulur: üstünde açık adisyon olan masa silinemez.
