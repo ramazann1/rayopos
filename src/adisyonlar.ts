@@ -694,41 +694,34 @@ export async function adisyonIptal(adisyonId: number, sebep: string) {
 
   const tutar = await adisyonTutari(adisyonId);
   const yer = await adisyonYeri(adisyonId);
-  // Adisyonun kalemleri iptal yazılmadan önce okunuyor: tezgâha "bu masanın
-  // tamamını yapmayın" fişi bunlardan basılıyor.
+  // Adisyonun kalemleri ve künyesi iptal yazılmadan önce okunuyor: tezgâha
+  // "bu masanın tamamını yapmayın" fişi bunlardan basılıyor. İptal edilmiş
+  // adisyonu okumak ayrı bir yetkiye bağlı, sonra bakılsa fiş boş çıkardı.
   const iptalEdilecekler = await adisyonKalemleri(adisyonId);
+  const kunye = await fisKunyesi(adisyonId);
 
-  const { error } = await supabase
-    .from("adisyonlar")
-    .update({
-      durum: "iptal",
-      iptal_sebep: sebep,
-      kapanis: new Date().toISOString(),
-      guncelleme: new Date().toISOString(),
-    })
-    .eq("id", adisyonId);
+  const { error } = await supabase.rpc("adisyon_iptal_et", {
+    p_adisyon_id: adisyonId,
+    p_sebep: sebep,
+  });
   if (error) throw new Error(error.message || "Adisyon iptal edilemedi.");
 
   await denetimYaz([{ islem: "adisyon_iptal", adisyonId, yer, tutar, sebep }]);
 
   // Fiş beklenmiyor: adisyon zaten iptal edildi, yazıcı sorunu bunu geri almaz.
   if (iptalEdilecekler.length) {
-    fisKunyesi(adisyonId)
-      .then((kunye) =>
-        iptalFisiYaz(
-          {
-            sepet: [],
-            indirim: 0,
-            tahsilatlar: [],
-            ...kunye,
-            id: adisyonId,
-            ad: yer,
-            garson: kisaAd(acikOturum()?.ad ?? "") || undefined,
-          },
-          iptalEdilecekler
-        )
-      )
-      .catch((e) => console.error("İptal fişi kuyruğa yazılamadı:", e));
+    iptalFisiYaz(
+      {
+        sepet: [],
+        indirim: 0,
+        tahsilatlar: [],
+        ...kunye,
+        id: adisyonId,
+        ad: yer,
+        garson: kisaAd(acikOturum()?.ad ?? "") || undefined,
+      },
+      iptalEdilecekler
+    ).catch((e) => console.error("İptal fişi kuyruğa yazılamadı:", e));
   }
 }
 
@@ -759,48 +752,12 @@ export async function adisyonIkram(
   const tutar = await adisyonTutari(adisyonId);
   const yer = await adisyonYeri(adisyonId);
 
-  const { data: turlar } = await supabase
-    .from("turlar")
-    .select("id")
-    .eq("adisyon_id", adisyonId);
-
-  const turIdler = ((turlar as any[]) ?? []).map((t) => t.id);
-  if (turIdler.length) {
-    // İptal edilmiş kalemler olduğu gibi kalıyor: iptal ikramdan başka bir şey.
-    // Kalem güncellemesi sessiz geçerse adisyon kapanır ama ürünler normal
-    // kalır: hesap kapanmış görünür, ciro yanlış çıkar. Hata varsa burada durulur.
-    const { error: kalemHatasi } = await supabase
-      .from("adisyon_kalemleri")
-      .update({
-        durum: "ikram",
-        indirim: 0,
-        indirim_tanim_id: null,
-        indirim_ad: null,
-        odenmez_id: odenmezId ?? null,
-      })
-      .in("tur_id", turIdler)
-      .eq("durum", "normal");
-    if (kalemHatasi) throw new Error(kalemHatasi.message || "Adisyon ikram edilemedi.");
-  }
-
-  const { error } = await supabase
-    .from("adisyonlar")
-    .update({
-      durum: "kapali",
-      indirim: 0,
-      indirim_tanim_id: null,
-      indirim_ad: null,
-      // Tamamı ikram edilen hesaptan servis bedeli de alınmıyor; kaldırıldığı
-      // yazılıyor ki adisyon yeniden açılırsa kuver kendiliğinden geri gelmesin.
-      kuver_tutar: 0,
-      garsoniye_tutar: 0,
-      kuver_uygula: false,
-      garsoniye_uygula: false,
-      odenmez_id: odenmezId ?? null,
-      kapanis: new Date().toISOString(),
-      guncelleme: new Date().toISOString(),
-    })
-    .eq("id", adisyonId);
+  // Kalemler ve adisyon sunucuda tek işlemde yazılıyor: eskiden ikisi ayrı
+  // istekti ve ikincisi düşerse ürünler ikram, adisyon açık kalıyordu.
+  const { error } = await supabase.rpc("adisyon_ikram_et", {
+    p_adisyon_id: adisyonId,
+    p_odenmez_id: odenmezId ?? null,
+  });
   if (error) throw new Error(error.message || "Adisyon ikram edilemedi.");
 
   const adlar = await odenmezAdlariniGetir(odenmezId ? [odenmezId] : []);
@@ -1309,18 +1266,21 @@ async function kalemleriYaz(
 
   cekmeceyiGerekirseAc(yeniTahsilatTipleri);
 
+  // Masa adı kapanıştan önce okunuyor: kapanmış adisyonu görmek ayrı bir
+  // yetkiye bağlı, sonra bakılsa denetim defterine yersiz satır düşerdi.
+  const denetimYeri =
+    denetimler.length || (kapat && veri.eksik) ? await adisyonYeri(adisyonId) : undefined;
+
   if (kapat) {
-    await supabase
-      .from("adisyonlar")
-      .update({
-        durum: "kapali",
-        kapanis: new Date().toISOString(),
-        // Eksik kapatma bilgisi yalnız o kapanışta yazılıyor; hesap tam
-        // ödenerek kapandıysa eski borç notu da temizleniyor.
-        eksik_kisi: veri.eksik?.kisi ?? null,
-        eksik_sebep: veri.eksik?.sebep ?? null,
-      })
-      .eq("id", adisyonId);
+    // Eksik kapatma bilgisi yalnız o kapanışta yazılıyor; hesap tam ödenerek
+    // kapandıysa eski borç notu da temizleniyor.
+    const { error: kapanisHatasi } = await supabase.rpc("adisyon_kapat", {
+      p_adisyon_id: adisyonId,
+      p_eksik_kisi: veri.eksik?.kisi ?? null,
+      p_eksik_sebep: veri.eksik?.sebep ?? null,
+    });
+    // Sessiz geçerse para kasaya girer ama masa açık kalır; hata görünmeli.
+    if (kapanisHatasi) throw new Error(kapanisHatasi.message || "Hesap kapatılamadı.");
 
     if (veri.eksik) {
       denetimler.push({
@@ -1333,8 +1293,7 @@ async function kalemleriYaz(
   }
 
   if (denetimler.length) {
-    const yer = await adisyonYeri(adisyonId);
-    await denetimYaz(denetimler.map((d) => ({ ...d, adisyonId, yer })));
+    await denetimYaz(denetimler.map((d) => ({ ...d, adisyonId, yer: denetimYeri })));
   }
 
   // Ekran aynı sayfada ikinci kez kaydedebiliyor; "gördüklerim" listesi yeni

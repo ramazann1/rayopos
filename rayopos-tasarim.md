@@ -3,28 +3,62 @@
 
 ## 0. SIRADAKİ İŞ (16 Eyl 2026 güncellendi)
 
-> **Sıra (16 Eyl 2026 seans sonu):**
-> 1. **Garson adisyonu iptal/ikram edemiyor.** Ramazan kendi hesabıyla girip
->    PIN ile garsona geçiyor; adisyonu iptal veya ikram etmek isteyince işlem
->    reddediliyor, ekranda "new row violates row-level security policy for
->    table adisyonlar" yazıyor (PATCH 403). İkramda ürünlere ikram yazısı
->    geliyor ama adisyon açık kalıyor. Sıfırdan araştırılacak.
-> 2. **Kayıt kapatma SQL'i** — `sql/2026-09-16-kayit-kapat.sql` Supabase'de
+> **Sıra (16 Eyl 2026 üçüncü seans sonu):**
+> 1. **Sessiz yazma hataları konuşturulacak.** Kodda 45 yazma işlemi hatayı
+>    yutuyor (`await supabase...` sonucu hiç okunmuyor): en yoğunu
+>    `menu.ts` (26), `adisyonlar.ts` (14), `masalar.ts` ve `oturum.ts` (6'şar).
+>    Bunlar patlamıyor, sadece olmuyor — ödeme-kapatma hatasının haftalarca
+>    fark edilmemesinin sebebi buydu. Hepsine hata kontrolü konacak.
+> 2. **Yetki provası betiği.** Bir personeli seçip bütün ana işlemleri geri
+>    alınan bir işlemde deneyen, "şunu yapabiliyor / şuna takılıyor" tablosu
+>    veren SQL. 16 Eyl'de elle yapılan denemenin (bkz. aşağıdaki seans notu)
+>    toplu hâli; her yeni yetkide tekrar çalıştırılır.
+> 3. **"Deneme Garson" hesabı.** En dar yetkiyle duran bir personel; sürüm
+>    öncesi sipariş–ödeme–iptal turu onunla atılır. Bugüne kadarki testler
+>    yönetici hesabıyla yapıldığı için kısıtlı kullanıcı hataları görünmüyordu.
+> 4. **Kayıt kapatma SQL'i** — `sql/2026-09-16-kayit-kapat.sql` Supabase'de
 >    çalıştırılmadı (16 Eyl'de Supabase arızası vardı, panele girilemiyordu).
 >    Ramazan'a SQL Editor'de çalıştırt; o zamana kadar `isletme_kur` açık.
-> 3. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
+> 5. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
 >    Kod elendi: canlıdaki derleme, `_headers` ile birlikte temiz tarayıcıda
 >    sorunsuz açılıyor.
-> 4. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
+> 6. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
 >    10:33: "belgeler kayıt otoritesine iletildi"). Seans başında sor/WHOIS'e
 >    bak; gelince Cloudflare Pages'te özel alan adı olarak bağlanır. Erişim
 >    sorunu tekrarlarsa geçici olarak `pos.egzozcafe.com` bağlanabilir
 >    (ikisi de aynı Cloudflare hesabında).
-> 5. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
+> 7. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
-> 6. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 8. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (16 Eyl 2026, üçüncü seans):**
+> - **Garson adisyonu iptal/ikram/kapat edemiyordu — çözüldü.** Sebep yetki
+>   eksikliği değilmiş: PostgreSQL bir satırı güncellemeye izin verirken
+>   güncellenmiş hâlinin de o kişiye görünür kalmasını şart koşuyor. Adisyonun
+>   okuma kuralı kapanmış adisyonu `siparis.kapali_gor` gibi yetkilere bağlı;
+>   garson adisyonu kapattığı an satır kendi gözünden kayboluyor ve yazma geri
+>   çevriliyor. Kalem iptalinin çalışmasının sebebi de buydu — kalemin
+>   okunabilirliği adisyonun durumuna bakıyor, adisyon hâlâ açıktı.
+> - **Okuma kuralı bilerek gevşetilmedi** (Ramazan kararı): garson kendi
+>   kapattığı hesapları görebilseydi toplayıp günün cirosunu öğrenirdi. Onun
+>   yerine durumu değiştiren üç işlem `sql/2026-09-16-adisyon-kapatma.sql`
+>   içindeki tanımlayıcı fonksiyonlara taşındı: `adisyon_iptal_et`,
+>   `adisyon_ikram_et`, `adisyon_kapat`. Satır güvenliğini aşıyorlar,
+>   karşılığında işletmeyi ve yetkiyi kendileri denetliyor. (SQL çalıştırıldı.)
+> - **Ödeme alıp kapatma sessizce başarısız oluyordu**: para kasaya giriyor,
+>   masa açık kalıyordu. O satırda hata kontrolü yokmuş; artık var.
+> - **`siparis.adisyon_ikram` yalnız tarayıcıda denetleniyormuş**, veritabanında
+>   karşılığı yoktu. Yeni fonksiyon kapattı. İkramda kalemler ve adisyon artık
+>   tek işlem: yarım kalmış ikram mümkün değil.
+> - Kapanıştan **sonra** adisyonu okuyan iki yer (iptal fişi künyesi, denetim
+>   defterindeki masa adı) kapanıştan önceye alındı — kapanınca okunamıyorlar.
+> - Güvenlik denemeleri (hepsi geri alındı): yetkisi olmayan personel → "yetkiniz
+>   yok", **başka işletmenin yöneticisi → "Adisyon bulunamadı"**, anon → üçünü de
+>   çalıştıramıyor, `search_path` üçünde de sabit.
+> - **Kural: kısıtlı yetkili hesapla test edilmeyen iş bitmiş sayılmaz.** Bu
+>   hataların tamamı yönetici hesabında görünmüyor. Sıradaki işin 3. maddesi.
 >
 > **Yapılanlar (16 Eyl 2026, ikinci seans):**
 > - **Mobil masa ızgarası**: üç sütun, 118px kart; çizgiler kartların
