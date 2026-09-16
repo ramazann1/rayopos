@@ -18,7 +18,6 @@ import Odenmezler from "./pages/Odenmezler";
 import Yazicilar from "./pages/Yazicilar";
 import BaglantiDurumu from "./pages/BaglantiDurumu";
 import FisTasarimi from "./pages/FisTasarimi";
-import YazdirmaKuyrugu from "./pages/YazdirmaKuyrugu";
 import Giris from "./pages/Giris";
 import QrMenu from "./pages/QrMenu";
 import MobilKabuk, { acikSekmeler } from "./mobil/MobilKabuk";
@@ -172,7 +171,6 @@ function App() {
           <Route path="/ayarlar/yazicilar" element={<Yazicilar />} />
           <Route path="/ayarlar/istasyonlar" element={<Yazicilar />} />
           <Route path="/ayarlar/fis-tasarimi" element={<FisTasarimi />} />
-          <Route path="/ayarlar/yazdirma-kuyrugu" element={<YazdirmaKuyrugu />} />
           <Route path="/ayarlar/baglanti-durumu" element={<BaglantiDurumu />} />
           <Route path="/ayarlar/:bolum" element={<IsletmeAyarlari />} />
         </Route>

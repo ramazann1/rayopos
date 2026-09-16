@@ -25,7 +25,6 @@ import {
   QrCode,
   Receipt,
   Ruler,
-  ScrollText,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -64,7 +63,6 @@ export const yaziciBolumleri: Bolum[] = [
   { yol: "/ayarlar/yazicilar", ad: "Yazıcılar", ikon: Printer },
   { yol: "/ayarlar/istasyonlar", ad: "İstasyonlar", ikon: ChefHat },
   { yol: "/ayarlar/fis-tasarimi", ad: "Fiş Tasarımı", ikon: Receipt },
-  { yol: "/ayarlar/yazdirma-kuyrugu", ad: "Yazdırma Kuyruğu", ikon: ScrollText },
   { yol: "/ayarlar/baglanti-durumu", ad: "Bağlantı Durumu", ikon: Wifi },
 ];
 

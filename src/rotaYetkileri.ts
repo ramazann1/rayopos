@@ -44,7 +44,6 @@ const ROTA_YETKILERI: [string, string][] = [
   ["/ayarlar/yazicilar", "yazici.yonet"],
   ["/ayarlar/istasyonlar", "yazici.yonet"],
   ["/ayarlar/fis-tasarimi", "yazici.yonet"],
-  ["/ayarlar/yazdirma-kuyrugu", "yazici.yonet"],
   ["/ayarlar/baglanti-durumu", "yazici.yonet"],
 ];
 

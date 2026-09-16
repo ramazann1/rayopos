@@ -325,35 +325,3 @@ export function fisIcerigi(
 /** Kuyruğa yazılan hâli: köprü bunu okuyup çiziyor. */
 export const fisPaketi = (icerik: FisIcerigi) => JSON.stringify(icerik);
 
-/**
- * Fişin okunabilir özeti — Yazdırma Kuyruğu ekranı satıra tıklayınca bunu
- * gösteriyor. Kâğıttaki düzenin birebir aynısı değil, ne basıldığının
- * dökümü. Eski kayıtlar düz metin olduğu için onlar olduğu gibi dönüyor.
- */
-export function icerikOzeti(ham: string): string {
-  let icerik: FisIcerigi;
-  try {
-    icerik = JSON.parse(ham);
-    if (!Array.isArray(icerik?.satirlar)) return ham;
-  } catch {
-    return ham;
-  }
-
-  const GENISLIK = 42;
-  return icerik.satirlar
-    .map((s) => {
-      if (s.t === "cizgi") return "-".repeat(GENISLIK);
-      if (s.t === "bosluk") return "";
-      if (s.t === "ic") return `  ${s.m}`;
-      if (s.t === "orta") {
-        const bosluk = Math.max(0, Math.floor((GENISLIK - s.m.length) / 2));
-        return " ".repeat(bosluk) + s.m;
-      }
-      if (s.t === "sol") return s.m;
-      if (s.t === "logo") return "[logo]";
-      if (s.t === "karekod") return `[karekod] ${s.m}`;
-      const yer = Math.max(0, GENISLIK - s.sol.length - s.sag.length);
-      return s.sol + " ".repeat(yer) + s.sag;
-    })
-    .join("\n");
-}
