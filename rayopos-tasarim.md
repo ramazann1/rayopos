@@ -3,12 +3,17 @@
 
 ## 0. SIRADAKİ İŞ (16 Eyl 2026 güncellendi)
 
-> **Sıra (16 Eyl 2026 üçüncü seans sonu):**
-> 1. **Sessiz yazma hataları konuşturulacak.** Kodda 45 yazma işlemi hatayı
->    yutuyor (`await supabase...` sonucu hiç okunmuyor): en yoğunu
->    `menu.ts` (26), `adisyonlar.ts` (14), `masalar.ts` ve `oturum.ts` (6'şar).
->    Bunlar patlamıyor, sadece olmuyor — ödeme-kapatma hatasının haftalarca
->    fark edilmemesinin sebebi buydu. Hepsine hata kontrolü konacak.
+> **Sıra (16 Eyl 2026 dördüncü seans sonu):**
+> 1. **Sessiz yazma hataları — kalan dosyalar.** `masalar.ts` (6) ve
+>    `menu.ts` (26) bitti, ekranlarıyla birlikte. Kalanlar:
+>    **`adisyonlar.ts` (14)** — para ve masa durumu burada, en dikkatli
+>    bakılacak dosya; sonra `oturum.ts` (6), `personel.ts` (2),
+>    `yazicilar.ts`, `mesguliyet.ts`, `medya.ts` (1'er).
+>    Desen kurulu: `src/yazmaDenetimi.ts` → `yazmayiDenetle` (hata varsa
+>    durdur) ve `satirDenetle` (`.select("id")` ile dönen satırı say —
+>    satır güvenliği engellediğinde veritabanı hata bile vermiyor).
+>    Veri katmanı fırlatıyor, ekran yakalayıp uyarı penceresinde gösteriyor;
+>    ikisi birden yapılmazsa kullanıcı yine hiçbir şey görmüyor.
 > 2. **Yetki provası betiği.** Bir personeli seçip bütün ana işlemleri geri
 >    alınan bir işlemde deneyen, "şunu yapabiliyor / şuna takılıyor" tablosu
 >    veren SQL. 16 Eyl'de elle yapılan denemenin (bkz. aşağıdaki seans notu)
@@ -16,22 +21,46 @@
 > 3. **"Deneme Garson" hesabı.** En dar yetkiyle duran bir personel; sürüm
 >    öncesi sipariş–ödeme–iptal turu onunla atılır. Bugüne kadarki testler
 >    yönetici hesabıyla yapıldığı için kısıtlı kullanıcı hataları görünmüyordu.
-> 4. **Kayıt kapatma SQL'i** — `sql/2026-09-16-kayit-kapat.sql` Supabase'de
->    çalıştırılmadı (16 Eyl'de Supabase arızası vardı, panele girilemiyordu).
->    Ramazan'a SQL Editor'de çalıştırt; o zamana kadar `isletme_kur` açık.
-> 5. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
+> 4. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
 >    Kod elendi: canlıdaki derleme, `_headers` ile birlikte temiz tarayıcıda
 >    sorunsuz açılıyor.
-> 6. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
+> 5. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
 >    10:33: "belgeler kayıt otoritesine iletildi"). Seans başında sor/WHOIS'e
 >    bak; gelince Cloudflare Pages'te özel alan adı olarak bağlanır. Erişim
 >    sorunu tekrarlarsa geçici olarak `pos.egzozcafe.com` bağlanabilir
 >    (ikisi de aynı Cloudflare hesabında).
-> 7. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
+> 6. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
-> 8. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 7. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (16 Eyl 2026, dördüncü seans):**
+> - **Sessiz yazmalar konuşuyor (`masalar.ts`, `menu.ts`).** Yeni
+>   `src/yazmaDenetimi.ts`: `yazmayiDenetle` hatayı anlaşılır Türkçeye
+>   çeviriyor (yetki yok / aynı kayıt var / başka kayıtta kullanılıyor),
+>   `satirDenetle` ayrıca dönen satırı sayıyor. **İkincisi asıl mesele:**
+>   satır güvenliği bir güncellemeyi/silmeyi engellediğinde PostgREST hata
+>   döndürmüyor, sadece hiçbir satıra dokunmuyor — yalnız hata kontrolü koymak
+>   bunu yakalamıyordu.
+> - **Bölge silme hiç çalışmıyormuş.** Yeni denetim ortaya çıkardı: bölge →
+>   masa cascade tamam ama geçmişte o masada kapanmış adisyon varsa
+>   `adisyonlar.masa_id` masayı bırakmıyor. `sql/2026-09-16-masa-silme.sql`
+>   (çalıştırıldı): masa silinmeden önce adı adisyonun eski `masa_ad`
+>   sütununa yazılıp bağ boşaltılıyor — ciro geçmişi duruyor, masa adı da.
+> - **Yazdıktan sonra ekran eski listeyi gösteriyordu**: `bolgeleriGetir`
+>   önbellekten "önce kopya" veriyor, silinen bölge sayfa yenilenene kadar
+>   duruyordu. `masalar.ts` artık her yazmadan sonra `tanimTazele` çağırıyor
+>   (`odenmezler.ts`'teki desen); mobil de aynı düzelmeyi aldı.
+> - **`urunKaydet` mesaj döndürme sözleşmesi korundu**: alt yazmalar
+>   fırlatıyor, fonksiyon yakalayıp mesaja çeviriyor. Toplu aktarım da öyle.
+> - **Yazdırma Kuyruğu ekranı kaldırıldı (Ramazan kararı).** Rota, menü satırı,
+>   sayfa ve yalnız onun kullandığı kod (`kuyrugaBak`/`kuyrugaGeriKoy`/
+>   `kuyruktanIptal`, `icerikOzeti`) silindi. **Kuyruk mekanizması duruyor** —
+>   fiş basma bu yoldan çalışıyor. Sonucu: basılamayan fiş artık arayüzden
+>   görünmüyor ve yeniden gönderilemiyor.
+> - `sql/2026-09-16-kayit-kapat.sql` çalıştırıldı; kayıt artık veritabanında
+>   da kapalı.
 >
 > **Yapılanlar (16 Eyl 2026, üçüncü seans):**
 > - **Garson adisyonu iptal/ikram/kapat edemiyordu — çözüldü.** Sebep yetki
