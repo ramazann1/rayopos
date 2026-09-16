@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
 import { hataysaFirlat, onbellekliGetir } from "./onbellek";
 import { tazeleyiciTanit } from "./tanimAbonelik";
 import type {
@@ -323,7 +324,8 @@ async function kardesSonSira(ustId?: number) {
 
 export async function kategoriEkle(k: KategoriAlanlari) {
   const sira = (await kardesSonSira(k.ustId)) + 1;
-  await supabase.from("kategoriler").insert({ ...kategoriSatiri(k), sira });
+  const sonuc = await supabase.from("kategoriler").insert({ ...kategoriSatiri(k), sira }).select("id");
+  satirDenetle(sonuc, "Kategori eklenemedi.");
 }
 
 export async function kategoriGuncelle(id: number, k: KategoriAlanlari) {
@@ -338,11 +340,13 @@ export async function kategoriGuncelle(id: number, k: KategoriAlanlari) {
     ? { ...kategoriSatiri(k), sira: (await kardesSonSira(k.ustId)) + 1 }
     : kategoriSatiri(k);
 
-  await supabase.from("kategoriler").update(satir).eq("id", id);
+  const sonuc = await supabase.from("kategoriler").update(satir).eq("id", id).select("id");
+  satirDenetle(sonuc, "Kategori kaydedilemedi.");
 }
 
 export async function kategoriSil(id: number) {
-  await supabase.from("kategoriler").delete().eq("id", id);
+  const sonuc = await supabase.from("kategoriler").delete().eq("id", id).select("id");
+  satirDenetle(sonuc, "Kategori silinemedi.");
 }
 
 // Barkod benzersiz olmak zorunda — kopyalanan üründe boş bırakılır.
@@ -362,11 +366,17 @@ function porsiyonSatiri(urunId: number, p: MenuPorsiyon, sira: number, barkodlar
 }
 
 async function porsiyonGruplariYaz(porsiyonId: number, grupIdler: number[]) {
-  await supabase.from("porsiyon_secenek_gruplari").delete().eq("porsiyon_id", porsiyonId);
+  yazmayiDenetle(
+    await supabase.from("porsiyon_secenek_gruplari").delete().eq("porsiyon_id", porsiyonId),
+    "Porsiyonun seçenek grupları kaydedilemedi."
+  );
   if (grupIdler.length) {
-    await supabase
-      .from("porsiyon_secenek_gruplari")
-      .insert(grupIdler.map((g) => ({ porsiyon_id: porsiyonId, grup_id: g })));
+    yazmayiDenetle(
+      await supabase
+        .from("porsiyon_secenek_gruplari")
+        .insert(grupIdler.map((g) => ({ porsiyon_id: porsiyonId, grup_id: g }))),
+      "Porsiyonun seçenek grupları kaydedilemedi."
+    );
   }
 }
 
@@ -377,7 +387,20 @@ function yazmaHatasi(hata: { code?: string }) {
     : "Ürün kaydedilemedi.";
 }
 
+/**
+ * Ekran hata mesajını bekliyor, fırlatılan hatayı değil: alt yazmaların
+ * denetimleri burada mesaja çevriliyor. Ürünün kendi satırı yazılmışken
+ * porsiyonu yazılamazsa da mesaj çıkıyor — yarım kaydı sessiz geçmemek için.
+ */
 export async function urunKaydet(u: MenuUrun) {
+  try {
+    return await urunuYaz(u);
+  } catch (e) {
+    return e instanceof Error ? e.message : "Ürün kaydedilemedi.";
+  }
+}
+
+async function urunuYaz(u: MenuUrun) {
   let id = u.id;
   const alanlar = {
     ad: u.ad,
@@ -443,24 +466,32 @@ export async function urunKaydet(u: MenuUrun) {
       .map((p: any) => p.id as number)
       .filter((pid) => !kalanlar.includes(pid));
     if (silinecek.length) {
-      await supabase.from("porsiyonlar").delete().in("id", silinecek);
+      yazmayiDenetle(
+        await supabase.from("porsiyonlar").delete().in("id", silinecek),
+        "Kaldırılan porsiyon silinemedi."
+      );
     }
 
     await Promise.all(
       u.porsiyonlar.map(async (p, i) => {
         let porsiyonId = p.id;
         if (porsiyonId) {
-          await supabase
-            .from("porsiyonlar")
-            .update(porsiyonSatiri(urunId, p, i + 1))
-            .eq("id", porsiyonId);
+          satirDenetle(
+            await supabase
+              .from("porsiyonlar")
+              .update(porsiyonSatiri(urunId, p, i + 1))
+              .eq("id", porsiyonId)
+              .select("id"),
+            "Porsiyon kaydedilemedi."
+          );
         } else {
-          const { data } = await supabase
+          const sonuc = await supabase
             .from("porsiyonlar")
             .insert(porsiyonSatiri(urunId, p, i + 1))
             .select("id")
             .single();
-          porsiyonId = data?.id;
+          yazmayiDenetle(sonuc, "Porsiyon eklenemedi.");
+          porsiyonId = (sonuc.data as any)?.id;
         }
         if (porsiyonId) await porsiyonGruplariYaz(porsiyonId, p.grupIdler);
       })
@@ -486,9 +517,15 @@ export async function urunKaydet(u: MenuUrun) {
       }))
     );
 
-    await supabase.from("urun_kategorileri").delete().eq("urun_id", urunId);
+    yazmayiDenetle(
+      await supabase.from("urun_kategorileri").delete().eq("urun_id", urunId),
+      "Ürünün kategorileri kaydedilemedi."
+    );
     if (baglar.length) {
-      await supabase.from("urun_kategorileri").insert(baglar);
+      yazmayiDenetle(
+        await supabase.from("urun_kategorileri").insert(baglar),
+        "Ürünün kategorileri kaydedilemedi."
+      );
     }
   };
 
@@ -504,9 +541,12 @@ export async function urunKaydet(u: MenuUrun) {
 // değiştiriyor, tek tek güncellemek yerine liste baştan kuruluyor. Dosyanın
 // kendisi depoda duruyor, satırın silinmesi dosyayı silmiyor.
 async function urunMedyasiYaz(urunId: number, medya: UrunMedya[]) {
-  await supabase.from("urun_medya").delete().eq("urun_id", urunId);
+  yazmayiDenetle(
+    await supabase.from("urun_medya").delete().eq("urun_id", urunId),
+    "Ürünün görselleri kaydedilemedi."
+  );
   if (!medya.length) return;
-  await supabase.from("urun_medya").insert(
+  const sonuc = await supabase.from("urun_medya").insert(
     medya.slice(0, 3).map((m, i) => ({
       urun_id: urunId,
       yol: m.yol,
@@ -514,15 +554,19 @@ async function urunMedyasiYaz(urunId: number, medya: UrunMedya[]) {
       sira: i + 1,
     }))
   );
+  yazmayiDenetle(sonuc, "Ürünün görselleri kaydedilemedi.");
 }
 
 // Menü grupları silinip yeniden yazılıyor — satırlara bağlı başka kayıt yok,
 // sipariş kalemleri ürüne bağlı.
 async function menuGruplariYaz(urunId: number, gruplar: MenuIcerikGrubu[]) {
-  await supabase.from("menu_gruplari").delete().eq("urun_id", urunId);
+  yazmayiDenetle(
+    await supabase.from("menu_gruplari").delete().eq("urun_id", urunId),
+    "Menü içeriği kaydedilemedi."
+  );
 
   for (const [i, g] of gruplar.entries()) {
-    const { data } = await supabase
+    const sonuc = await supabase
       .from("menu_gruplari")
       .insert({
         urun_id: urunId,
@@ -532,9 +576,11 @@ async function menuGruplariYaz(urunId: number, gruplar: MenuIcerikGrubu[]) {
       })
       .select("id")
       .single();
+    yazmayiDenetle(sonuc, "Menü içeriği kaydedilemedi.");
 
+    const data = sonuc.data as any;
     if (!data?.id || !g.satirlar.length) continue;
-    await supabase.from("menu_satirlari").insert(
+    const satirSonucu = await supabase.from("menu_satirlari").insert(
       g.satirlar.map((s, j) => ({
         grup_id: data.id,
         urun_id: s.urunId,
@@ -545,13 +591,14 @@ async function menuGruplariYaz(urunId: number, gruplar: MenuIcerikGrubu[]) {
         sira: j + 1,
       }))
     );
+    yazmayiDenetle(satirSonucu, "Menü içeriği kaydedilemedi.");
   }
 }
 
 // Kopya, kaynağın bulunduğu her kategoride onun hemen ardına yerleşir.
 // Kod ve barkod benzersiz olduğu için kopyaya geçmez.
 export async function urunKopyala(kaynak: MenuUrun, hepsi: MenuUrun[]) {
-  const { data } = await supabase
+  const urunSonucu = await supabase
     .from("urunler")
     .insert({
       ad: `${kaynak.ad} (kopya)`,
@@ -565,16 +612,19 @@ export async function urunKopyala(kaynak: MenuUrun, hepsi: MenuUrun[]) {
     })
     .select("id")
     .single();
+  yazmayiDenetle(urunSonucu, "Ürün kopyalanamadı.");
 
-  const id = data?.id as number | undefined;
+  const id = (urunSonucu.data as any)?.id as number | undefined;
   if (!id) return;
 
   for (const [i, p] of kaynak.porsiyonlar.entries()) {
-    const { data: yeni } = await supabase
+    const porsiyonSonucu = await supabase
       .from("porsiyonlar")
       .insert(porsiyonSatiri(id, p, i + 1, false))
       .select("id")
       .single();
+    yazmayiDenetle(porsiyonSonucu, "Ürün kopyalanamadı.");
+    const yeni = porsiyonSonucu.data as any;
     if (yeni?.id && p.grupIdler.length) {
       await porsiyonGruplariYaz(yeni.id, p.grupIdler);
     }
@@ -587,7 +637,12 @@ export async function urunKopyala(kaynak: MenuUrun, hepsi: MenuUrun[]) {
     const yer = sirali.indexOf(kaynak.id!) + 1;
     sirali.splice(yer, 0, id);
 
-    await supabase.from("urun_kategorileri").insert({ urun_id: id, kategori_id: kategoriId, sira: yer + 1 });
+    yazmayiDenetle(
+      await supabase
+        .from("urun_kategorileri")
+        .insert({ urun_id: id, kategori_id: kategoriId, sira: yer + 1 }),
+      "Ürün kopyalanamadı."
+    );
     await urunSirala(kategoriId, sirali);
   }
 
@@ -595,7 +650,8 @@ export async function urunKopyala(kaynak: MenuUrun, hepsi: MenuUrun[]) {
 }
 
 export async function urunSil(id: number) {
-  await supabase.from("urunler").delete().eq("id", id);
+  const sonuc = await supabase.from("urunler").delete().eq("id", id).select("id");
+  satirDenetle(sonuc, "Ürün silinemedi.");
 }
 
 /**
@@ -704,20 +760,31 @@ export async function grupKaydet(
   let grupId = id;
 
   if (grupId) {
-    await supabase.from("secenek_gruplari").update({ ad, tekli, zorunlu, en_az: enAz }).eq("id", grupId);
+    satirDenetle(
+      await supabase
+        .from("secenek_gruplari")
+        .update({ ad, tekli, zorunlu, en_az: enAz })
+        .eq("id", grupId)
+        .select("id"),
+      "Seçenek grubu kaydedilemedi."
+    );
   } else {
-    const { data } = await supabase
+    const sonuc = await supabase
       .from("secenek_gruplari")
       .insert({ ad, tekli, zorunlu, en_az: enAz })
       .select("id")
       .single();
-    grupId = data?.id;
+    yazmayiDenetle(sonuc, "Seçenek grubu eklenemedi.");
+    grupId = (sonuc.data as any)?.id;
   }
   if (!grupId) return;
 
-  await supabase.from("secenekler").delete().eq("grup_id", grupId);
+  yazmayiDenetle(
+    await supabase.from("secenekler").delete().eq("grup_id", grupId),
+    "Seçenekler kaydedilemedi."
+  );
   if (liste.length) {
-    await supabase.from("secenekler").insert(
+    const seceneklerSonucu = await supabase.from("secenekler").insert(
       liste.map((s, i) => ({
         grup_id: grupId,
         ad: s.ad,
@@ -726,11 +793,13 @@ export async function grupKaydet(
         varsayilan: s.varsayilan ?? false,
       }))
     );
+    yazmayiDenetle(seceneklerSonucu, "Seçenekler kaydedilemedi.");
   }
 }
 
 export async function grupSil(id: number) {
-  await supabase.from("secenek_gruplari").delete().eq("id", id);
+  const sonuc = await supabase.from("secenek_gruplari").delete().eq("id", id).select("id");
+  satirDenetle(sonuc, "Seçenek grubu silinemedi.");
 }
 
 export async function birimleriKaydet(
@@ -738,26 +807,34 @@ export async function birimleriKaydet(
   silinenler: number[]
 ) {
   if (silinenler.length) {
-    await supabase.from("birimler").delete().in("id", silinenler);
+    yazmayiDenetle(
+      await supabase.from("birimler").delete().in("id", silinenler),
+      "Birim silinemedi."
+    );
   }
 
   const yeniler = liste.filter((b) => !b.id);
   if (yeniler.length) {
-    await supabase.from("birimler").insert(
+    const eklemeSonucu = await supabase.from("birimler").insert(
       yeniler.map((b) => ({
         ad: b.ad,
         sira: liste.indexOf(b) + 1,
         varsayilan: !!b.varsayilan,
       }))
     );
+    yazmayiDenetle(eklemeSonucu, "Birim eklenemedi.");
   }
 
   for (const [i, b] of liste.entries()) {
     if (b.id)
-      await supabase
-        .from("birimler")
-        .update({ ad: b.ad, sira: i + 1, varsayilan: !!b.varsayilan })
-        .eq("id", b.id);
+      satirDenetle(
+        await supabase
+          .from("birimler")
+          .update({ ad: b.ad, sira: i + 1, varsayilan: !!b.varsayilan })
+          .eq("id", b.id)
+          .select("id"),
+        "Birim kaydedilemedi."
+      );
   }
 }
 export type KdvSatiri = { id?: number; ad: string; oran: number; varsayilan: boolean };
@@ -765,13 +842,19 @@ export type KdvSatiri = { id?: number; ad: string; oran: number; varsayilan: boo
 export async function kdvKaydet(liste: KdvSatiri[], silinenler: number[]) {
   if (silinenler.length) {
     // Silinen grubu kullanan ürünler varsayılana düşer.
-    await supabase.from("urunler").update({ kdv_id: null }).in("kdv_id", silinenler);
-    await supabase.from("kdv_gruplari").delete().in("id", silinenler);
+    yazmayiDenetle(
+      await supabase.from("urunler").update({ kdv_id: null }).in("kdv_id", silinenler),
+      "KDV grubu silinemedi."
+    );
+    yazmayiDenetle(
+      await supabase.from("kdv_gruplari").delete().in("id", silinenler),
+      "KDV grubu silinemedi."
+    );
   }
 
   const yeniler = liste.filter((k) => !k.id);
   if (yeniler.length) {
-    await supabase.from("kdv_gruplari").insert(
+    const eklemeSonucu = await supabase.from("kdv_gruplari").insert(
       yeniler.map((k) => ({
         ad: k.ad,
         oran: k.oran,
@@ -779,14 +862,19 @@ export async function kdvKaydet(liste: KdvSatiri[], silinenler: number[]) {
         sira: liste.indexOf(k) + 1,
       }))
     );
+    yazmayiDenetle(eklemeSonucu, "KDV grubu eklenemedi.");
   }
 
   for (const [i, k] of liste.entries()) {
     if (k.id)
-      await supabase
-        .from("kdv_gruplari")
-        .update({ ad: k.ad, oran: k.oran, varsayilan: k.varsayilan, sira: i + 1 })
-        .eq("id", k.id);
+      satirDenetle(
+        await supabase
+          .from("kdv_gruplari")
+          .update({ ad: k.ad, oran: k.oran, varsayilan: k.varsayilan, sira: i + 1 })
+          .eq("id", k.id)
+          .select("id"),
+        "KDV grubu kaydedilemedi."
+      );
   }
 }
 

@@ -764,9 +764,24 @@ export default function MenuStudyosu() {
     ? `${kategoriler.find((k) => k.id === secili.ustId)?.ad} — alt kategori sırası`
     : "Kategorileri sırala";
 
+  // Veri katmanı yazma başarısız olunca duruyor; ekran hatayı yakalamazsa
+  // kullanıcı yine hiçbir şey görmez, sadece pencere açık kalırdı.
+  const dene = async (is: () => Promise<void>, yedekMesaj: string) => {
+    try {
+      await is();
+      return true;
+    } catch (e) {
+      setUyari(e instanceof Error ? e.message : yedekMesaj);
+      return false;
+    }
+  };
+
   const kategoriKaydet = async (k: KategoriAlanlari) => {
-    if (pencere?.kategori) await kategoriGuncelle(pencere.kategori.id, k);
-    else await kategoriEkle(k);
+    const oldu = await dene(async () => {
+      if (pencere?.kategori) await kategoriGuncelle(pencere.kategori.id, k);
+      else await kategoriEkle(k);
+    }, "Kategori kaydedilemedi.");
+    if (!oldu) return;
     setPencere(null);
     yukle();
   };
@@ -783,7 +798,7 @@ export default function MenuStudyosu() {
     setOnaySor({
       mesaj: `"${k.ad}" kategorisi silinsin mi?`,
       devam: async () => {
-        await kategoriSil(k.id);
+        if (!(await dene(() => kategoriSil(k.id), "Kategori silinemedi."))) return;
         if (seciliId === k.id) setSeciliId(k.ustId ?? null);
         yukle();
       },
@@ -791,8 +806,11 @@ export default function MenuStudyosu() {
   };
 
   const siralamaKaydet = async (idler: number[]) => {
-    if (siralama === "kategori") await kategoriSirala(idler);
-    else if (secili) await urunSirala(secili.id, idler);
+    const oldu = await dene(async () => {
+      if (siralama === "kategori") await kategoriSirala(idler);
+      else if (secili) await urunSirala(secili.id, idler);
+    }, "Sıra kaydedilemedi.");
+    if (!oldu) return;
     setSiralama(null);
     yukle();
   };
@@ -810,7 +828,9 @@ export default function MenuStudyosu() {
   // Kopya kaynağın altında beliriyor ve kısa süre vurgulanıyor — panel açılmıyor ki
   // arka arkaya birkaç kopya çıkarmak akışı kesmesin.
   const urunuKopyala = async (u: MenuUrun) => {
-    const yeniId = await urunKopyala(u, urunler);
+    let yeniId: number | undefined;
+    if (!(await dene(async () => { yeniId = await urunKopyala(u, urunler); }, "Ürün kopyalanamadı.")))
+      return;
     await yukle();
     if (yeniId) {
       setVurgulu(yeniId);
@@ -839,7 +859,7 @@ export default function MenuStudyosu() {
     setOnaySor({
       mesaj: `"${u.ad}" silinsin mi?`,
       devam: async () => {
-        await urunSil(u.id!);
+        if (!(await dene(() => urunSil(u.id!), "Ürün silinemedi."))) return;
         yukle();
         setPanel(null);
       },
@@ -856,7 +876,11 @@ export default function MenuStudyosu() {
     enAz: number,
     liste: SecenekSatiri[]
   ) => {
-    await grupKaydet(grupPencere?.grup?.id, ad, tekli, zorunlu, enAz, liste);
+    const oldu = await dene(
+      () => grupKaydet(grupPencere?.grup?.id, ad, tekli, zorunlu, enAz, liste),
+      "Seçenek grubu kaydedilemedi."
+    );
+    if (!oldu) return;
     setGrupPencere(null);
     yukle();
   };
@@ -869,7 +893,7 @@ export default function MenuStudyosu() {
     setOnaySor({
       mesaj: `"${g.ad}" grubu silinsin mi?`,
       devam: async () => {
-        await grupSil(g.id);
+        if (!(await dene(() => grupSil(g.id), "Seçenek grubu silinemedi."))) return;
         yukle();
         setGrupPencere(null);
       },
@@ -883,7 +907,7 @@ export default function MenuStudyosu() {
     liste: { id?: number; ad: string; varsayilan: boolean }[],
     silinenler: number[]
   ) => {
-    await birimleriKaydet(liste, silinenler);
+    if (!(await dene(() => birimleriKaydet(liste, silinenler), "Birimler kaydedilemedi."))) return;
     await yukle();
     setBildirim("Birimler kaydedildi");
   };
@@ -901,7 +925,7 @@ export default function MenuStudyosu() {
   const kdvKullanimi = (id: number) => urunler.filter((u) => u.kdvId === id).length;
 
   const kdvYaz = async (liste: KdvSatiri[], silinenler: number[]) => {
-    await kdvKaydet(liste, silinenler);
+    if (!(await dene(() => kdvKaydet(liste, silinenler), "KDV grupları kaydedilemedi."))) return;
     await yukle();
     setBildirim("KDV grupları kaydedildi");
   };
@@ -911,6 +935,17 @@ export default function MenuStudyosu() {
   // Ürünler tek tek gidiyor: urunKaydet porsiyon, kategori ve sıra işlerini
   // zaten hallediyor, aynı işi ikinci kez yazmaya gerek yok.
   const aktarimYaz = async (onizleme: AktarimPlani, ilerle: (yapilan: number) => void) => {
+    try {
+      return await aktarimiIsle(onizleme, ilerle);
+    } catch (e) {
+      await yukle();
+      return e instanceof Error ? e.message : "Aktarım tamamlanamadı.";
+    }
+  };
+
+  // Aktarım yarıda hata alırsa o ana kadar yazılanlar duruyor; ekran kaldığı
+  // yeri gösterebilsin diye menü her durumda yeniden okunuyor.
+  const aktarimiIsle = async (onizleme: AktarimPlani, ilerle: (yapilan: number) => void) => {
     let yapilan = 0;
     const adim = () => ilerle(++yapilan);
 
