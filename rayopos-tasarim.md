@@ -3,13 +3,14 @@
 
 ## 0. SIRADAKİ İŞ (17 Eyl 2026 güncellendi)
 
-> **Sıra (17 Eyl 2026, ikinci seans sonu):**
-> 1. **Mutfak aşama imzaları sunucuya.** `hazirlik_kisi`, `paketleme_kisi`,
->    `hazir_kisi` hâlâ tarayıcının gönderdiği değerle yazılıyor
->    (`mutfak.ts`, `acikOturum()?.id`). 5 Eyl'de adisyon/tur/kasa imzaları tam
->    bu yüzden sunucuya taşınmıştı — bu üçü o taramada atlanmış. "Kim
->    hazırladı" kurcalanabilir, mutfak süre raporu ona dayanıyor. Desen hazır:
->    `2026-09-05-kim-yapti-sunucuda.sql`.
+> **Sıra (17 Eyl 2026, üçüncü seans sonu):**
+> 1. **Hazır işaretlenmemiş kalemlerin temizliği.** Barda 131 kalem
+>    `hazir_at` boş duruyor, hepsi kapanmış adisyonlardan kalma (17 Eyl'de
+>    tarayıcıda ölçülürken çıktı). Ekranda görünmüyorlar ama mutfak süre
+>    raporunda "hiç bitmemiş" sayılıyorlar. İki karar gerekiyor: (a) mevcut
+>    kalemler ne olacak, (b) **hesap kapanınca bekleyen kalem ne olacak** —
+>    kapanışta hazır sayılsın mı, ayrı bir işaretle mi kapatılsın. Ramazan'ın
+>    kararı; sahte hazır saati yazmak raporu bozar.
 > 2. **Mert Bey hesabıyla tam tur.** Yetki provası sunucu tarafını 41/41
 >    doğruladı ama bu bir SQL provası — arayüzün kısıtlı kullanıcıda nasıl
 >    davrandığı hâlâ denenmedi. Onunla giriş yapıp sipariş–ödeme–iptal–masa
@@ -28,6 +29,35 @@
 > 5. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
 > 6. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (17 Eyl 2026, üçüncü seans):**
+> - **Mutfak aşama imzaları sunucuda** (`2026-09-17-mutfak-imzalari.sql`).
+>   Aşamanın saati yeni yazıldıysa kişi `oturum_personeli()` oluyor, saat
+>   boşaltılırsa (geri alma) kişi de boşalıyor, saat değişmediyse eski imza
+>   geri yazılıyor. Tarayıcı artık `kisi` sütunu göndermiyor. 5 Eyl'deki
+>   deseni tamamlıyor.
+> - **İstasyon ekranı 5 saniyeden ~0,3 saniyeye indi.** Kazanan desen: önce
+>   açık adisyon kimlikleri, sonra `turlar?adisyon_id=in.(...)`. Gömülü
+>   tabloya süzgeç koymak (`adisyon.durum=eq.acik`) tek başına ~1 sn
+>   tutuyordu; kalem tarafından kurulan sorgu daha da kötüydü (600–2400 ms).
+>   Ölçüm Ramazan'ın Chrome'unda `performance.getEntriesByType('resource')`
+>   ile yapıldı — kod okuyarak üç tur yanlış tahmin edildi.
+> - **Kalem kendi tezgâhını taşıyor** (`istasyon_id`,
+>   `2026-09-17-kalem-istasyonu.sql`). Kural değişmedi (ürünün istasyonu,
+>   yoksa kategorisinden devralınan) ama sipariş kaydedilirken bir kez
+>   hesaplanıyor: ekran menünün tamamını indirmiyor, tezgâhın yüzlerce ürün
+>   kimliği sorguya yazılmıyor. Ürün/kategori başka tezgâha taşınırsa henüz
+>   hazırlanmamış kalemler tetikleyiciyle güncelleniyor.
+> - **Kaybolup geri gelme hatası bitti.** Canlı bağlantı bizim kendi
+>   güncellememizi de haber veriyor; o haberle başlayan sorgu kalemi eski
+>   hâliyle okuyup ekrana geri getiriyordu. Yazma sürerken gelen tazeleme
+>   uygulanmıyor, geciken eski sorgu yenisini ezmiyor (istek numarası).
+>   Canlı haberler 300 ms'de toplanıyor: 12 kalemli sipariş 12 tazeleme
+>   yerine 1 tazeleme.
+> - **Yükleniyor hâli.** İlk sorgu gelmeden liste boş sayılıyordu, sipariş
+>   varken "Tezgâh boş" yazıyordu. Kart alanının kendi göstergesi var
+>   (`.istasyon-kartlar-yukleniyor`); tam sayfa için yazılmış sınıf sayfayı
+>   uzatıyordu.
 >
 > **Yapılanlar (17 Eyl 2026, ikinci seans):**
 > - **Yetki provası betiği bitti** (`sql/2026-09-17-yetki-provasi.sql`). Bir

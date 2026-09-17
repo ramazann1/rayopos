@@ -4,13 +4,12 @@
 // düşüyor. Adisyon bazlı çalışılsaydı iki saat önce girilen ürünle az önce
 // söylenen aynı kartta dururdu ve tezgâh "yeni geleni" ayırt edemezdi.
 //
-// Kalemin hangi tezgâha ait olduğu ürünün istasyonundan geliyor; eşleme mutfak
-// fişiyle aynı haritadan okunuyor ki fişe düşen ürünle ekrana düşen ürün
-// birbirini tutsun.
+// Kalemin hangi tezgâha ait olduğu kendi kaydında duruyor (`istasyon_id`,
+// 2026-09-17-kalem-istasyonu.sql). Kural mutfak fişiyle aynı — ürünün kendi
+// istasyonu, yoksa kategorisinden devraldığı — ama sipariş kaydedilirken bir
+// kez hesaplanıyor: ekran menüyü indirip her açılışta yeniden çıkarmıyor.
 
 import { supabase } from "./supabase";
-import { acikOturum } from "./oturum";
-import { urunIstasyonlari } from "./yazicilar";
 import type { AdisyonTipi } from "./adisyonlar";
 
 /**
@@ -25,10 +24,12 @@ export const ASAMA_ADI: Record<Asama, { gecmis: string; simdi: string; dugme: st
   hazir: { gecmis: "Hazır", simdi: "Hazır", dugme: "Hazır" },
 };
 
-const SUTUN: Record<Asama, { zaman: string; kisi: string }> = {
-  hazirlik: { zaman: "hazirlik_at", kisi: "hazirlik_kisi" },
-  paketleme: { zaman: "paketleme_at", kisi: "paketleme_kisi" },
-  hazir: { zaman: "hazir_at", kisi: "hazir_kisi" },
+// Yalnız saat sütunu; "kim yaptı" imzasını sunucu koyuyor
+// (2026-09-17-mutfak-imzalari.sql), tarayıcının gönderdiği değer eziliyor.
+const SUTUN: Record<Asama, { zaman: string }> = {
+  hazirlik: { zaman: "hazirlik_at" },
+  paketleme: { zaman: "paketleme_at" },
+  hazir: { zaman: "hazir_at" },
 };
 
 export type MutfakKalemi = {
@@ -94,43 +95,66 @@ export type MutfakKarti = {
 
 const ALANLAR = `id, siparis_no, olusturma,
        garson:personel!turlar_garson_id_fkey (ad),
-       adisyon:adisyonlar!inner (adisyon_no, masa_ad, tip, ad, kisi_sayisi, not_metni, durum,
+       adisyon:adisyonlar!inner (adisyon_no, masa_ad, tip, ad, kisi_sayisi, not_metni,
                                  masa:masalar (ad)),
-       adisyon_kalemleri (id, urun_id, ad, porsiyon, secimler, adet, durum, not_metni,
+       adisyon_kalemleri (id, istasyon_id, ad, porsiyon, secimler, adet, durum, not_metni,
                           hazirlik_at, paketleme_at, hazir_at)`;
 
 /**
- * Ekrana düşecek kartlar. `hazirlananlar` false ise tezgâhta bekleyenler,
- * true ise bitmiş olanlar geliyor — ikisi aynı sorgudan çıkıyor, tek fark
- * kalemin hazır olup olmadığı.
+ * Ekranın iki listesi, iki adımda.
+ *
+ * Önce hangi adisyonların açık olduğu soruluyor (birkaç satır), sonra o
+ * adisyonların turları kalemleriyle alınıyor. Tek soruda "adisyonu açık olan
+ * turları ver" demek veritabanını her seferinde tüm geçmişi birleştirmeye
+ * zorluyordu: aynı veri 17 Eylül'de ölçüldüğünde tek soruda 1100 ms, bu iki
+ * adımda 430 ms sürdü. Kalemin tezgâhı kaydında durduğu için
+ * (2026-09-17-kalem-istasyonu.sql) süzme burada bedava.
  */
-export async function kartlariGetir(
-  istasyonIdler: number[],
-  hazirlananlar = false
-): Promise<MutfakKarti[]> {
-  const [{ data }, harita] = await Promise.all([
-    supabase
-      .from("turlar")
-      .select(ALANLAR)
-      .eq("adisyon.durum", "acik")
-      .order("olusturma", { ascending: false })
-      .limit(hazirlananlar ? 40 : 200),
-    urunIstasyonlari(),
-  ]);
+export async function panoyuGetir(
+  istasyonIdler: number[]
+): Promise<{ bekleyen: MutfakKarti[]; hazirlanan: MutfakKarti[] }> {
+  if (!istasyonIdler.length) return { bekleyen: [], hazirlanan: [] };
 
+  const { data: adisyonlar } = await supabase
+    .from("adisyonlar")
+    .select("id")
+    .eq("durum", "acik");
+
+  const acikIdler = ((adisyonlar as any[]) ?? []).map((a) => a.id);
+  if (!acikIdler.length) return { bekleyen: [], hazirlanan: [] };
+
+  const { data } = await supabase
+    .from("turlar")
+    .select(ALANLAR)
+    .in("adisyon_id", acikIdler);
+
+  const satirlar = (data as any[]) ?? [];
+  return {
+    bekleyen: kartlariDiz(satirlar, istasyonIdler, false),
+    hazirlanan: kartlariDiz(satirlar, istasyonIdler, true),
+  };
+}
+
+/** Bir tur = ekranda bir kart. Kalemi olmayan tur karta dönüşmüyor. */
+function kartlariDiz(
+  satirlar: any[],
+  istasyonIdler: number[],
+  hazirlananlar: boolean
+): MutfakKarti[] {
   const kartlar: MutfakKarti[] = [];
-  for (const t of ((data as any[]) ?? [])) {
+
+  for (const t of satirlar) {
     const kalemler = ((t.adisyon_kalemleri as any[]) ?? [])
       // İkram da hazırlanıyor, iptal edilen hazırlanmıyor.
       .filter((k) => (k.durum ?? "normal") !== "iptal")
       // İstasyonu olmayan ürün hiçbir tezgâha düşmüyor: kola için mutfağın
       // ekranında satır çıkmasın.
-      .filter((k) => k.urun_id && istasyonIdler.includes(harita.get(k.urun_id) as number))
+      .filter((k) => k.istasyon_id && istasyonIdler.includes(k.istasyon_id))
       .filter((k) => (hazirlananlar ? k.hazir_at : !k.hazir_at))
       .map(
         (k): MutfakKalemi => ({
           id: k.id,
-          istasyonId: harita.get(k.urun_id) as number,
+          istasyonId: k.istasyon_id as number,
           ad: k.ad,
           porsiyon: k.porsiyon ?? undefined,
           secimler: Array.isArray(k.secimler) ? k.secimler : [],
@@ -163,7 +187,12 @@ export async function kartlariGetir(
 
   // Bekleyenler en eskiden yeniye: en çok bekleyen tezgâhın önünde dursun.
   // Hazırlananlarda tersi geçerli, en son biten üstte.
-  return hazirlananlar ? kartlar : kartlar.reverse();
+  kartlar.sort((a, b) =>
+    hazirlananlar
+      ? b.olusturma.localeCompare(a.olusturma)
+      : a.olusturma.localeCompare(b.olusturma)
+  );
+  return hazirlananlar ? kartlar.slice(0, 40) : kartlar;
 }
 
 /** Aşamaya alma. Tek kalem de olabilir, kartın tamamı da. */
@@ -172,7 +201,7 @@ export async function asamayaAl(kalemIdler: number[], asama: Asama) {
   const sutun = SUTUN[asama];
   const { error } = await supabase
     .from("adisyon_kalemleri")
-    .update({ [sutun.zaman]: new Date().toISOString(), [sutun.kisi]: acikOturum()?.id ?? null })
+    .update({ [sutun.zaman]: new Date().toISOString() })
     .in("id", kalemIdler);
   if (error) throw new Error("Kalem işaretlenemedi.");
 }
@@ -187,7 +216,7 @@ export async function asamadanCik(kalemIdler: number[], asama: Asama) {
   const sutun = SUTUN[asama];
   const { error } = await supabase
     .from("adisyon_kalemleri")
-    .update({ [sutun.zaman]: null, [sutun.kisi]: null })
+    .update({ [sutun.zaman]: null })
     .in("id", kalemIdler);
   if (error) throw new Error("Kalem geri alınamadı.");
 }
@@ -198,16 +227,26 @@ export async function asamadanCik(kalemIdler: number[], asama: Asama) {
  * siparişi kaydettikten sonra mutfak bir tur boyu boş ekrana bakardı.
  */
 export function mutfagiDinle(haberVer: () => void) {
+  // Haber kalem kalem geliyor: on iki kalemli bir sipariş on iki kez tazeleme
+  // demek. Kısa bir bekleme üst üste gelenleri tek tazelemeye topluyor —
+  // tezgâh yine anında görüyor, ekran boşuna sorgu atmıyor.
+  let zamanlayici: ReturnType<typeof setTimeout> | undefined;
+  const topla = () => {
+    clearTimeout(zamanlayici);
+    zamanlayici = setTimeout(haberVer, 300);
+  };
+
   const kanal = supabase
     .channel("istasyon-ekrani")
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "adisyon_kalemleri" },
-      () => haberVer()
+      topla
     )
     .subscribe();
 
   return () => {
+    clearTimeout(zamanlayici);
     supabase.removeChannel(kanal);
   };
 }

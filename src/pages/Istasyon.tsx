@@ -25,7 +25,7 @@ import {
   asamayaAl,
   bulunanAsama,
   istasyonAsamalari,
-  kartlariGetir,
+  panoyuGetir,
   mutfagiDinle,
   siradakiAsama,
 } from "../mutfak";
@@ -176,6 +176,9 @@ function Secim({ istasyonlar }: { istasyonlar: Istasyon[] }) {
 function Ekran({ istasyonlar, onCik }: { istasyonlar: Istasyon[]; onCik: () => void }) {
   const [bekleyen, setBekleyen] = useState<MutfakKarti[]>([]);
   const [hazirlanan, setHazirlanan] = useState<MutfakKarti[]>([]);
+  // İlk sorgu gelmeden liste boş sayılmıyor: sipariş varken "Tezgâh boş"
+  // yazısı görünüyordu, tezgâh siparişi yok sanıyordu.
+  const [ilkGeldi, setIlkGeldi] = useState(false);
   const [panelAcik, setPanelAcik] = useState(false);
   const [boyut, setBoyut] = useState(
     () => localStorage.getItem(BOYUT_ANAHTARI) ?? "orta"
@@ -190,14 +193,22 @@ function Ekran({ istasyonlar, onCik }: { istasyonlar: Istasyon[]; onCik: () => v
   const idler = useMemo(() => istasyonlar.map((i) => i.id), [istasyonlar]);
   const anahtar = idler.join(",");
 
+  // Kendi yazmamız sürerken gelen tazeleme ekrana uygulanmıyor: canlı bağlantı
+  // bizim güncellememizi de haber veriyor, o haberle başlayan sorgu kalemi
+  // henüz eski hâliyle okuyup ekrana geri getiriyordu. Geciken eski sorgu da
+  // yenisini ezmesin diye her istek numaralanıyor.
+  const yazmaSurer = useRef(0);
+  const istekNo = useRef(0);
+
   const yenile = useCallback(async () => {
-    const liste = anahtar.split(",").map(Number);
-    const [b, h] = await Promise.all([
-      kartlariGetir(liste),
-      kartlariGetir(liste, true),
-    ]);
+    const no = ++istekNo.current;
+    const { bekleyen: b, hazirlanan: h } = await panoyuGetir(
+      anahtar.split(",").map(Number)
+    );
+    if (no !== istekNo.current || yazmaSurer.current) return;
     setBekleyen(b);
     setHazirlanan(h);
+    setIlkGeldi(true);
   }, [anahtar]);
 
   useEffect(() => {
@@ -244,13 +255,23 @@ function Ekran({ istasyonlar, onCik }: { istasyonlar: Istasyon[]; onCik: () => v
     );
     setSonIslem({ idler: kalemIdler, asama });
     sonIslemZaman.current = Date.now();
-    await asamayaAl(kalemIdler, asama);
+    yazmaSurer.current++;
+    try {
+      await asamayaAl(kalemIdler, asama);
+    } finally {
+      yazmaSurer.current--;
+    }
     yenile();
   }
 
   async function geriAl(kalemIdler: number[], asama: Asama) {
     setSonIslem(null);
-    await asamadanCik(kalemIdler, asama);
+    yazmaSurer.current++;
+    try {
+      await asamadanCik(kalemIdler, asama);
+    } finally {
+      yazmaSurer.current--;
+    }
     yenile();
   }
 
@@ -295,9 +316,11 @@ function Ekran({ istasyonlar, onCik }: { istasyonlar: Istasyon[]; onCik: () => v
         <div className="istasyon-ad">
           <h1>{istasyonlar.map((i) => i.ad).join(" + ")}</h1>
           <span>
-            {bekleyenAdet > 0
-              ? `${bekleyenAdet} ürün hazırlanıyor`
-              : "Bekleyen sipariş yok"}
+            {!ilkGeldi
+              ? "Yükleniyor…"
+              : bekleyenAdet > 0
+                ? `${bekleyenAdet} ürün hazırlanıyor`
+                : "Bekleyen sipariş yok"}
           </span>
         </div>
 
@@ -341,7 +364,12 @@ function Ekran({ istasyonlar, onCik }: { istasyonlar: Istasyon[]; onCik: () => v
 
       <div className="istasyon-govde">
         <main className="istasyon-kartlar">
-          {bekleyen.length === 0 ? (
+          {!ilkGeldi ? (
+            <div className="istasyon-kartlar-yukleniyor">
+              <div className="cember" />
+              <span>Siparişler geliyor…</span>
+            </div>
+          ) : bekleyen.length === 0 ? (
             <div className="istasyon-bos">
               <CircleCheckBig />
               <p>Tezgâh boş</p>
@@ -365,7 +393,9 @@ function Ekran({ istasyonlar, onCik }: { istasyonlar: Istasyon[]; onCik: () => v
         {panelAcik && (
           <aside className="istasyon-panel">
             <h2>Hazırlananlar</h2>
-            {hazirlanan.length === 0 ? (
+            {!ilkGeldi ? (
+              <p className="istasyon-panel-bos">Yükleniyor…</p>
+            ) : hazirlanan.length === 0 ? (
               <p className="istasyon-panel-bos">Bu vardiyada henüz hazırlanan yok.</p>
             ) : (
               hazirlanan.map((kart) => (

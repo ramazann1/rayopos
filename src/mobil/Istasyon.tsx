@@ -23,7 +23,7 @@ import {
   asamayaAl,
   bulunanAsama,
   istasyonAsamalari,
-  kartlariGetir,
+  panoyuGetir,
   mutfagiDinle,
   siradakiAsama,
 } from "../mutfak";
@@ -191,6 +191,9 @@ function Ekran({
   const [bekleyen, setBekleyen] = useState<MutfakKarti[]>([]);
   const [hazirlanan, setHazirlanan] = useState<MutfakKarti[]>([]);
   const [sekme, setSekme] = useState<"bekleyen" | "hazirlanan">("bekleyen");
+  // İlk sorgu gelmeden liste boş sayılmıyor: sipariş varken "Tezgâh boş"
+  // yazısı görünüyordu, tezgâh siparişi yok sanıyordu.
+  const [ilkGeldi, setIlkGeldi] = useState(false);
   // Son işaretlenen kalemler; geri alma şeridi bunlara bakıyor.
   const [sonIslem, setSonIslem] = useState<{ idler: number[]; asama: Asama } | null>(null);
   const sonIslemZaman = useRef(0);
@@ -199,14 +202,22 @@ function Ekran({
 
   const anahtar = istasyonlar.map((i) => i.id).join(",");
 
+  // Kendi yazmamız sürerken gelen tazeleme ekrana uygulanmıyor: canlı bağlantı
+  // bizim güncellememizi de haber veriyor, o haberle başlayan sorgu kalemi
+  // henüz eski hâliyle okuyup ekrana geri getiriyordu. Geciken eski sorgu da
+  // yenisini ezmesin diye her istek numaralanıyor.
+  const yazmaSurer = useRef(0);
+  const istekNo = useRef(0);
+
   const yenile = useCallback(async () => {
-    const liste = anahtar.split(",").map(Number);
-    const [b, h] = await Promise.all([
-      kartlariGetir(liste),
-      kartlariGetir(liste, true),
-    ]);
+    const no = ++istekNo.current;
+    const { bekleyen: b, hazirlanan: h } = await panoyuGetir(
+      anahtar.split(",").map(Number)
+    );
+    if (no !== istekNo.current || yazmaSurer.current) return;
     setBekleyen(b);
     setHazirlanan(h);
+    setIlkGeldi(true);
   }, [anahtar]);
 
   useEffect(() => {
@@ -244,13 +255,23 @@ function Ekran({
     );
     setSonIslem({ idler: kalemIdler, asama });
     sonIslemZaman.current = Date.now();
-    await asamayaAl(kalemIdler, asama);
+    yazmaSurer.current++;
+    try {
+      await asamayaAl(kalemIdler, asama);
+    } finally {
+      yazmaSurer.current--;
+    }
     yenile();
   };
 
   const geriAl = async (kalemIdler: number[], asama: Asama) => {
     setSonIslem(null);
-    await asamadanCik(kalemIdler, asama);
+    yazmaSurer.current++;
+    try {
+      await asamadanCik(kalemIdler, asama);
+    } finally {
+      yazmaSurer.current--;
+    }
     yenile();
   };
 
@@ -309,7 +330,9 @@ function Ekran({
         </button>
       </div>
 
-      {sekme === "bekleyen" ? (
+      {!ilkGeldi ? (
+        <div className="yukleniyor"><div className="cember" /></div>
+      ) : sekme === "bekleyen" ? (
         bekleyen.length === 0 ? (
           <div className="m-bos">
             <CircleCheckBig size={30} />
