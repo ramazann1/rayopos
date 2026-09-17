@@ -1,21 +1,20 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (17 Eyl 2026 güncellendi)
+## 0. SIRADAKİ İŞ (18 Eyl 2026 güncellendi)
 
-> **Sıra (17 Eyl 2026, üçüncü seans sonu):**
-> 1. **Hazır işaretlenmemiş kalemlerin temizliği.** Barda 131 kalem
->    `hazir_at` boş duruyor, hepsi kapanmış adisyonlardan kalma (17 Eyl'de
->    tarayıcıda ölçülürken çıktı). Ekranda görünmüyorlar ama mutfak süre
->    raporunda "hiç bitmemiş" sayılıyorlar. İki karar gerekiyor: (a) mevcut
->    kalemler ne olacak, (b) **hesap kapanınca bekleyen kalem ne olacak** —
->    kapanışta hazır sayılsın mı, ayrı bir işaretle mi kapatılsın. Ramazan'ın
->    kararı; sahte hazır saati yazmak raporu bozar.
-> 2. **Mert Bey hesabıyla tam tur.** Yetki provası sunucu tarafını 41/41
->    doğruladı ama bu bir SQL provası — arayüzün kısıtlı kullanıcıda nasıl
->    davrandığı hâlâ denenmedi. Onunla giriş yapıp sipariş–ödeme–iptal–masa
->    taşıma denenecek; yetkisiz düğmeler gizli mi, hata mesajları anlaşılır mı.
->    ("Deneme Garson" diye bir kayıt yok, o hesap açılmamış.)
+> **Sıra (18 Eyl 2026, seans sonu):**
+> 1. **Supabase hesabında toplu kontrol.** Ramazan'ın tarayıcısından Supabase
+>    paneline girilip veritabanı baştan sona taranacak: çakışan/yinelenen
+>    fonksiyon tanımları, eski tablo adlarından kalan artıklar, kapalı kalmış
+>    RLS, yetkisi yazılmamış fonksiyon, hatalı tetikleyici, günlüklerdeki
+>    hatalar. 18 Eyl'deki cihaz hatası gibi sessiz duran başka şeyler var mı
+>    diye bakılıyor. **Bir sonraki seansın ilk işi bu** (Ramazan kararı).
+> 2. **Mert Bey turunun mobil ayağı.** Masaüstü turu 18 Eyl'de yapıldı
+>    (adım 1, 2, 3, 4, 10 çalıştı; 5–9 ve 13–18'in düğmeleri hiç görünmüyor —
+>    doğru davranış). Kalan: aynı adımlar telefonda. Mert Bey'in yetkisi dar
+>    olduğu için yetki hata mesajı bu hesapla sınanamıyor; mesajı görmek
+>    istersek geçici olarak bir yetki verilip yanındaki alınmalı.
 > 3. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
@@ -29,6 +28,43 @@
 > 5. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
 > 6. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (18 Eyl 2026):**
+> - **"Şu an kim çalışıyor" artık cihaza bağlı** (`2026-09-18-cihaz-oturumu.sql`,
+>   `src/cihaz.ts`, `supabase.ts`). Seansın en önemli işi. `oturum_kisileri`
+>   tablosunun anahtarı `auth_id`'ydi: aynı hesapla giren bütün cihazlar tek
+>   satırı paylaşıyordu. Telefondan PIN'le kişi değiştirince kasadaki kişi de
+>   değişiyordu — üstelik yalnız isim değil **yetkiler** de, çünkü
+>   `oturum_yetkisi()` izinleri o satırdan okuyor. Kasa ekranı satırı yalnız
+>   açılışta okuduğu için ekranda eski isim yazarken siparişler yeni kişinin
+>   üstüne kaydediliyordu. Artık tarayıcı kendine rastgele bir kimlik üretip
+>   her isteğe `x-cihaz` başlığıyla gönderiyor, satır `(hesap + cihaz)` çiftine
+>   ait. Tarayıcıda uçtan uca denendi: telefonda geçiş yapıldı, bilgisayar
+>   yenilendi, kişi değişmedi.
+>   - Aynı tarayıcının iki sekmesi aynı cihaz sayılıyor — bilinçli: tek
+>     bilgisayar, başında tek kişi.
+>   - Başlık göndermeyen istemci (yazıcı köprüsü) "bilinmiyor" cihazı;
+>     davranışı eskisiyle aynı, kendi hesabının personeli sayılıyor.
+>   - Canlı bağlantı (websocket) başlık taşımıyor ama zararsız: üç abonelik de
+>     gelen satırın içeriğine bakmıyor, "değişti" sinyaliyle veriyi REST'ten
+>     yeniden çekiyor.
+>   - Göç eski satırları **siliyor**; hangi cihaza ait oldukları bilinmediği
+>     için devredilseler köprü o kişinin yetkileriyle çalışırdı.
+> - **Hesap kapanınca hazır işaretlenmemiş kalemler işaretleniyor**
+>   (`2026-09-18-hazirlanmadan-kapandi.sql`). Kalemde `kapanista_kapandi`
+>   sütunu var; adisyon açıktan kapalı/iptale geçerken tetikleyici yazıyor.
+>   Kapanış saati **hazır saati diye yazılmıyor** — müşteri iki saat oturduysa
+>   ortalama bozulurdu. Analiz'deki mutfak şeridine "İşaretlenmeyen" sayacı
+>   eklendi. Barda duran 131 eski kalem olduğu gibi bırakıldı (Ramazan kararı).
+> - **Yetki hata mesajları artık kaybolmuyor** (`yazmaDenetimi.ts`). Sunucu
+>   `yetki_iste` ile "Adisyon iptal etme yetkiniz yok." gibi net cümleler
+>   yazıyor ve `42501` koduyla gönderiyor; kod bu kodu görünce mesajı atıp
+>   yerine genel "Bu işlem için yetkiniz yok." yazıyordu. Artık yalnız
+>   Postgres'in ham `row-level security` / `permission denied` metni
+>   örtülüyor, kendi cümlemiz ekrana çıkıyor.
+> - **Arayüz–sunucu yetki eşleşmesi tam.** Sunucudaki 41 yetkinin 41'i de
+>   arayüzde bir yerde kontrol ediliyor (28'i düğme düzeyinde `yetkiVar`,
+>   gerisi rota girişinde). "Düğme duruyor ama sunucu reddediyor" boşluğu yok.
 >
 > **Yapılanlar (17 Eyl 2026, üçüncü seans):**
 > - **Mutfak aşama imzaları sunucuda** (`2026-09-17-mutfak-imzalari.sql`).

@@ -1747,6 +1747,11 @@ function Mutfak({ ozet }: { ozet: MutfakSuresiOzeti | null }) {
             <em>tek bir üründe</em>
           </div>
           <div className="serit-sayi">
+            <span className="serit-etiket">İşaretlenmeyen</span>
+            <strong>{ozet.isaretlenmeyen}</strong>
+            <em>hazır denmeden hesabı kapandı</em>
+          </div>
+          <div className="serit-sayi">
             <span className="serit-etiket">Gecikme</span>
             <strong>{gecikmeDk > 0 ? `%${gecikmePay}` : "—"}</strong>
             <em>
@@ -1761,7 +1766,8 @@ function Mutfak({ ozet }: { ozet: MutfakSuresiOzeti | null }) {
       <Bilgi>
         Süre, siparişin tezgâha düştüğü an ile hazır işaretlendiği an arasını
         ölçüyor. Mutfak tuşa geç basarsa ya da biten ürünleri sonradan toplu
-        işaretlerse rakam gerçekte geçen süreden uzun çıkar.
+        işaretlerse rakam gerçekte geçen süreden uzun çıkar. Hazır
+        denmeden hesabı kapanan ürünler süreye katılmıyor, ayrıca sayılıyor.
       </Bilgi>
 
       <section className="ayar-bolum">

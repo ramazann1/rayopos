@@ -10,9 +10,15 @@
 
 type Sonuc = { error: { code?: string; message?: string } | null; data?: unknown };
 
+// Yetki hatasında sunucunun kendi cümlesi ekrana çıkıyor: fonksiyonlar
+// "Adisyon iptal etme yetkiniz yok." gibi eksiği adıyla söyleyen mesajlar
+// yazıyor (yetki_iste, 28 Ağustos). Yalnız satır güvenliğinin ham İngilizce
+// metni gizleniyor — o kullanıcıya bir şey anlatmıyor.
 function hataMetni(hata: { code?: string; message?: string }, mesaj: string) {
-  if (hata.code === "42501" || /row-level security/i.test(hata.message ?? ""))
+  const metin = (hata.message ?? "").trim();
+  if (/row-level security/i.test(metin) || /permission denied/i.test(metin))
     return "Bu işlem için yetkiniz yok.";
+  if (hata.code === "42501") return metin || "Bu işlem için yetkiniz yok.";
   if (hata.code === "23505") return `${mesaj} Aynı kayıt zaten var.`;
   if (hata.code === "23503") return `${mesaj} Bu kayıt başka kayıtlarda kullanılıyor.`;
   return hata.message ? `${mesaj} (${hata.message})` : mesaj;

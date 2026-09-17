@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { kopukBildir, ulasildiBildir } from "./baglanti";
+import { cihazKimligi } from "./cihaz";
 
 /**
  * Sunucuya giden her istek bağlantı durumunu besliyor. Yüz küsur çağrının her
@@ -40,5 +41,13 @@ const izlenenFetch: typeof fetch = async (adres, secenekler) => {
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_KEY,
-  { global: { fetch: izlenenFetch } }
+  {
+    global: {
+      fetch: izlenenFetch,
+      // Sunucu "şu an kim çalışıyor" satırını bu başlıkla ayırıyor: aynı
+      // hesapla giren kasa ve telefon birbirinin kişisini değiştirmesin
+      // (sql/2026-09-18-cihaz-oturumu.sql).
+      headers: { "x-cihaz": cihazKimligi },
+    },
+  }
 );

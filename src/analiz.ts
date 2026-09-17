@@ -1294,6 +1294,8 @@ export type MutfakSuresiOzeti = {
   ortalama: number;
   enUzun: number;
   geciken: number;
+  /** Hazır işaretlenmeden hesabı kapanan kalem sayısı. Süre hesabına girmiyor. */
+  isaretlenmeyen: number;
   /** Sıra/hazırlık ayrımı yalnız aşama açık olan istasyonlarda oluşuyor. */
   asamaliVar: boolean;
 };
@@ -1319,7 +1321,7 @@ export async function mutfakSureleri(f: AnalizFiltre): Promise<MutfakSuresiOzeti
       .from("turlar")
       .select(
         `olusturma,
-         adisyon_kalemleri (urun_id, ad, durum, hazirlik_at, hazir_at)`
+         adisyon_kalemleri (urun_id, ad, durum, hazirlik_at, hazir_at, kapanista_kapandi)`
       )
       .gte("olusturma", bas.toISOString())
       .lt("olusturma", bit.toISOString())
@@ -1331,12 +1333,19 @@ export async function mutfakSureleri(f: AnalizFiltre): Promise<MutfakSuresiOzeti
   const istasyonAdi = new Map(istasyonlar.map((i) => [i.id, i.ad]));
   const satirlar = new Map<string, MutfakSuresiSatiri & { toplam: number; bekleme: number; beklemeAdet: number }>();
   let asamaliVar = false;
+  let isaretlenmeyen = 0;
 
   for (const t of ((data as any[]) ?? [])) {
     const dusme = new Date(t.olusturma).getTime();
     for (const k of ((t.adisyon_kalemleri as any[]) ?? [])) {
-      // Hazır işaretlenmemiş ve iptal edilmiş kalemin süresi yok.
-      if (!k.hazir_at || (k.durum ?? "normal") === "iptal") continue;
+      // Hazır işaretlenmemiş ve iptal edilmiş kalemin süresi yok. Hesap
+      // kapanırken hâlâ işaretlenmemiş olanlar ayrıca sayılıyor: ölçüme
+      // girmiyorlar ama kaç tane olduğu tezgâhın alışkanlığını gösteriyor.
+      if ((k.durum ?? "normal") === "iptal") continue;
+      if (!k.hazir_at) {
+        if (k.kapanista_kapandi) isaretlenmeyen += 1;
+        continue;
+      }
       const sure = Math.max(0, Math.round((new Date(k.hazir_at).getTime() - dusme) / 1000));
 
       const anahtar = k.urun_id ? `u${k.urun_id}` : `a${k.ad}`;
@@ -1401,6 +1410,7 @@ export async function mutfakSureleri(f: AnalizFiltre): Promise<MutfakSuresiOzeti
     ortalama: adet ? Math.round(toplam / adet) : 0,
     enUzun,
     geciken,
+    isaretlenmeyen,
     asamaliVar,
   };
 }
