@@ -3,17 +3,18 @@
 
 ## 0. SIRADAKİ İŞ (17 Eyl 2026 güncellendi)
 
-> **Sıra (17 Eyl 2026 seans sonu):**
-> 1. **Yetki provası betiği.** Bir personeli seçip bütün ana işlemleri geri
->    alınan bir işlemde deneyen, "şunu yapabiliyor / şuna takılıyor" tablosu
->    veren SQL. 16 Eyl'de elle yapılan denemenin toplu hâli; her yeni yetkide
->    tekrar çalıştırılır. **Artık asıl sırada bu var:** sessiz yazmalar
->    konuşuyor ama denetimlerin gerçekten devreye girdiği tek durum kısıtlı
->    yetkili kullanıcı, o da hiç denenmedi.
-> 2. **"Deneme Garson" hesabıyla tam tur.** Hesap açılmış durumda (garson,
->    tüm bölgeler, PIN yok). Eksik olan tur: onunla giriş yapıp
->    sipariş–ödeme–iptal–masa taşıma denenecek. Bugüne kadarki bütün testler
->    yönetici hesabıyla yapıldı, kısıtlı kullanıcı hataları görünmüyordu.
+> **Sıra (17 Eyl 2026, ikinci seans sonu):**
+> 1. **Mutfak aşama imzaları sunucuya.** `hazirlik_kisi`, `paketleme_kisi`,
+>    `hazir_kisi` hâlâ tarayıcının gönderdiği değerle yazılıyor
+>    (`mutfak.ts`, `acikOturum()?.id`). 5 Eyl'de adisyon/tur/kasa imzaları tam
+>    bu yüzden sunucuya taşınmıştı — bu üçü o taramada atlanmış. "Kim
+>    hazırladı" kurcalanabilir, mutfak süre raporu ona dayanıyor. Desen hazır:
+>    `2026-09-05-kim-yapti-sunucuda.sql`.
+> 2. **Mert Bey hesabıyla tam tur.** Yetki provası sunucu tarafını 41/41
+>    doğruladı ama bu bir SQL provası — arayüzün kısıtlı kullanıcıda nasıl
+>    davrandığı hâlâ denenmedi. Onunla giriş yapıp sipariş–ödeme–iptal–masa
+>    taşıma denenecek; yetkisiz düğmeler gizli mi, hata mesajları anlaşılır mı.
+>    ("Deneme Garson" diye bir kayıt yok, o hesap açılmamış.)
 > 3. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
@@ -27,6 +28,56 @@
 > 5. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
 > 6. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (17 Eyl 2026, ikinci seans):**
+> - **Yetki provası betiği bitti** (`sql/2026-09-17-yetki-provasi.sql`). Bir
+>   personelin kimliğine bürünüp (`set local role authenticated` + JWT taklidi)
+>   `yetkiler` tablosundaki her maddeyi tek tek deniyor, sonunda `rollback`.
+>   Liste koddan değil veritabanından okunuyor: yeni yetki eklendiğinde betiğe
+>   dokunmadan sınanıyor, denemesi olmayan yetki "betiğe eklenmeli" diye
+>   raporun sonunda çıkıyor. Kullanımı: `begin; select * from
+>   yetki_provasi('Mert Bey'); rollback;`
+> - **Kodu okumak bu soruyu cevaplamıyor.** Seans boyunca iki kez yanlış sayı
+>   verildi (9, sonra 23 yetki korunuyor) çünkü kilitlerin çoğu yetki kodunu
+>   tetikleyiciye **parametre** olarak geçiyor (`tanim_yetkisi(tg_argv)`),
+>   grep'le görünmüyor. Ölçünün tek yolu çalıştırmak.
+> - **Altı açık kapatıldı, hepsi provada bulundu:**
+>   - `yazici.yonet` — `istasyonlar` ve `yazici_istasyonlari` 21 Ağu'daki
+>     yeniden adlandırmadan beri **hiç kilitli değildi**. 5 Eyl'deki yetki
+>     bağlama listesi eski tablo adlarını kullanıyordu, `tanim_yetkisi_bagla`
+>     olmayan tabloyu `raise notice` ile atlıyordu. Göç "başarılı" göründü.
+>     Artık atlamıyor, **hata veriyor** (`2026-09-17-istasyon-yetkisi.sql`).
+>   - `siparis.servis` — kuver/garsoniye kaldırma denetimsizdi.
+>   - `odeme.indirim_tanimli` — "sadece ön tanımlı" ayrımı yalnız ekrandaydı;
+>     o yetkiyle sunucuya istenen tutar yazılabiliyordu.
+>     (İkisi: `2026-09-17-servis-ve-indirim-yetkisi.sql`)
+>   - `mutfak.ekran` — aşama işaretleri (altı sütun) korumasızdı
+>     (`2026-09-17-istasyon-ekrani-yetkisi.sql`).
+>   - `masa.devral` — canlı masanın işareti **upsert** ile üstüne yazılıyordu
+>     (`2026-09-17-masa-devralma-yetkisi.sql`).
+>   - `kasa.cekmece` — yetki işlevsizdi; kuyruk politikası üç yetkiden birini
+>     yeterli sayıyordu (`2026-09-17-kuyruk-is-turleri.sql`).
+> - **Ters yönlü bir hata da çıktı:** mutfak fişi `siparis.fis_yazdir`
+>   yetkisine bağlıymış. O yetkisi olmayan garsonun siparişi mutfağa hiç
+>   düşmezdi. Kuyruk politikası artık iş türüne göre ayrılıyor: hesap fişi,
+>   mutfak fişi, çekmece ve deneme fişi ayrı yetkilere bakıyor.
+>
+> **Bu seansın tasarım kararları:**
+> - **Kilit tutara değil karara konur.** `kuver_tutar` her sipariş
+>   değişiminde yeniden hesaplanıyor (`servisTutarlariniGuncelle`); oraya kilit
+>   koymak sipariş almayı bozardı. İnsan kararı `kuver_uygula` bayrağında.
+> - **Tam ikram muaf.** `adisyon_ikram_et` kuveri ve indirimleri sıfırlıyor;
+>   bunlar ikramın parçası, ayrı karar değil. İşlem kendini
+>   `rayopos.ikram_suruyor` ile işaretliyor, servis ve indirim denetimleri o
+>   işarete bakıp karışmıyor. Olmasaydı indirim yetkisi olmayan müdür hesabı
+>   ikram edemezdi.
+> - **Masa devralma süreli kilit.** Kendi işaretin serbest, 60 saniyeden eski
+>   işaret serbest, başkasının taze işareti `masa.devral` ister. Süre ekrandaki
+>   `OLU_SURE` ile aynı — yeni kavram getirmiyor, var olanı yazma tarafına
+>   taşıyor. Sert kilit bilerek konmadı (29 Ağu notu: garson ekranı açık
+>   unutur, kasiyer müşteriyi kapıda bekletir).
+> - **Çekmeceyi ödeme alan da açar** (Ramazan kararı). Nakit ödemede çekmece
+>   kendiliğinden açılıyor; parayı alan, parayı koyacağı çekmeceyi açabilmeli.
 >
 > **Yapılanlar (17 Eyl 2026):**
 > - **Sessiz yazma hataları maddesi bitti** — altı veri dosyasının hepsi

@@ -83,8 +83,8 @@ begin
 
       -- Yazıcı ve istasyon -------------------------------------------------
       ('yazicilar',                 'yazici.yonet',   'Yazıcı ayarlarını değiştirme yetkiniz yok.'),
-      ('mutfak_gruplari',           'yazici.yonet',   'İstasyon ayarlarını değiştirme yetkiniz yok.'),
-      ('yazici_mutfak_gruplari',    'yazici.yonet',   'Yazıcı ayarlarını değiştirme yetkiniz yok.'),
+      ('istasyonlar',               'yazici.yonet',   'İstasyon ayarlarını değiştirme yetkiniz yok.'),
+      ('yazici_istasyonlari',       'yazici.yonet',   'Yazıcı ayarlarını değiştirme yetkiniz yok.'),
       ('fis_sablonlari',            'yazici.yonet',   'Fiş tasarımını değiştirme yetkiniz yok.'),
 
       -- Gider tanımları ----------------------------------------------------
