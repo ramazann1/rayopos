@@ -3,33 +3,97 @@
 
 ## 0. SIRADAKİ İŞ (18 Eyl 2026 güncellendi)
 
-> **Sıra (18 Eyl 2026, seans sonu):**
-> 1. **Supabase hesabında toplu kontrol.** Ramazan'ın tarayıcısından Supabase
->    paneline girilip veritabanı baştan sona taranacak: çakışan/yinelenen
->    fonksiyon tanımları, eski tablo adlarından kalan artıklar, kapalı kalmış
->    RLS, yetkisi yazılmamış fonksiyon, hatalı tetikleyici, günlüklerdeki
->    hatalar. 18 Eyl'deki cihaz hatası gibi sessiz duran başka şeyler var mı
->    diye bakılıyor. **Bir sonraki seansın ilk işi bu** (Ramazan kararı).
-> 2. **Mert Bey turunun mobil ayağı.** Masaüstü turu 18 Eyl'de yapıldı
+> **Sıra (18 Eyl 2026, ikinci seans sonu):**
+> 1. **Mert Bey turunun mobil ayağı.** Masaüstü turu 18 Eyl'de yapıldı
 >    (adım 1, 2, 3, 4, 10 çalıştı; 5–9 ve 13–18'in düğmeleri hiç görünmüyor —
 >    doğru davranış). Kalan: aynı adımlar telefonda. Mert Bey'in yetkisi dar
 >    olduğu için yetki hata mesajı bu hesapla sınanamıyor; mesajı görmek
 >    istersek geçici olarak bir yetki verilip yanındaki alınmalı.
-> 3. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
+> 2. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
 >    Kod elendi: canlıdaki derleme, `_headers` ile birlikte temiz tarayıcıda
 >    sorunsuz açılıyor.
-> 4. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
+> 3. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
 >    10:33: "belgeler kayıt otoritesine iletildi"). Seans başında sor/WHOIS'e
 >    bak; gelince Cloudflare Pages'te özel alan adı olarak bağlanır. Erişim
 >    sorunu tekrarlarsa geçici olarak `pos.egzozcafe.com` bağlanabilir
 >    (ikisi de aynı Cloudflare hesabında).
-> 5. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
+> 4. **Canlıda fiş yazdırma denemesi** — kasada Chrome'un yerel ağ izni
 >    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
-> 6. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 5. **Artık tablolar silinsin mi** — `adisyonlar_eski` (8 satır, `isletme_id`
+>    bile yok) ve `kayit_denemeleri` (2 satır). İkisinde de RLS açık ama tek
+>    kural yok. Denetimde çıktı, Ramazan kararı bekliyor.
+> 6. **Dizinsiz yabancı anahtarlar** — 48 sütunda yabancı anahtar var, dizin
+>    yok. Hata değil, hız işi; istasyon ekranındaki gibi **ölçerek** bakılacak,
+>    tahminle indeks eklenmeyecek.
+> 7. **`eposta_hesabi` sınırlanmalı mı** — giriş yapmadan çağrılabiliyor
+>    (zorunlu, giriş ekranı kullanıyor) ve e-postayı bilen kişi telefon
+>    numarasını öğrenebiliyor, üstelik bütün işletmelerde arıyor. Toplu liste
+>    çekilemediği için düşük öncelikli; çözüm `istek_ip` + deneme sayacı.
+> 8. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
 >
-> **Yapılanlar (18 Eyl 2026):**
+> **Yapılanlar (18 Eyl 2026, ikinci seans):**
+> - **Veritabanı baştan sona tarandı** (`2026-09-18-veritabani-denetimi.sql`,
+>   saklanıyor, yalnız okuma). Tek sorgu, on üç başlık: RLS durumu, kiracı
+>   süzgeci, süzgeçsiz politika, çift fonksiyon tanımı, `search_path`, anon'a
+>   açık fonksiyon, gövdede geçen ama olmayan tablo, devre dışı tetikleyici,
+>   cihaz ayrımı, bağsız sütun, görünüm, anon tablo erişimi, dizinsiz bağ.
+>   Yanına Supabase'in kendi denetçisi ve 24 saatlik günlükler.
+>   **Temiz çıkanlar:** RLS kapalı tablo yok, çift fonksiyon tanımı yok
+>   (eski imza artığı yok), devre dışı tetikleyici yok, `security definer`
+>   fonksiyonların hepsinde `search_path` var, `auth_id` taşıyan tek durum
+>   tablosu `oturum_kisileri`ydi (o da bu sabah düzeltildi). Günlüklerdeki
+>   63 hatanın hepsi 17 Eyl gecesindeki göç anına ait, 23:44'te kesilmiş.
+> - **Ürün kodu bütün işletmelerde ortakmış** (`2026-09-18-urun-kodu-isletmeye.sql`,
+>   `-harf.sql`). Seansın en önemli bulgusu, cihaz hatasıyla aynı sınıf:
+>   `urunler_kod_essiz` indeksinde `isletme_id` yoktu. A kafesi "101" kodunu
+>   kullandıysa B kafesi kullanamıyordu ve engelleyen ürünü hiç göremediği
+>   için sebebini bulamazdı. Kodlu ürün henüz sıfır olduğu için kimse
+>   çarpmamış. Kural `(isletme_id, lower(kod))` oldu — harf duyarsızlığı
+>   içe aktarımın tarafına çekildi, o zaten `KAHVE1` ile `kahve1`'i aynı
+>   sayıyordu; iki taraf artık aynı dili konuşuyor.
+> - **Barkod benzersizliği kodda varsayılıyor, veritabanında yokmuş.**
+>   `porsiyonSatiri` ürün kopyalarken barkodu bilerek boşaltıyor ama karşılığı
+>   yoktu. `(isletme_id, barkod)` eklendi; çakışmada ekran artık "Bu barkod
+>   başka bir porsiyonda kullanılıyor." diyor (`menu.ts`, `barkodDenetle`).
+> - **anon yetkileri yeniden kapatıldı** (`2026-09-18-anon-yetkileri.sql`).
+>   1 Eylül'de yapılmıştı; o günden sonra eklenen 32 fonksiyon yine herkese
+>   açık doğmuştu. **Bu bir kerelik iş değil, her yeni fonksiyonda tekrarlanan
+>   bir sızıntı** — o yüzden yine tek tek değil süpürerek kapatıldı. Açık
+>   kalan tam üç tanesi: `giris_kuruldu`, `eposta_hesabi`, `qr_menu`.
+>   `isletme_kur` bilerek kapalı kaldı (16 Eyl, kayit-kapat).
+>   Uygulamadan önce geri alınan bir işlemde `yetki_provasi` çalıştırıldı:
+>   41 yetkinin 41'i doğru, yani süpürme hiçbir şeyi kırmıyor.
+> - **`search_path` eksiği kapandı** (`2026-09-18-arama-yolu.sql`). On üç
+>   fonksiyon, hepsi invoker. Gövdeler yeniden yazılmadı; `alter function ...
+>   set search_path` yalnız ayarı değiştiriyor, kod olduğu gibi kalıyor.
+> - **Ürün görselleri dışarıdan listelenebiliyormuş**
+>   (`2026-09-18-medya-listeleme.sql`). Supabase denetçisi yakaladı, benim
+>   betiğim kaçırdı — o yalnız `public` şemasına bakıyor, dosya deposu
+>   `storage` şemasında. Okuma kuralı `bucket_id = 'menu'`di, klasör ayrımı
+>   yoktu: anonim anahtarla bütün işletmelerin fotoğraf listesi çekilebiliyordu.
+>   Kural üyenin kendi klasörüyle sınırlandı. Karekod menüsü etkilenmiyor
+>   (kova `public`, görseller doğrudan adresinden servis ediliyor, o yol
+>   satır güvenliğine bakmıyor); program zaten hiçbir yerde dosya listelemiyor.
+> - **Denetçide düzeltilecek bir şey kalmadı.** Uyarı 101'den 60'a indi.
+>   Kalan 1 hata (`porsiyon_maliyetleri` görünümü) ve 57 uyarı ("üye şu
+>   fonksiyonu çağırabiliyor") programın tasarımı: bütün yazma işleri yetkiyi
+>   içeride kontrol eden fonksiyonlardan geçiyor, denetçi her birini ayrı
+>   uyarı sayıyor. Kapatmak programı çalışmaz hâle getirir.
+>
+> **Bu seansın tasarım kararları:**
+> - **Benzersizlik kuralı kiracıya bağlanır.** Bir işletmenin verisi başka bir
+>   işletmenin işini engelleyemez. Engelleyen kayıt görülemediği için çıkan
+>   hata sebebi bulunamayan hatadır — cihaz hatasının aynı sınıfı.
+> - **Harf duyarlılığı insanın yazdığı alanda kapalı, makinenin yazdığında
+>   açık.** Ürün kodunu insan yazıyor (`lower(kod)`), barkodu okuyucu yazıyor
+>   (harfi harfine).
+> - **Yetki kapatma süpürerek yapılır.** Postgres'te yetkisi yazılmayan
+>   fonksiyon herkese açık doğuyor; tek tek kapatmak her yeni fonksiyonda
+>   sızıntıyı geri getiriyor.
+>
+> **Yapılanlar (18 Eyl 2026, ilk seans):**
 > - **"Şu an kim çalışıyor" artık cihaza bağlı** (`2026-09-18-cihaz-oturumu.sql`,
 >   `src/cihaz.ts`, `supabase.ts`). Seansın en önemli işi. `oturum_kisileri`
 >   tablosunun anahtarı `auth_id`'ydi: aynı hesapla giren bütün cihazlar tek

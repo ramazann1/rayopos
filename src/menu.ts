@@ -365,6 +365,13 @@ function porsiyonSatiri(urunId: number, p: MenuPorsiyon, sira: number, barkodlar
   };
 }
 
+// Porsiyonda benzersiz olan tek alan barkod; çakışma başka bir şeyden gelemez.
+// Genel "Aynı kayıt zaten var." mesajı hangi alanın tutmadığını söylemiyor.
+function barkodDenetle(sonuc: { error: { code?: string } | null }) {
+  if (sonuc.error?.code === "23505")
+    throw new Error("Bu barkod başka bir porsiyonda kullanılıyor.");
+}
+
 async function porsiyonGruplariYaz(porsiyonId: number, grupIdler: number[]) {
   yazmayiDenetle(
     await supabase.from("porsiyon_secenek_gruplari").delete().eq("porsiyon_id", porsiyonId),
@@ -476,20 +483,20 @@ async function urunuYaz(u: MenuUrun) {
       u.porsiyonlar.map(async (p, i) => {
         let porsiyonId = p.id;
         if (porsiyonId) {
-          satirDenetle(
-            await supabase
-              .from("porsiyonlar")
-              .update(porsiyonSatiri(urunId, p, i + 1))
-              .eq("id", porsiyonId)
-              .select("id"),
-            "Porsiyon kaydedilemedi."
-          );
+          const sonuc = await supabase
+            .from("porsiyonlar")
+            .update(porsiyonSatiri(urunId, p, i + 1))
+            .eq("id", porsiyonId)
+            .select("id");
+          barkodDenetle(sonuc);
+          satirDenetle(sonuc, "Porsiyon kaydedilemedi.");
         } else {
           const sonuc = await supabase
             .from("porsiyonlar")
             .insert(porsiyonSatiri(urunId, p, i + 1))
             .select("id")
             .single();
+          barkodDenetle(sonuc);
           yazmayiDenetle(sonuc, "Porsiyon eklenemedi.");
           porsiyonId = (sonuc.data as any)?.id;
         }
