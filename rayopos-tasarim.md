@@ -1,14 +1,21 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (18 Eyl 2026 güncellendi)
+## 0. SIRADAKİ İŞ (20 Eyl 2026 güncellendi)
 
-> **Sıra (18 Eyl 2026, ikinci seans sonu):**
-> 1. **Mert Bey turunun mobil ayağı.** Masaüstü turu 18 Eyl'de yapıldı
->    (adım 1, 2, 3, 4, 10 çalıştı; 5–9 ve 13–18'in düğmeleri hiç görünmüyor —
->    doğru davranış). Kalan: aynı adımlar telefonda. Mert Bey'in yetkisi dar
->    olduğu için yetki hata mesajı bu hesapla sınanamıyor; mesajı görmek
->    istersek geçici olarak bir yetki verilip yanındaki alınmalı.
+> **Sıra (20 Eyl 2026 seans sonu):**
+> 1. **Tek sinyal — canlı mesaj sayısını düşürme.** Ölçüldü (20 Eyl): her ekran
+>    dört tabloyu ayrı ayrı dinliyor, bir satır değişikliği her cihaza ayrı
+>    mesaj oluyor. 15 cihaz + masa başına ortalama 5 turda ücretsiz paketin
+>    aylık 2 milyon mesaj sınırı aşılıyor. Çözüm: `masa_degisim` tablosu
+>    (adisyon kimliği + zaman) ve adisyon/kalem/tahsilat/kuyruk üstünde
+>    **ifade başına** çalışan tetikleyiciler; ekranlar yalnız onu dinler.
+>    İki ürünlü bir kayıt beş mesaj yerine bir mesaj üretir.
+>    **Riskler (seansta konuşuldu):** tetikleyici yazma yolunun üstünde —
+>    hata olursa garson sipariş kaydedemez; sinyal tablosunun satır güvenliği
+>    veya canlı yayın listesi yanlışsa hiç mesaj gelmez ve ekran sessizce
+>    bayatlar. **Kısıtlı yetkili hesapla test edilmeden bitmiş sayılmaz.**
+>    Tazeyken yapılacak iş; bu yüzden 20 Eyl seansında başlanmadı.
 > 2. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
@@ -31,7 +38,78 @@
 >    (zorunlu, giriş ekranı kullanıyor) ve e-postayı bilen kişi telefon
 >    numarasını öğrenebiliyor, üstelik bütün işletmelerde arıyor. Toplu liste
 >    çekilemediği için düşük öncelikli; çözüm `istek_ip` + deneme sayacı.
-> 8. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 8. **Arayüzü personel kaydı seçsin** (Ramazan kararı, 19 Eyl 2026). Bugün
+>    mobil mi masaüstü mü kararını yalnız ekran genişliği veriyor
+>    (`src/mobil/mobilTercih.ts`, 820px). Olması gereken: **hangi personelin
+>    hangi arayüzü açacağına işletmeci karar verir** — personel kaydında
+>    "Arayüz: Ekrana göre / Her zaman mobil / Her zaman masaüstü". Varsayılan
+>    "ekrana göre", yani bugünkü davranış. Gerekçe: garson ile kasiyerin işi
+>    ayrı; cihaz ölçüsü bu ayrımı temsil etmiyor. Mağaza uygulaması gündeme
+>    gelirse konu yeniden açılacak.
+> 9. **Günlük yedek** (Ramazan kararı, 19 Eyl 2026): Supabase'in aylık 25
+>    dolarlık paketi alınmayacak. Ücretsiz pakette otomatik yedek yok; bugün
+>    işletmenin hiçbir yedeği yok. Plan: **gecelik bulut yedeği** (GitHub'ın
+>    zamanlayıcısı `pg_dump` çalıştırıp şifreli dosyayı gizli bir yere yazar —
+>    kasanın açık olmasına gerek yok; depo herkese açık olduğu için yedek
+>    oraya konamaz) **+ kasada ikinci kopya** (Görev Zamanlayıcı). İkisi de
+>    ücretsiz. Not: ücretsiz paket 7 gün hareketsiz kalırsa projeyi uykuya
+>    alıyor — uzun kapanışta kasa açılmaz, panelden elle uyandırılır.
+> 10. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+>
+> **Yapılanlar (20 Eyl 2026):**
+> - **Mert Bey turunun mobil ayağı bitti** — Ramazan telefonda denedi, sorun yok.
+> - **Salon her siparişte bütün masa tanımlarını indiriyormuş.** Seansın en
+>   önemli bulgusu. `salonuOku` canlı haberle her tetiklendiğinde
+>   `bolgeleriGetir` de çağrılıyordu; o "önce kopya, arkada tazele" modunda
+>   olduğu için ekran beklemiyor ama **arkada 150 masanın listesi yeniden
+>   iniyordu** (21 KB). Ölçüm: bir adisyonun tam ömründe ekran başına 249 KB,
+>   bunun 237 KB'si tanım. Masa tanımı siparişle değişmiyor; üstelik gerçekten
+>   değişirse `tanimAbonelik` zaten haber veriyor (`bolgeler` ve `masalar`
+>   listede, tarayıcıda doğrulandı: masa eklenince kasa saniyeler içinde gördü).
+>   `onbellek.ts`'e `kopyadanGetir` eklendi (kopyayı verir, sunucuyu hiç
+>   yoklamaz), `bolgeleriGetir(tazele)` parametre aldı. **Aynı tur sonrası
+>   249 KB → 5,1 KB (49 kat).** Salon, mobil Masalar ve fiş kuyruğu tazelemesi
+>   — üçü de düzeltildi (kuyruk yolu ilk denemede atlanmıştı, ölçüm yakaladı).
+> - **Üç emniyet kondu**, tanım hiç okunmasın diye değil seyrek okunsun diye:
+>   tanım aboneliği haber verirse anında, **tanımadığı masaya hesap açılmışsa**
+>   o an (`yabanciMasaVar`), hiçbiri olmazsa `SEYREK_TANIM` (5 dk). Ayrıca
+>   ekran arka plandan öne gelince bir kez. Ramazan'ın itirazından çıktı:
+>   "yeni masa 5 dakika sonra düşerse büyük sorun" — haklıydı.
+> - **Kuyruk aboneliğine süzgeç** (`canli.ts`, `SUZGECLER`). Ekranlardaki fiş
+>   işareti yalnız hesap fişine bakıyor (`masa_ozetleri`, `tip='adisyon'`) ama
+>   abonelik kuyruğun tamamını dinliyordu: her mutfak fişi her cihaza mesaj
+>   oluyor, ekranda hiçbir şey değişmiyordu. Süzgeç sunucu tarafında, yani
+>   Supabase'in mesaj sayacı da azalıyor.
+>
+> **Ölçüm yöntemi (tekrarlanabilir):** Supabase bayt bilgisini tarayıcıya
+> vermiyor (`transferSize` hep 0 — TAO başlığı yok), o yüzden `window.fetch`
+> sarmalanıp cevaplar tartıldı. Ölçülen ekran arka plandaysa `useCanli`
+> tazeleme yapmıyor; ölçüm için `document.hidden` geçici olarak `false`
+> sabitlendi. İki sekme: biri ölçülen kasa ekranı, öteki garson.
+>
+> **Supabase ücretsiz paket — ölçülmüş rakamlar (20 Eyl 2026):**
+> Doluluk bugün: veritabanı 37 MB/500 MB, trafik 114 MB/5 GB, canlı mesaj
+> 5.869/2 milyon, bağlantı 8/200 (11 günlük dönem). Birim maliyetler ölçüldü:
+> `masa_ozetleri` satırı **221 bayt**, 20 açık masanın özeti gzip'li
+> **483 bayt** (gzip bu veride 9-10 kat sıkıştırıyor, `content-encoding: gzip`
+> doğrulandı). Bir tur 6 satır değiştiriyor (2 ürün + adisyon + 2 kuyruk + tur),
+> beşi dinlenen tablolarda.
+> **15 cihaz, 150 adisyon/gün için:** trafik ayda ~0,9 GB (sınırın %18'i,
+> rahat); **canlı mesaj asıl darboğaz.** Sığdığı ortalama tur sayısı:
+> düzeltmeden önce 4,7 — kuyruk süzgeciyle 7,9 — tek sinyalle 25+.
+> **Kural: sınırı belirleyen ortalama tur sayısıdır, en yoğun masa değil.**
+>
+> **Bu seansın tasarım kararları:**
+> - **Arayüzü ekran genişliği değil işletmeci seçer** (sıra 8). Garson ile
+>   kasiyerin işi ayrı; cihaz ölçüsü bu ayrımı temsil etmiyor.
+> - **Ücretli pakete geçilmeyecek, yedek kendimiz alınacak** (sıra 9).
+> - **Tanım verisi canlı haberle tazelenmez.** Canlı haber "durum değişti"
+>   demek; tanımın (masa, bölge, menü) kendi aboneliği var. İkisini birbirine
+>   bağlamak, saniyede birkaç kez değişen bir şeyi ayda bir değişen şeyin
+>   yüküyle taşımak oluyor.
+> - **Cihaz sayısı çarpandır.** Canlı mesajda maliyet `satır × cihaz`. Tek
+>   kasada görünmeyen bir israf, 15 cihazda sınırı aşırıyor. Yeni abonelik
+>   eklenirken "kaç cihaz bunu dinleyecek" sorusu sorulur.
 >
 > **Yapılanlar (18 Eyl 2026, ikinci seans):**
 > - **Veritabanı baştan sona tarandı** (`2026-09-18-veritabani-denetimi.sql`,

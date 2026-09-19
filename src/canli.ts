@@ -24,6 +24,20 @@ export type CanliTablo =
   | "yazdirma_kuyrugu"
   | "masa_mesguliyet";
 
+/**
+ * Tablonun yalnız bir bölümü haber edilsin diye konan süzgeçler. Sunucu
+ * tarafında uygulanıyor: eşleşmeyen satır cihaza hiç gönderilmiyor, yani
+ * yalnız ekranın işi değil, Supabase'in mesaj sayacı da azalıyor.
+ *
+ * Ölçüldü (19 Eyl 2026): 15 cihaz açıkken her mutfak fişi 15 ayrı mesaj
+ * oluyordu, oysa ekranlardaki fiş işareti yalnız hesap fişine bakıyor
+ * (`masa_ozetleri`, `tip = 'adisyon'`). Mutfak fişi ekranda hiçbir şeyi
+ * değiştirmiyor.
+ */
+const SUZGECLER: Partial<Record<CanliTablo, string>> = {
+  yazdirma_kuyrugu: "tip=eq.adisyon",
+};
+
 type Dinleyici = () => void;
 
 // Aynı tabloyu üç ekran birden dinleyebiliyor; her biri için ayrı bağlantı
@@ -43,7 +57,7 @@ function aboneOl(tablo: CanliTablo, dinleyici: Dinleyici) {
         .channel(`canli-${tablo}`)
         .on(
           "postgres_changes",
-          { event: "*", schema: "public", table: tablo },
+          { event: "*", schema: "public", table: tablo, filter: SUZGECLER[tablo] },
           () => dinleyiciler.get(tablo)?.forEach((d) => d())
         )
         .subscribe()

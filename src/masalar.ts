@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { hataysaFirlat, onbellekliGetir } from "./onbellek";
+import { hataysaFirlat, kopyadanGetir, onbellekliGetir } from "./onbellek";
 import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
 import { tanimTazele, tazeleyiciTanit } from "./tanimAbonelik";
 import { ayarlar } from "./isletmeAyarlari";
@@ -30,7 +30,32 @@ function masayaCevir(m: any): Masa {
 /** Ekranların canlı izleme anahtarı (bkz. tanimAbonelik.useTanim). */
 export const BOLGE_ANAHTAR = "bolgeler";
 
-export function bolgeleriGetir(): Promise<Bolge[]> {
+/**
+ * Tanımlar bu süre geçmeden sunucudan okunmuyor. Emniyet payı: canlı abonelik
+ * sessizce ölürse (bağlantı koptu, tarayıcı uyuttu) ekran kendini en geç bu
+ * sürede toparlıyor.
+ */
+export const SEYREK_TANIM = 5 * 60_000;
+
+/**
+ * Hesap açılmış ama tanımlarda olmayan masa var mı — başka bir cihazda yeni
+ * masa eklenip hemen kullanılmış demektir. Ekran o an tanımları tazeliyor,
+ * SEYREK_TANIM süresini beklemiyor.
+ */
+export function yabanciMasaVar(bolgeler: Bolge[], adisyonlar: Record<number, unknown>) {
+  const bilinen = new Set<number>();
+  for (const b of bolgeler) for (const m of b.masalar) bilinen.add(m.id);
+  return Object.keys(adisyonlar).some((id) => !bilinen.has(Number(id)));
+}
+
+/**
+ * `tazele` kapalıyken sunucu hiç yoklanmıyor, cihazdaki kopya veriliyor.
+ * Salon ve mobil masa ekranı sipariş haberiyle saniyede birkaç kez okuyor;
+ * masa tanımı siparişle değişmediği için o okumalarda kapalı çağrılıyor.
+ * Tanım gerçekten değişirse `tanimAbonelik` kopyayı tazeliyor.
+ */
+export function bolgeleriGetir(tazele = true): Promise<Bolge[]> {
+  if (!tazele) return kopyadanGetir(BOLGE_ANAHTAR, bolgeleriOku);
   return onbellekliGetir(BOLGE_ANAHTAR, bolgeleriOku, true);
 }
 

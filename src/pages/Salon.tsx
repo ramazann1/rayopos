@@ -30,7 +30,7 @@ import MasaPlani, { yerlesimiVar } from "../components/MasaPlani";
 import OnayModal from "../components/OnayModal";
 import HizliOde from "../components/HizliOde";
 import SiparisGecmisi from "../components/SiparisGecmisi";
-import { useTanimEtkisi } from "../tanimAbonelik";
+import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
 import MasasizSiparis from "../components/MasasizSiparis";
 import Kasa from "../components/Kasa";
 import { yetkiVar } from "../oturum";
@@ -57,7 +57,14 @@ import {
 import { servisSatirlari } from "../servis";
 import type { AdisyonVerisi, MasaOzeti, MasasizAdisyon } from "../adisyonlar";
 import { adisyonFisiYaz } from "../yazicilar";
-import { BOLGE_ANAHTAR, bolgeleriGetir, durgunMu, hedefOnayMesaji } from "../masalar";
+import {
+  BOLGE_ANAHTAR,
+  SEYREK_TANIM,
+  bolgeleriGetir,
+  durgunMu,
+  hedefOnayMesaji,
+  yabanciMasaVar,
+} from "../masalar";
 import type { Bolge, Masa } from "../types";
 
 type Acik = MasaOzeti;
@@ -194,6 +201,8 @@ export default function Salon() {
   // Masada başkası varsa girişten önce sorulan pencere.
   const [mesgulSorusu, setMesgulSorusu] = useState<{ masa: Masa; ad: string } | null>(null);
   const mesguliyetler = useMesguliyetler();
+  // Masa tanımları en son ne zaman sunucudan okundu (bkz. salonuOku).
+  const sonTanimOkumasi = useRef(0);
 
   const masayaGir = (masa: Masa) => {
     // Engel değil uyarı: kim olduğu söyleniyor, karar kişide kalıyor.
@@ -221,7 +230,13 @@ export default function Salon() {
   // düştü, köprü aldı, basıldı) ve ekran üç kez zıplıyordu. Aynısı başka bir
   // garson kalem eklediğinde de oluyordu. Ekranda zaten doğru masalar duruyor,
   // yeni veri gelince sessizce yerini alıyor.
-  const salonuOku = async (gorunur = false) => {
+  // `tanimlar`: masa/bölge tanımları sunucudan da okunsun mu. Sipariş
+  // haberiyle gelen tazelemelerde kapalı: tanım siparişle değişmiyor, her
+  // haberde 150 masanın listesini indirmenin karşılığı yok (ölçüm 19 Eyl
+  // 2026: adisyon başına ekrana 237 KB tanım, 12 KB gerçek veri). Tanımı
+  // gerçekten değişince `tanimAbonelik` kopyayı tazeliyor; altta ayrıca iki
+  // emniyet var (tanınmayan masa, SEYREK_TANIM süresi).
+  const salonuOku = async (gorunur = false, tanimlar = true) => {
     if (gorunur) setYukleniyor(true);
     setOkunamadi(false);
 
@@ -237,8 +252,11 @@ export default function Salon() {
     // boşuna saniyelerce bekliyor. Masa tanımları cihazdaki kopyadan anında
     // geliyor, salon hemen çiziliyor.
     const bos = Promise.resolve(undefined);
+    const tanimSuresiGecti = Date.now() - sonTanimOkumasi.current > SEYREK_TANIM;
+    const tanimlariOku = tanimlar || tanimSuresiGecti;
+    if (tanimlariOku) sonTanimOkumasi.current = Date.now();
     const [b, a, m] = await Promise.all([
-      dene(bolgeleriGetir()),
+      dene(bolgeleriGetir(tanimlariOku)),
       baglantiVar() ? dene(tumAdisyonlar()) : bos,
       baglantiVar() ? dene(masasizAdisyonlar()) : bos,
     ]);
@@ -259,6 +277,14 @@ export default function Salon() {
     setSeciliId((s) =>
       s === "tumu" || s === "masasiz" || b.some((x) => x.id === s) ? s : b[0]?.id ?? "tumu"
     );
+
+    // Tanımadığı masaya hesap açılmışsa tanımlar o an okunuyor: başka bir
+    // cihazda yeni masa eklenip hemen kullanılmış demektir, kasa onu
+    // süreyi beklemeden görmeli.
+    if (!tanimlariOku && a && yabanciMasaVar(b, a)) {
+      sonTanimOkumasi.current = Date.now();
+      tanimTazele(BOLGE_ANAHTAR);
+    }
   };
 
   useEffect(() => {
@@ -266,8 +292,21 @@ export default function Salon() {
   }, []);
 
   // Garson telefondan sipariş girdiğinde kasadaki salon kendiliğinden
-  // tazeleniyor; kasiyerin ekranı yenilemesi gerekmiyor.
-  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar", "yazdirma_kuyrugu"], salonuOku);
+  // tazeleniyor; kasiyerin ekranı yenilemesi gerekmiyor. Tanımlar bu yolda
+  // sunucudan okunmuyor (bkz. salonuOku).
+  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar", "yazdirma_kuyrugu"], () =>
+    salonuOku(false, false)
+  );
+
+  // Ekran arka plandan öne gelince tanımlar bir kez okunuyor: arkadayken
+  // canlı bağlantı kopmuş ve tanım haberi kaçmış olabilir.
+  useEffect(() => {
+    const oneGelince = () => {
+      if (document.visibilityState === "visible") salonuOku();
+    };
+    document.addEventListener("visibilitychange", oneGelince);
+    return () => document.removeEventListener("visibilitychange", oneGelince);
+  }, []);
 
   // Bağlantı geri gelince salon kendiliğinden doluyor: garson "Yeniden dene"ye
   // basmayı beklemesin, ekran zaten düzelmiş olsun. Kopukken ekranda masa
@@ -279,7 +318,7 @@ export default function Salon() {
   const { bekleyen } = useKuyruk();
   const oncekiBekleyen = useRef(bekleyen);
   useEffect(() => {
-    if (bekleyen !== oncekiBekleyen.current) salonuOku();
+    if (bekleyen !== oncekiBekleyen.current) salonuOku(false, false);
     oncekiBekleyen.current = bekleyen;
   }, [bekleyen]);
 

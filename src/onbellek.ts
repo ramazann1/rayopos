@@ -184,6 +184,23 @@ export async function onbellekliGetir<T>(
   }
 }
 
+/**
+ * Kopyayı verir, sunucuyu hiç yoklamaz.
+ *
+ * `onbellekliGetir` kopyayı beklemeden veriyor ama arkada her seferinde bir
+ * okuma başlatıyor. Sipariş haberiyle saniyede birkaç kez tekrarlanan
+ * okumalarda bunun karşılığı yok: masa tanımı siparişle değişmiyor.
+ * Ölçüldü (19 Eyl 2026) — bir adisyonun ömrü boyunca ekran başına 237 KB
+ * yalnız masa tanımlarına gidiyordu, gereken veri 12 KB'di.
+ *
+ * Kopya yoksa normal okumaya düşüyor; ilk açılışta yine sunucu okunuyor.
+ */
+export function kopyadanGetir<T>(anahtar: string, getirici: () => Promise<T>): Promise<T> {
+  const paket = onbellekOku<T>(anahtar);
+  if (paket) return Promise.resolve(paket.veri);
+  return onbellekliGetir(anahtar, getirici, true);
+}
+
 /** Kopyayı sunucudan tazeler — canlı abonelik menü değişince bunu çağırıyor. */
 export function onbellegiTazele<T>(anahtar: string, getirici: () => Promise<T>) {
   return sunucudanTazele(anahtar, getirici).catch(() => {});

@@ -18,7 +18,14 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { BOLGE_ANAHTAR, bolgeleriGetir, durgunMu, hedefOnayMesaji } from "../masalar";
+import {
+  BOLGE_ANAHTAR,
+  SEYREK_TANIM,
+  bolgeleriGetir,
+  durgunMu,
+  hedefOnayMesaji,
+  yabanciMasaVar,
+} from "../masalar";
 import {
   adisyonGetir,
   adisyonIkram,
@@ -46,7 +53,7 @@ import { hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
 import { baglantiHatasi, baglantiVar, sureSinirli, useBaglanti } from "../baglanti";
 import { useCanli } from "../canli";
 import { devralabilir, masayiDevral, useMesguliyetler } from "../mesguliyet";
-import { useTanimEtkisi } from "../tanimAbonelik";
+import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
 import { paraGoster } from "../para";
 import type { Bolge, Masa } from "../types";
 
@@ -131,16 +138,23 @@ export default function MobilMasalar() {
   // Liste sunucuda değişince ekran kendiliğinden yeniliyor.
   const [uyari, setUyari] = useState<string | null>(null);
   const [, setTik] = useState(0);
+  // Masa tanımları en son ne zaman sunucudan okundu (bkz. oku).
+  const sonTanimOkumasi = useRef(0);
 
-  const oku = async () => {
+  // `tanimlar`: masa/bölge tanımları sunucudan da okunsun mu. Kasadaki Salon
+  // ile aynı kural — sipariş haberiyle gelen tazelemelerde kapalı, çünkü tanım
+  // siparişle değişmiyor. Telefonda ayrıca önemli: garsonun hattı sayılıyor.
+  const oku = async (tanimlar = true) => {
     setYukleniyor(true);
     setOkunamadi(false);
 
     // Masa tanımları cihazdaki kopyadan da gelebiliyor; adisyonlar gelemiyor
     // (bir dakika öncesinin dolu/boş bilgisi yanlış bilgidir).
     const dene = <T,>(is: Promise<T>) => sureSinirli(is.catch(() => undefined));
+    const tanimlariOku = tanimlar || Date.now() - sonTanimOkumasi.current > SEYREK_TANIM;
+    if (tanimlariOku) sonTanimOkumasi.current = Date.now();
     const [b, a] = await Promise.all([
-      dene(bolgeleriGetir()),
+      dene(bolgeleriGetir(tanimlariOku)),
       baglantiVar() ? dene(tumAdisyonlar()) : Promise.resolve(undefined),
     ]);
     setYukleniyor(false);
@@ -155,6 +169,13 @@ export default function MobilMasalar() {
     // görünsün, aynı masaya ikinci hesap açılmasın.
     setAdisyonlar({ ...(baglantiVar() ? {} : kopyaMasalari()), ...(a ?? {}), ...bekleyenMasalar() });
     setSeciliBolge((s) => (b.some((x) => x.id === s) ? s : b[0]?.id ?? null));
+
+    // Tanımadığı masaya hesap açılmışsa tanımlar o an okunuyor: başka bir
+    // cihazda yeni masa eklenip hemen kullanılmış demektir.
+    if (!tanimlariOku && a && yabanciMasaVar(b, a)) {
+      sonTanimOkumasi.current = Date.now();
+      tanimTazele(BOLGE_ANAHTAR);
+    }
   };
 
   useEffect(() => {
@@ -168,14 +189,25 @@ export default function MobilMasalar() {
   }, []);
 
   // Başka bir cihaz masaya sipariş girdiğinde ekran kendini tazeliyor: garson
-  // telefonda, kasiyer bilgisayarda aynı masayı görüyor.
-  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar", "yazdirma_kuyrugu"], oku);
+  // telefonda, kasiyer bilgisayarda aynı masayı görüyor. Tanımlar bu yolda
+  // sunucudan okunmuyor (bkz. oku).
+  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar", "yazdirma_kuyrugu"], () => oku(false));
+
+  // Telefon cebe girip çıkınca ekran öne geldiğinde tanımlar bir kez okunuyor:
+  // arkadayken canlı bağlantı kopmuş ve tanım haberi kaçmış olabilir.
+  useEffect(() => {
+    const oneGelince = () => {
+      if (document.visibilityState === "visible") oku();
+    };
+    document.addEventListener("visibilitychange", oneGelince);
+    return () => document.removeEventListener("visibilitychange", oneGelince);
+  }, []);
 
   // Kuyruk boşaldıkça ve bağlantı geri geldikçe ekran kendini tazeliyor.
   const { bekleyen } = useKuyruk();
   const oncekiBekleyen = useRef(bekleyen);
   useEffect(() => {
-    if (bekleyen !== oncekiBekleyen.current) oku();
+    if (bekleyen !== oncekiBekleyen.current) oku(false);
     oncekiBekleyen.current = bekleyen;
   }, [bekleyen]);
 
@@ -194,7 +226,7 @@ export default function MobilMasalar() {
     return (
       <div className="m-bos">
         <p>Masalar yüklenemedi.</p>
-        <button className="m-dugme" onClick={oku}>
+        <button className="m-dugme" onClick={() => oku()}>
           <RotateCw size={18} /> Yeniden dene
         </button>
       </div>
@@ -344,7 +376,7 @@ export default function MobilMasalar() {
     <>
       <header className="m-baslik">
         <h1>Masalar</h1>
-        <button className="m-ikon-dugme" onClick={oku} aria-label="Yenile">
+        <button className="m-ikon-dugme" onClick={() => oku()} aria-label="Yenile">
           <RotateCw size={20} />
         </button>
       </header>
