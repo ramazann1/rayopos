@@ -49,7 +49,7 @@ export default function MobilSatis() {
   // Gün içinde satış oldukça sayılar kendiliğinden ilerliyor. Sakin tempoda:
   // bakma ekranı, hesap ağır ve rakamın gözün önünde zıplaması rahatsız eder.
   // Ekran arkadayken (telefon cepte) hiç sorgu yapılmıyor.
-  useCanli(["adisyonlar", "tahsilatlar", "adisyon_kalemleri"], () => oku(true), SAKIN);
+  useCanli(["masa_degisim"], () => oku(true), SAKIN);
 
   // Bağlantı geri gelince ekran kendini tazeliyor; işletmeci "yenile"ye
   // basmayı beklemesin.

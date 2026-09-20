@@ -36,7 +36,7 @@ import Kasa from "../components/Kasa";
 import { yetkiVar } from "../oturum";
 import { ayarlar } from "../isletmeAyarlari";
 import { baglantiHatasi, baglantiVar, sureSinirli, useBaglanti } from "../baglanti";
-import { useCanli } from "../canli";
+import { SINYAL, useCanli } from "../canli";
 import { devralabilir, masayiDevral, useMesguliyetler } from "../mesguliyet";
 import {
   adisyonGetir,
@@ -294,9 +294,7 @@ export default function Salon() {
   // Garson telefondan sipariş girdiğinde kasadaki salon kendiliğinden
   // tazeleniyor; kasiyerin ekranı yenilemesi gerekmiyor. Tanımlar bu yolda
   // sunucudan okunmuyor (bkz. salonuOku).
-  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar", "yazdirma_kuyrugu"], () =>
-    salonuOku(false, false)
-  );
+  useCanli(["masa_degisim"], () => salonuOku(false, false), SINYAL);
 
   // Ekran arka plandan öne gelince tanımlar bir kez okunuyor: arkadayken
   // canlı bağlantı kopmuş ve tanım haberi kaçmış olabilir.

@@ -59,7 +59,7 @@ import type { KuyrukIsi } from "../kuyruk";
 import { kdvDokumu } from "../kdv";
 import { adetGoster, paraGoster } from "../para";
 import { useMasayiTut } from "../mesguliyet";
-import { useCanli } from "../canli";
+import { SINYAL, useCanli } from "../canli";
 import { ayarlar } from "../isletmeAyarlari";
 import type { IndirimKaynagi } from "../indirimler";
 import type {
@@ -362,7 +362,7 @@ export default function Siparis() {
   // değişiklik varsa yereldeki hâl korunuyor, sunucudan yalnız yeni kalemler
   // biniyor. Kuyrukta bekleyen kayıt varsa hiç dokunulmuyor: o sepet
   // sunucudakinden yeni.
-  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar"], () => {
+  useCanli(["masa_degisim"], () => {
     if (!baglantiVar() || bekleyenKayit(hedef)) return;
     (masasiz ? masasizGetir(adisyonId) : adisyonGetir(masaId)).then((veri) => {
       setSepet((s) => {
@@ -387,7 +387,7 @@ export default function Siparis() {
         return sepetiTazele(veri.sepet, s, yerelDegisiklik);
       });
     });
-  });
+  }, SINYAL);
 
   // Şeritte ana kategoriler durur; alt kategoriler satırdaki okla açılır.
   // Üstü satışta gizliyse alt kategori şeride ana kategori gibi girer.

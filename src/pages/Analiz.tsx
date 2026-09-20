@@ -150,7 +150,7 @@ export default function Analiz() {
   // ekranı olduğu için sakin hızda: yoğun saatte her kaleme sorgu atılmıyor,
   // okunan sayı da altından kaymıyor.
   useCanli(
-    ["adisyonlar", "adisyon_kalemleri", "tahsilatlar", "turlar", "masraflar"],
+    ["masa_degisim", "masraflar"],
     () => {
       sessizTazeleme.current = true;
       setTazele((t) => t + 1);

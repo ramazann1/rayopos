@@ -58,7 +58,7 @@ import { kdvDokumu } from "../kdv";
 import { adisyonFisiYaz } from "../yazicilar";
 import { bekleyenKayit, kuyrugaEkle } from "../kuyruk";
 import { useMasayiTut } from "../mesguliyet";
-import { useCanli } from "../canli";
+import { SINYAL, useCanli } from "../canli";
 import { baglantiHatasi, baglantiVar } from "../baglanti";
 import { kilitKaldir, kilitKur } from "../cikisKilidi";
 import { ayarlar } from "../isletmeAyarlari";
@@ -254,7 +254,7 @@ export default function MobilSiparis() {
   // garson görüyor. Kaydedilmemiş kalemler korunuyor (sepetiTazele), çevrimdışı
   // ya da kuyrukta bekleyen kayıt varsa hiç dokunulmuyor — o sepet sunucununkinden
   // yeni, üstüne bayat veri binmemeli.
-  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar"], () => {
+  useCanli(["masa_degisim"], () => {
     if (!baglantiVar() || bekleyenKayit({ tip: "masa", masaId })) return;
     adisyonGetir(masaId).then((veri) => {
       setSepet((s) => {
@@ -269,7 +269,7 @@ export default function MobilSiparis() {
       setIndirim(veri.indirim);
       setServis({ kuverUygula: veri.kuverUygula, garsoniyeUygula: veri.garsoniyeUygula });
     });
-  });
+  }, SINYAL);
 
   // KDV oranı satış anında kaleme yazılıyor: ürünün grubu sonradan değişse bile
   // kesilmiş adisyonun dökümü oynamasın.

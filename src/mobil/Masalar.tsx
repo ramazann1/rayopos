@@ -51,7 +51,7 @@ import HizliOde from "../components/HizliOde";
 import { bekleyenMasalar, cevrimdisiHesap, kopyaMasalari, kuyrugaEkle, useKuyruk } from "../kuyruk";
 import { hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
 import { baglantiHatasi, baglantiVar, sureSinirli, useBaglanti } from "../baglanti";
-import { useCanli } from "../canli";
+import { SINYAL, useCanli } from "../canli";
 import { devralabilir, masayiDevral, useMesguliyetler } from "../mesguliyet";
 import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
 import { paraGoster } from "../para";
@@ -191,7 +191,7 @@ export default function MobilMasalar() {
   // Başka bir cihaz masaya sipariş girdiğinde ekran kendini tazeliyor: garson
   // telefonda, kasiyer bilgisayarda aynı masayı görüyor. Tanımlar bu yolda
   // sunucudan okunmuyor (bkz. oku).
-  useCanli(["adisyonlar", "adisyon_kalemleri", "tahsilatlar", "yazdirma_kuyrugu"], () => oku(false));
+  useCanli(["masa_degisim"], () => oku(false), SINYAL);
 
   // Telefon cebe girip çıkınca ekran öne geldiğinde tanımlar bir kez okunuyor:
   // arkadayken canlı bağlantı kopmuş ve tanım haberi kaçmış olabilir.
