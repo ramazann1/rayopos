@@ -102,11 +102,23 @@
 >    tek seferde gönderiliyor.)*
 > 6. **STOK MODÜLÜ — sıradaki büyük iş.** 22 Eyl 2026'da görsel maddelerin
 >    tamamı ertelenince (aşağıdaki 1a ve 1c) sıra buraya geldi; kapsam ve
->    alınmış kararlar aşağıda 2. maddede duruyor. **Plan yazmadan önce Adisyo'da
->    Stok turu yapılacak** — bu modülün derin turu hiç yapılmadı, turu atlayıp
->    plan yazmak tahminle iş çıkarır. Tur beraber, canlı, ölçerek.
+>    alınmış kararlar aşağıda 2. maddede duruyor. **Adisyo turu tamamlandı:**
+>    1 Eyl 2026 (ilk tur) + 22 Eyl 2026 (her ekran ve her modal, ikinci tur);
+>    bulgular pos-yol-haritasi.md "13. STOK MODÜLÜ — DERİN TUR" ve "12.7".
+>    Sıradaki adım: **veri modeli + Malzemeler ekranı.**
 >
 > **Yapılanlar (22 Eyl 2026):**
+> - **Adisyo stok modülü ikinci turu — her ekran, her modal.** Chrome'la canlı
+>   panelde gezildi, hiçbir şey değiştirilmedi. Bulgular pos-yol-haritasi.md
+>   "12.7 İkinci tur"da. Öne çıkanlar: fire ayrı ve ücretli modül · maliyet
+>   zinciri tamamen boş (Birim Tutarı otuz malzemede de ₺0) · kritik seviye
+>   tek tek girildiği için 30 malzemeden yalnız birinde dolu · "Birimler"
+>   aslında porsiyon listesi (AD ve Adet iki ayrı kayıt, çevrim yok) · stok
+>   miktarı ürün kartından defter kaydı olmadan değiştirilebiliyor.
+>   **Ramazan'ın düzeltmesi turu kurtardı:** eksi stoklar Adisyo'nun kusuru
+>   değil, Parametreler'deki "Eksi stoğa izin verilsin" anahtarını kendisi
+>   açtığı için. Yanlış teşhis zorlayıcı bir engel yazmamıza yol açacaktı;
+>   doğrusu ayar. Bu turdan üç tasarım kararı çıktı (aşağıda 2. madde).
 > - **Satış kaleminde kategori saklanıyor** (`sql/2026-09-22-kalemde-kategori.sql`).
 >   `adisyon_kalemleri` ürünün adını ve fiyatını satış anında zaten kopyalıyordu;
 >   kategori listede yoktu, rapor onu `urun_id` üstünden menüye soruyordu. Menü
@@ -1895,6 +1907,26 @@
 >    **Miktarlar en küçük birimde tam sayı** tutulur (gram/mililitre/adet) —
 >    para kuruşunda yaptığımızın aynısı, float yuvarlama hatası çıkmasın diye.
 >    Ekranda kg gösterilir, veritabanında gram durur.
+>    **İkinci Adisyo turu yapıldı (22 Eyl 2026)** — bütün ekranlar, modallar ve
+>    süzgeçler tek tek gezildi; bulgular pos-yol-haritasi.md "12.7 İkinci tur".
+>    **Karar (22 Eyl 2026): arayüz Adisyo'nun kopyası olmayacak.** Adisyo'nun
+>    stok ekranları gri tablolardan ibaret — ikonsuz satırlar, üst üste binen
+>    modallar, yalnız sayı gösteren raporlar. Oradan **çözülen problemler**
+>    alınır (giriş/sayım ikilisi, anlık "yeni miktar", eski→değişim→yeni
+>    defteri, reçete tipi üçlüsü, iç içe reçete), **çözümün görüntüsü
+>    alınmaz.** RayoPOS'un stok modülü kendi ekran dilimizle kurulur: her
+>    satırda ve her başlıkta lucide-react ikonu, mercan vurgu, kart düzeni,
+>    Bilgi kutusuyla açıklama, okunur punto. Tablo değil **kart + liste**
+>    karışımı düşünülecek; masaüstü ve mobil aynı bileşeni açacak.
+>    **Karar (22 Eyl 2026): eksi stok zorlama değil ayar.** Adisyo'da
+>    Parametreler → "Eksi stoğa izin verilsin" anahtarı var ve eGZOZ'da açık;
+>    Ramazan bilerek açmış (malzeme girişi geç kalabiliyor, satış durursa
+>    işletme duruyor). Bizde de varsayılan izin verilir, isteyen işletme
+>    kapatır. Eksi stok her hâlükârda görünür olur (kırmızı) — engel değil,
+>    uyarı. **Fire bizde ücretsiz** (Adisyo ayrı satıyor). **Kritik seviye
+>    toplu girilebilir** (Adisyo'da tek tek girildiği için 30 malzemenin
+>    yalnız birinde dolu). **Stok yalnız hareketle değişir** — Adisyo'daki
+>    gibi ürün kartından elle düzeltme yolu olmayacak.
 > 3. **Gelişmiş raporlar** — saatlik ciro, personel performansı, karşılaştırmalı analiz
 > 4. **Cari / veresiye modülü**
 > 5. **Masasız adisyonun çevrimdışı açılması** — offline'ın açık kalan tek ucu

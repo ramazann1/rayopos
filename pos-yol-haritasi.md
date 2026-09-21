@@ -1325,3 +1325,75 @@ hesaplama, eski→değişim→yeni defteri, kritik seviye filtresi, iç içe re�
 alış fiyatı ve ağırlıklı ortalama maliyet, zayi nedeni seçmeli liste,
 stok eksiye düşerken uyarı.
 
+
+### 12.7 İkinci tur — her ekran ve her modal (22 Eyl 2026)
+Stok modülünün tamamı yeniden gezildi; bu kez modallar, süzgeçler ve ayar
+ekranları dahil. Canlı işletme, hiçbir şey değiştirilmedi.
+
+**Gezilenler:** Stok Listesi (tarih/tip süzgeci, Not, Detay) · Stok Giriş
+İşlemleri · Stok Sayım İşlemleri · Zayi İşlemleri (+ *Zayi Ekle* ve *Sorumlu
+Kişiler* modalları) · Stok Durum Raporu (+ filtre çekmecesi, hareket defteri)
+· Fire Raporu · Tanımlamalar → Birimler (+ *Birim Tanımla* modalı) · Ürün
+kartı (reçete + stok bölümü) · Restaurant Ayarları → Parametreler.
+
+**Yeni bulgular:**
+- **Fire ayrı ve ücretli bir modül.** Ekran kapalı geliyor: "ücretlendirme
+  için satış hattımızla iletişime geçin". Fire = çiğ/pişmiş kayıp oranı,
+  zayiden farklı; gün başı–gün sonu çiğ ve pişmiş miktar girilerek hesaplanıyor
+  ve *Gün başı-gün sonu manuel yapılsın* parametresine bağlı. Stok Listesi'nde
+  "Fire" diye üçüncü bir işlem tipi görünüyor ama süzgeçte yok (Hepsi / Stok
+  Sayımı / Stok Girişi). **Bizde fire ücretsiz olacak.**
+- **Maliyet zinciri tamamen boş.** Stok Durum Raporu'nda *Birim Tutarı* ve
+  *Toplam Tutar* otuz malzemenin hepsinde ₺0. Alış fiyatı girilecek yer
+  olmadığı için kârlılık hiç hesaplanamıyor. Alış fiyatı + ağırlıklı ortalama
+  maliyet kararımızın en somut gerekçesi bu.
+- **Kritik seviye pratikte ölü.** 30+ malzemeden yalnız birinde girilmiş
+  (Tütün, 5 Kg). Sebep: kritik seviye yalnız **ürün kartından tek tek**
+  giriliyor, stok ekranlarında gösteriliyor ama düzenlenemiyor. **Bizde toplu
+  girilebilmeli.**
+- **Birim = porsiyon karmaşası, kanıtlandı.** "Birimler" ekranının gerçek adı
+  *Porsiyon/Birim Yönetimi*: Tam, Yarım, Bir buçuk, **AD**, **Adet**, Kg aynı
+  listede — "AD" ve "Adet" iki ayrı kayıt. *Birim Tanımla* modalında **tek alan
+  var: Birim Adı.** Çevrim, temel birim, ondalık kuralı yok; Kg ile g arasında
+  bağ kurulamıyor.
+- **Zayi sorumluları personel değil.** *Sorumlu Kişiler* modalı yalnız serbest
+  isim listesi; sistemdeki kullanıcılarla bağı yok. *Zayi Ekle* modalı: Ürün
+  Ara · Miktar · Maliyet tutarı (elle) · Zayi Tarihi · Zayi nedeni (serbest
+  metin) · Sorumlu Kişi · Satış Kanalı (sabit).
+- **Stok miktarı ürün kartından elle değiştirilebiliyor** — hareket kaydı
+  oluşturmadan. Defterin yanında ikinci, denetlenmeyen bir yol. **Bizde stok
+  yalnız hareketle değişir.**
+- **Toplam satırı birimleri karıştırıyor:** "Toplam Stok Girişi: 5 Adet" —
+  Kg ile Tam'ı toplayıp "Adet" diyor.
+- Süzgeçler **çip** olarak duruyor (*Değişiklikleri gör*, *Kritik seviyenin
+  altındakileri göster*); seçilince yalnız eşleşen satırlar kalıyor. Alınacak
+  desen.
+
+**Eksi stok — DÜZELTME.** İlk izlenim "Adisyo eksiye düşüşü engellemiyor"
+şeklindeydi; yanlış. **Restaurant Ayarları → Parametreler → "Eksi stoğa izin
+verilsin"** anahtarı var ("Girilen siparişteki ürünlerin stoğunun eksiye
+düşmesine izin verir") ve eGZOZ'da **açık**. Yani işletmedeki eksi stoklar
+(TEREYAĞI −157,997 · MAYDONOZ −178,6 · KREMA −346,44) kusur değil, Ramazan'ın
+bilinçli tercihi: malzeme girişi her zaman zamanında yapılamıyor, satış
+durursa işletme duruyor.
+**Kararımız:** RayoPOS'da da bu bir **ayar** olacak, zorlama değil. Varsayılan
+izin verilir; isteyen işletme kapatır, o zaman reçetesi karşılanmayan ürün
+satılamaz. Eksi stok her hâlükârda **görünür** olur (kırmızı) — engel değil,
+uyarı. 12.6'daki "stok eksiye düşerken uyarı" maddesi bu şekilde okunmalı.
+**Ders:** Adisyo'da bir davranış yokmuş gibi görünürse önce Parametreler'e
+bakılır — kırka yakın anahtar var ve çoğu davranışı kökten değiştiriyor.
+
+**Doğrulananlar (1 Eyl turundan):** giriş **ekliyor** (−346,44 + 5 = −341,44,
+anında hesaplanıyor) · sayım **yerine yazıyor** · ikisi aynı tablo, farkı
+başlık ve sütun adı · reçete tipi üçlüsü Normal / Çıkarılabilir / Opsiyonel ·
+iç içe reçete gerçek (KÜLBASTI SOS hem hammadde hem yedi satırlık reçete) ·
+reçeteli üründe Maliyet Tutarı kilitleniyor ("Maliyet reçeteden otomatik
+hesaplanır") · hareket defteri eski → değişim → yeni · otomatik düşüm **satış
+anında**, siparişi giren garsonun adıyla.
+
+**Sonuç:** Adisyo'nun stok modülü bir **miktar sayacı**, maliyet sistemi değil.
+Alış fiyatı yok → maliyet yok → kârlılık yok. Arayüz tarafında da alınacak bir
+şey yok: gri tablolar, ikonsuz satırlar, üst üste binen modallar (Birim Tanımla
+ile ÖKC penceresi aynı anda açık kaldı). **RayoPOS'un stok modülü Adisyo'nun
+kopyası olmayacak** — kendi ekran dilimizle, ikonlu ve modern kurulacak;
+Adisyo'dan yalnız *çözdüğü problemler* alınacak.
