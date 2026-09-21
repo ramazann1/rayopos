@@ -1,7 +1,7 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (21 Eyl 2026 güncellendi)
+## 0. SIRADAKİ İŞ (22 Eyl 2026 güncellendi)
 
 > **Sıra (21 Eyl 2026 seans sonu):**
 > 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
@@ -21,7 +21,7 @@
 >    - **Alan dolmaya yaklaşınca:** **Supabase Pro, 25 $/ay.** Getirdiği:
 >      8 GB (12 yıl yeter), **otomatik günlük yedek 7 gün saklamalı** (yedek
 >      işini biz yazmıyoruz, konu kapanıyor), **mesaj kotası 2 M → 5 M**
->      (9. maddedeki %52-83 kaygısı üçte birine iniyor). Harcama tavanı
+>      (8. maddedeki %52-83 kaygısı üçte birine iniyor). Harcama tavanı
 >      varsayılan açık — sürpriz fatura yok. Saniye saniye geri sarma (PITR)
 >      100 $/ay, ALINMAYACAK.
 >    - **30-40 işletmede (fatura ~200-300 $/ay):** **kendi sunucuna taşı.**
@@ -52,6 +52,21 @@
 >      için ayrı adımda kopyalanır. Kopya alındıktan sonra eskiye yazılan
 >      sipariş kaybolacağından **geçiş cafe kapalıyken** yapılır.
 >    **Reddedilen çözümler:**
+>    - *Sipariş ekranı yalnız kendi masasını dinlesin* — **ERTELENDİ**
+>      (Ramazan kararı, 22 Eyl 2026). 21 Eyl'de sıranın 3. maddesiydi:
+>      garsonun telefonu bugün bütün masaların sinyalini alıyor, `adisyon_id`
+>      süzgeciyle sunucu tarafında elenebilirdi. 100 işletmede faturanın %53'ü
+>      canlı mesaj (312 $/ay), mesajı %60-70 azaltmak 591 → ~390 $ yapıyordu.
+>      **Neden ertelendi:** "İleride kendi sunucumuzu kullanacağız zaten" —
+>      kendi sunucumuzda mesaj başına ücret diye bir kavram kalmıyor, tasarruf
+>      da anlamını yitiriyor. **Tek cafede bugün kuruş faydası yok.**
+>      **Not:** kendi sunucu eşiği 30-40 işletme; o eşiğe kadar geçen sürede
+>      mesaj hâlâ paralı. Ürünü satmaya başlayıp Supabase'de kalınacaksa bu
+>      madde geri gelir. Adisyo karşılaştırması ölçüldü ve **bu maddeyi
+>      elemiyor**: onlarda da aynı israf var (bir olayda 4 dolu mesaj,
+>      metotlar `...ToRestaurant` yani bütün restorana yayın), ama hub'ı
+>      kendileri çalıştırdığı için mesaj onlara bedava. Mesaj ekonomisinde
+>      zaten öndeyiz — bizim tek sinyalimiz olay başına 1 mesaj.
 >    - *Veritabanı doluluğunu Bağlantı Durumu ekranında göstermek* (21 Eyl).
 >      Ramazan: "başka işletmeler bunu neden bilsin, bizim barındırma
 >      sorunumuz onların ekranında işi yok."
@@ -62,49 +77,27 @@
 >    - *3 ay detay + aylık ürün özeti* (21 Eyl'de önerildi, aynı gün elendi).
 >      Rakip 3,7 yıl tutarken detay silmek satışta eksik olarak karşımıza
 >      çıkar; üstelik kurtardığı para faturanın %7'si.
-> 2. **Sipariş ekranı yalnız kendi masasını dinlesin** — ölçekte faturanın
->    asıl kaldıracı (21 Eyl Adisyo turuyla doğrulandı, önceki listede 10.
->    maddede "isteğe bağlı, acil değil" notuyla duruyordu).
->    Bugün garsonun telefonu **bütün masaların** sinyalini alıyor;
->    `adisyon_id` süzgeciyle sunucu tarafında elenebilir.
->    **Neden yukarı alındı:** 100 işletme faturasının %53'ü canlı mesaj
->    (312 $/ay). Mesajı %60-70 azaltmak faturayı 591 → ~390 $'a, işletme
->    başına 6 → 3,9 $'a indiriyor. Tek işletmede fark etmez, ürünü satmaya
->    başlayınca en pahalı kalem burası. Kendi sunucumuza geçsek bile işe
->    yarıyor — orada parayı değil makineyi rahatlatıyor.
->    **Adisyo karşılaştırması (ÖLÇÜLDÜ, 21 Eyl — ilk çıkarım yanlıştı):**
->    Adisyo'da da **aynı israf var**, hatta daha fazlası. WebSocket mesajları
->    sayıldı: bir sekme B5'in sipariş ekranında beklerken başka sekmeden L1'e
->    ürün eklendi; B5'e L1 hakkında **dört dolu mesaj** geldi
->    (`SendOrderDataToRestaurant`, `SendTableOrderDataToRestaurant`,
->    `SendKitchenOrderDataToRestaurant`, `GetPrintResult`). Metot adları
->    zaten `...ToRestaurant` — masaya/garsona değil, bütün restorana yayın.
->    Boştayken yalnız `{"type":6}` canlılık sinyali geliyor (37 sn'de 2).
->    **Yani bu madde Adisyo'yu yakalamak için değil.** Onlar hub'ı kendileri
->    çalıştırdığı için mesaj bedava; biz mesaj başına ödüyoruz. Üstelik
->    mesaj ekonomisinde **onlardan öndeyiz**: bizim tek sinyalimiz olay başına
->    1 mesaj, onlarınki 4 dolu paket. Gerekçe rekabet değil, kendi faturamız.
-> 3. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
+> 2. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
 >    10:33: "belgeler kayıt otoritesine iletildi"). Seans başında sor/WHOIS'e
 >    bak; gelince Cloudflare Pages'te özel alan adı olarak bağlanır. Erişim
 >    sorunu tekrarlarsa geçici olarak `pos.egzozcafe.com` bağlanabilir
 >    (ikisi de aynı Cloudflare hesabında).
-> 4. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
+> 3. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
 >    Kod elendi: canlıdaki derleme, `_headers` ile birlikte temiz tarayıcıda
 >    sorunsuz açılıyor.
-> 5. **Artık tablolar silinsin mi** — `adisyonlar_eski` (8 satır, `isletme_id`
+> 4. **Artık tablolar silinsin mi** — `adisyonlar_eski` (8 satır, `isletme_id`
 >    bile yok) ve `kayit_denemeleri` (2 satır). İkisinde de RLS açık ama tek
 >    kural yok. Denetimde çıktı, Ramazan kararı bekliyor.
-> 6. **Dizinsiz yabancı anahtarlar** — 48 sütunda yabancı anahtar var, dizin
+> 5. **Dizinsiz yabancı anahtarlar** — 48 sütunda yabancı anahtar var, dizin
 >    yok. Hata değil, hız işi; istasyon ekranındaki gibi **ölçerek** bakılacak,
 >    tahminle indeks eklenmeyecek.
-> 7. **`eposta_hesabi` sınırlanmalı mı** — giriş yapmadan çağrılabiliyor
+> 6. **`eposta_hesabi` sınırlanmalı mı** — giriş yapmadan çağrılabiliyor
 >    (zorunlu, giriş ekranı kullanıyor) ve e-postayı bilen kişi telefon
 >    numarasını öğrenebiliyor, üstelik bütün işletmelerde arıyor. Toplu liste
 >    çekilemediği için düşük öncelikli; çözüm `istek_ip` + deneme sayacı.
-> 8. **Arayüzü personel kaydı seçsin** (Ramazan kararı, 19 Eyl 2026). Bugün
+> 7. **Arayüzü personel kaydı seçsin** (Ramazan kararı, 19 Eyl 2026). Bugün
 >    mobil mi masaüstü mü kararını yalnız ekran genişliği veriyor
 >    (`src/mobil/mobilTercih.ts`, 820px). Olması gereken: **hangi personelin
 >    hangi arayüzü açacağına işletmeci karar verir** — personel kaydında
@@ -112,7 +105,7 @@
 >    "ekrana göre", yani bugünkü davranış. Gerekçe: garson ile kasiyerin işi
 >    ayrı; cihaz ölçüsü bu ayrımı temsil etmiyor. Mağaza uygulaması gündeme
 >    gelirse konu yeniden açılacak.
-> 9. **Kaydetmeyi tek isteğe indirmek — ACİLİYETİ DÜŞTÜ** (21 Eyl ölçümü).
+> 8. **Kaydetmeyi tek isteğe indirmek — ACİLİYETİ DÜŞTÜ** (21 Eyl ölçümü).
 >    Bizde bir kayıt 4-5 ayrı istek atıyor. Ölçüldü: **Adisyo da 3 istek
 >    atıyor** (`SaveOrder`, `GetOrderForDetail`, `SaveGmp3OrderPrinterLocked`).
 >    Yani bu kalemde rakipten geride değiliz. Mesaj kazancı da yok (800 ms
@@ -122,7 +115,7 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 10. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 9. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
 >
 > **Yapılanlar (21 Eyl 2026):**
 > - **Canlıda fiş yazdırma çalıştı.** Kasada gerçek yazıcıyla denendi,
@@ -146,7 +139,7 @@
 >   ödemiyorlar. Boşta 85 saniyede sıfır istek, sepete ürün eklerken sıfır
 >   istek, KAYDET'te üç istek. Sonuç: **yedek + arşivleme işi listeden
 >   çıktı**, yerine altyapı eşikleri kondu (1. madde) ve mesaj
->   optimizasyonu 10. sıradan 3. sıraya çıktı.
+>   optimizasyonu 3. sıraya çıktı (22 Eyl'de ertelendi, bkz. 1. madde).
 > - **Tek sinyal kuruldu** (`sql/2026-09-20-tek-sinyal.sql`). `masa_degisim`
 >   tablosu — adisyon kimliği + değişim anı, veri taşımıyor. Adisyon, tur,
 >   kalem, tahsilat ve hesap fişi üstünde **ifade başına** çalışan
