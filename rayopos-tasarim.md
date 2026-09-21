@@ -87,25 +87,10 @@
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
 >    Kod elendi: canlıdaki derleme, `_headers` ile birlikte temiz tarayıcıda
 >    sorunsuz açılıyor.
-> 4. **Artık tablolar silinsin mi** — `adisyonlar_eski` (8 satır, `isletme_id`
->    bile yok) ve `kayit_denemeleri` (2 satır). İkisinde de RLS açık ama tek
->    kural yok. Denetimde çıktı, Ramazan kararı bekliyor.
-> 5. **Dizinsiz yabancı anahtarlar** — 48 sütunda yabancı anahtar var, dizin
+> 4. **Dizinsiz yabancı anahtarlar** — 48 sütunda yabancı anahtar var, dizin
 >    yok. Hata değil, hız işi; istasyon ekranındaki gibi **ölçerek** bakılacak,
 >    tahminle indeks eklenmeyecek.
-> 6. **`eposta_hesabi` sınırlanmalı mı** — giriş yapmadan çağrılabiliyor
->    (zorunlu, giriş ekranı kullanıyor) ve e-postayı bilen kişi telefon
->    numarasını öğrenebiliyor, üstelik bütün işletmelerde arıyor. Toplu liste
->    çekilemediği için düşük öncelikli; çözüm `istek_ip` + deneme sayacı.
-> 7. **Arayüzü personel kaydı seçsin** (Ramazan kararı, 19 Eyl 2026). Bugün
->    mobil mi masaüstü mü kararını yalnız ekran genişliği veriyor
->    (`src/mobil/mobilTercih.ts`, 820px). Olması gereken: **hangi personelin
->    hangi arayüzü açacağına işletmeci karar verir** — personel kaydında
->    "Arayüz: Ekrana göre / Her zaman mobil / Her zaman masaüstü". Varsayılan
->    "ekrana göre", yani bugünkü davranış. Gerekçe: garson ile kasiyerin işi
->    ayrı; cihaz ölçüsü bu ayrımı temsil etmiyor. Mağaza uygulaması gündeme
->    gelirse konu yeniden açılacak.
-> 8. **Kaydetmeyi tek isteğe indirmek — ACİLİYETİ DÜŞTÜ** (21 Eyl ölçümü).
+> 5. **Kaydetmeyi tek isteğe indirmek — ACİLİYETİ DÜŞTÜ** (21 Eyl ölçümü).
 >    Bizde bir kayıt 4-5 ayrı istek atıyor. Ölçüldü: **Adisyo da 3 istek
 >    atıyor** (`SaveOrder`, `GetOrderForDetail`, `SaveGmp3OrderPrinterLocked`).
 >    Yani bu kalemde rakipten geride değiliz. Mesaj kazancı da yok (800 ms
@@ -115,7 +100,66 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 9. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 6. **STOK MODÜLÜ — sıradaki büyük iş.** 22 Eyl 2026'da görsel maddelerin
+>    tamamı ertelenince (aşağıdaki 1a ve 1c) sıra buraya geldi; kapsam ve
+>    alınmış kararlar aşağıda 2. maddede duruyor. **Plan yazmadan önce Adisyo'da
+>    Stok turu yapılacak** — bu modülün derin turu hiç yapılmadı, turu atlayıp
+>    plan yazmak tahminle iş çıkarır. Tur beraber, canlı, ölçerek.
+>
+> **Yapılanlar (22 Eyl 2026):**
+> - **Satış kaleminde kategori saklanıyor** (`sql/2026-09-22-kalemde-kategori.sql`).
+>   `adisyon_kalemleri` ürünün adını ve fiyatını satış anında zaten kopyalıyordu;
+>   kategori listede yoktu, rapor onu `urun_id` üstünden menüye soruyordu. Menü
+>   bir noktada baştan kurulduğu için eski kimlikler tutmuyor, geçmiş satışlar
+>   kategorisiz kalıyordu. Artık **veritabanı tetikleyicisi** dolduruyor —
+>   tarayıcı değil, çünkü kalem eklenen üç ayrı yol var (sipariş, çevrimdışı
+>   kuyruk, kalem taşıma) ve birinde unutulursa sessizce eksik kalırdı. Kimlik
+>   değil **ad** saklanıyor: kategori de silinebiliyor.
+>   **Ölçüm:** kategorisiz kalem 268 → 154 (bizim işletmede 428 dolu). Kalanlar
+>   menüde artık olmayan ürünler (Espresso, Cappuccino, Fincan Çay) ve deneme
+>   kayıtları — eşleşmemesi doğru.
+> - **HATA VE DERS: panelden çalıştırılan göç işletme ayırmalı.** Geçmişi
+>   doldurma sorgusu ad eşleşmesini **bütün işletmelerde** yaptı. Supabase
+>   panelinde satır güvenliği devrede değil; uygulamadan çalışsa RLS koruyacaktı,
+>   panelde korumadı. Sonuç: 11 kaleme başka işletmenin kategorisi yazıldı
+>   ("Sıcak İçecekler" — bizimki büyük harfli "SICAK İÇECEKLER", fark oradan
+>   yakalandı). `sql/2026-09-22-kalemde-kategori-duzeltme.sql` yabancı kategorileri
+>   silip doldurmayı işletme içinde tekrarladı; doğrulandı, yabancı kategori 0.
+>   **Kural: panelde çalışacak her toplu güncellemeye `isletme_id` koşulu
+>   konur.** Kimlik üstünden eşleşme güvenli (`urun_id` sistem genelinde tekil),
+>   ad üstünden eşleşme değil.
+> - **Analiz → Ödenmezler sütun kayması düzeldi.** İkram satırı açılınca ürün
+>   dökümü `colSpan={2}` ile ilk iki sütunu birleştiriyordu; başlık dört
+>   sütunluk olduğu için adet **Tutar**'ın, tutar **Pay**'ın altına düşüyordu.
+>   Yani ekranda okunan rakam yanlıştı. Döküm satırı artık dört hücre:
+>   ürün · adet · tutar · boş pay.
+> - **Analiz → Açık Hesap kaydırma yüksekliği düzeldi.** Borçlar ve tahsilatlar
+>   alt alta iki ayrı tablo ama ikisine de aynı `useKutuBoyu` ref'i veriliyordu;
+>   ikincisi birincinin ref'ini eziyor, üstteki tablo alttakinin konumuna göre
+>   hesaplanmış yükseklikle açılıyordu. Artık her tablonun kendi ölçümü var,
+>   tetik de kendi satır sayısı.
+> - **`eposta_hesabi` sınırlandı** (`sql/2026-09-22-eposta-sorgu-siniri.sql`).
+>   Giriş yapmadan çağrılabilen tek sorgu; e-postayı bilen kişi dönen adresten
+>   telefon numarasını okuyabiliyordu, üstelik bütün işletmelerde arıyordu.
+>   Artık IP başına **saatte 20 sorgu**; aşınca boş dönüyor ve giriş ekranındaki
+>   metin değişmiyor (farklı metin, doğru e-postayı bulduğunu ele verirdi).
+>   Kayıt korumasından farkı: orada her deneme ayrı satır, burada **IP başına
+>   tek satır + sayaç** — giriş çok daha sık yapıldığı için defter şişmesin.
+> - **Arayüzü personel kaydı seçiyor** (`sql/2026-09-22-personel-arayuz.sql`).
+>   Mobil mi masaüstü mü kararı artık yalnız ekran genişliğinden gelmiyor;
+>   personel kaydındaki **Arayüz** alanı belirliyor: *Ekrana göre* (varsayılan,
+>   eski davranış) · *Her zaman mobil* · *Her zaman masaüstü*. Gerekçe: cihaz
+>   ölçüsü işi temsil etmiyor — 10 inçlik tablette duran kasiyer mobile
+>   düşüyordu, büyük telefonla masa gezen garson masaüstüne. Tercih oturumda
+>   taşınıyor (`AcikOturum.arayuz`), çevrimdışı kopyaya da kendiliğinden giriyor.
+>   **Sütun yetkisi tuzağı:** `personel` tablosunda yetkiler sütun sütun
+>   veriliyor (2026-09-02 pin-sertlestirme); yeni sütun o listeye kendiliğinden
+>   girmediği için göç dosyası grant bloğunu **yeniden çalıştırıyor**. Bu tabloya
+>   sütun ekleyen her göç aynısını yapmalı.
+> - **`adisyonlar_eski` silindi** (`sql/2026-09-22-adisyonlar-eski-sil.sql`).
+>   4 Ağustos göçünden kalan 8 satırlık ölü tablo. `kayit_denemeleri` ise
+>   **silinmedi** — listede yanlışlıkla onun yanına yazılmıştı; kayıt koruması
+>   (aynı bağlantıdan günde 2, haftada 5 işletme sınırı) o tablodan sayıyor.
 >
 > **Yapılanlar (21 Eyl 2026):**
 > - **Canlıda fiş yazdırma çalıştı.** Kasada gerçek yazıcıyla denendi,
@@ -1779,7 +1823,14 @@
 >    gezinme yenilendi, mobil ikizler kapandı (7–9 Eyl 2026), İçe/Dışa Aktar ve
 >    Analiz Özeti bitti (9 Eyl). Kalan iş **ekranların gövdesinde**; ekran ekran
 >    gidiliyor. Sıra:
->    a. **Analiz'in kalan sekmeleri** — Özet, **Adisyonlar** (10 Eyl) ve
+>    a. **Analiz'in kalan sekmeleri — ERTELENDİ** (Ramazan kararı, 22 Eyl
+>       2026). "Bu görsel işleri cafede kullanmaya başladıktan sonra da
+>       halledebiliriz." Gerekçe: gerçek kullanımda neyin eksik olduğu
+>       görülmeden görsel iş körlemesine oluyor. **Ayrı tutulan iki madde:**
+>       Ödenmezler'deki sütun kayması ve Açık Hesap'taki ref çakışması
+>       görsel değil, yanlış bilgi gösteren hatalar — ertelemenin dışında
+>       tutuldu ve **aynı gün düzeltildi** (bkz. "Yapılanlar, 22 Eyl").
+>       Eski not: Özet, **Adisyonlar** (10 Eyl) ve
 >       **Ürünler** (11 Eyl) bitti. Sıradaki: **Mutfak** (grafiği yok),
 >       **Ödenmezler** (Pay düz yüzde metni; ayrıca satır açılınca ürün dökümü
 >       **yanlış sütunlara düşüyor** — `colSpan={2}` yüzünden adet Tutar'ın,
@@ -1790,13 +1841,18 @@
 >       düzeninde. Ürünler'de kurulan dil (öne çıkan kartlar, önceki dönem
 >       karşılaştırması, kullanılmayan sütunun çizilmemesi, tek tipografi ölçeği)
 >       kalan sekmelere yayılacak.
->    b. **"Kategorisiz" cironun %74'ü** — Ürünler sekmesinde gerçek veride çıktı
->       (11 Eyl). Tasarım sorunu değil: muhtemelen o kalemlerde ürün kimliği yok
->       (menüden silinen ürün kalemde satış anındaki adıyla kalıyor, kategorisi
->       bulunamıyor). Önce veriye bakılacak, sonra karar.
->    c. **Ödeme tipi kartlarının renkleri** — Hızlı Öde'de altı ayrı renk yan
->       yana. Ramazan'a soruldu (işletmenin kendi tanımı mı, sadeleşsin mi),
->       cevap bekliyor.
+>    b. **"Kategorisiz" ciro — BİTTİ** (22 Eyl 2026). Teşhis edildi: tahmin
+>       edilen "kalemde ürün kimliği yok" değildi; kimlik vardı ama **menü bir
+>       noktada baştan kurulmuş**, ürünler yeni kimliklerle oluşmuş, geçmiş
+>       kalemler eski kimliklere bakar kalmıştı. Çözüm: kategori artık satış
+>       anında kaleme yazılıyor (bkz. "Yapılanlar, 22 Eyl"). **%74 rakamı da
+>       düzeltildi** — ciro üstünden ölçülen yüzdeler deneme verisindeki uçuk
+>       fiyatlar yüzünden anlamsızdı; gerçek oran kalem sayısında %45'ti.
+>    c. **Ödeme tipi kartlarının renkleri — ERTELENDİ** (Ramazan kararı,
+>       22 Eyl 2026). Hızlı Öde'de altı ayrı renk yan yana; "işletmenin kendi
+>       tanımı mı kalsın, sadeleşsin mi" diye soruldu, cevap: *"kartların şekli
+>       şemali de görsel olay, onu da erteliyoruz."* Aynı gerekçe (a) maddesiyle
+>       aynı: cafede kullanılmadan görsel karar verilmiyor.
 >    d. **Seçenek Grupları ve Birimler/KDV sekmelerinin gövdesi** — Menü
 >       Stüdyosu'nun kalan üç sekmesi; alt şeritleri 9 Eyl'de düzeldi, liste ve
 >       form düzenleri elden geçmedi.

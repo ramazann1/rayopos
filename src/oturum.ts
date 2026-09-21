@@ -4,7 +4,7 @@ import { baglantiDinle, baglantiHatasi, baglantiVar, kopukBildir, sureSinirli } 
 import { yerelPinCoz, yerelPinKaydet, yerelPinVar, yerelPinleriSil } from "./cevrimdisiPin";
 import { onbellegiTemizle, onbellekOku, onbellekYaz } from "./onbellek";
 import { supabase } from "./supabase";
-import { telefonSade } from "./personel";
+import { telefonSade, type Arayuz } from "./personel";
 import { etkinYetkiler, kisiYetkileriniGetir, rolYetkileriniGetir, yetkileriGetir } from "./yetkiler";
 
 export type AcikOturum = {
@@ -13,6 +13,8 @@ export type AcikOturum = {
   rolId: number | null;
   rolAd: string;
   isletmeId: number;
+  /** İşletmecinin bu kişi için seçtiği arayüz. */
+  arayuz: Arayuz;
   /** Kişinin gerçekte kullanabildiği yetki kodları — rol + kişiye özel istisnalar. */
   yetkiler: string[];
 };
@@ -68,7 +70,7 @@ export function hesapEpostasi(telefon: string) {
 async function kisiyiYukle(sutun: "auth_id" | "id", deger: string | number) {
   const { data, error } = await supabase
     .from("personel")
-    .select("id, ad, rol_id, isletme_id, aktif, giris_engelli, roller (ad)")
+    .select("id, ad, rol_id, isletme_id, aktif, giris_engelli, arayuz, roller (ad)")
     .eq(sutun, deger)
     .single();
 
@@ -93,6 +95,7 @@ async function kisiyiYukle(sutun: "auth_id" | "id", deger: string | number) {
     rolId,
     rolAd: satir.roller?.ad ?? "",
     isletmeId: satir.isletme_id,
+    arayuz: (satir.arayuz ?? "ekran") as Arayuz,
     yetkiler: [...etkinYetkiler(yetkiler, rolId, rolKumesi, kisiDurumlari)],
   } as AcikOturum;
 }

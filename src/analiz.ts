@@ -249,7 +249,7 @@ const ALANLAR = `id, adisyon_no, tip, durum, iptal_sebep, acilis, kapanis, indir
        masa:masalar (ad, bolge_id, bolgeler (ad)),
        acan:personel!adisyonlar_acan_id_fkey (id, ad),
        turlar (garson:personel!turlar_garson_id_fkey (id, ad),
-               adisyon_kalemleri (id, urun_id, ad, adet, fiyat, kdv_oran, durum, indirim,
+               adisyon_kalemleri (id, urun_id, ad, kategori_ad, adet, fiyat, kdv_oran, durum, indirim,
                                    odenmez:odenmez_id (ad))),
        tahsilatlar (tip, tutar, bahsis)`;
 
@@ -274,6 +274,7 @@ function satiraCevir(s: any, varsayilanKdv?: number): AnalizAdisyon {
         turGarsonId: tur.garson?.id ?? undefined,
         turGarson: tur.garson?.ad ? kisaAd(tur.garson.ad) : undefined,
         ad: k.ad,
+        kategoriAd: k.kategori_ad ?? undefined,
         adet: Number(k.adet),
         fiyat: Number(k.fiyat),
         kdvOran: k.kdv_oran ?? undefined,
@@ -912,13 +913,17 @@ export function analizUrunleri(
     for (const k of a.kalemler) {
       const anahtar = k.urunId ? `u${k.urunId}` : `a${k.ad}`;
       if ((k.durum ?? "normal") === "normal") sepet.add(anahtar);
+      // Kategori önce kalemin kendisinden okunuyor: satış anında yazıldığı için
+      // menü sonradan değişse de doğru kalıyor. Menüye ancak o alan boşsa
+      // bakılıyor — imzadan (22 Eyl 2026) önceki kalemlerin bir kısmı öyle.
       const kategori = k.urunId ? kategoriler.get(k.urunId) : undefined;
+      const kategoriAd = k.kategoriAd || kategori?.ad || KATEGORISIZ;
       const satir =
         satirlar.get(anahtar) ??
         ({
           anahtar,
           ad: k.ad,
-          kategoriAd: kategori?.ad ?? KATEGORISIZ,
+          kategoriAd,
           kategoriRenk: kategori?.renk,
           miktar: 0,
           ciro: 0,
@@ -958,7 +963,8 @@ export function analizUrunleri(
           ({
             anahtar,
             ad: k.ad,
-            kategoriAd: (k.urunId ? kategoriler.get(k.urunId)?.ad : "") || KATEGORISIZ,
+            kategoriAd:
+              k.kategoriAd || (k.urunId ? kategoriler.get(k.urunId)?.ad : "") || KATEGORISIZ,
             kategoriRenk: k.urunId ? kategoriler.get(k.urunId)?.renk : undefined,
             miktar: 0,
             ciro: 0,

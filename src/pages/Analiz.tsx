@@ -2437,9 +2437,10 @@ function OdenmezDokumu({ satirlar }: { satirlar: OdenmezSatiri[] }) {
                   {acik === s.ad &&
                     s.urunler.map((u) => (
                       <tr key={u.ad} className="dokum-alt">
-                        <td colSpan={2}>{u.ad}</td>
+                        <td>{u.ad}</td>
                         <td className="orta">{u.adet}</td>
                         <td className="sag">{paraGoster(u.tutar)}</td>
+                        <td />
                       </tr>
                     ))}
                 </Fragment>
@@ -2458,9 +2459,14 @@ function OdenmezDokumu({ satirlar }: { satirlar: OdenmezSatiri[] }) {
  * ne kadar veresiye verdik, ne kadar topladık" sorusu okunmuyordu.
  */
 function AcikHesap({ hareketler }: { hareketler: CariHareketSatiri[] }) {
-  const { kutu, boy } = useKutuBoyu(hareketler.length);
   const borclar = hareketler.filter((h) => h.borc > 0);
   const tahsilatlar = hareketler.filter((h) => h.alacak > 0);
+
+  // İki tablo alt alta duruyor; her biri kendi yerine göre ölçülmeli. Tek ölçüm
+  // paylaşılınca ikincisi birincinin ref'ini eziyor ve üstteki tablo, alttakinin
+  // konumuna göre hesaplanmış bir yükseklikle açılıyordu.
+  const borcKutusu = useKutuBoyu(borclar.length);
+  const tahsilatKutusu = useKutuBoyu(tahsilatlar.length);
 
   const toplamBorc = borclar.reduce((t, h) => t + h.borc, 0);
   const toplamTahsilat = tahsilatlar.reduce((t, h) => t + h.alacak, 0);
@@ -2480,7 +2486,8 @@ function AcikHesap({ hareketler }: { hareketler: CariHareketSatiri[] }) {
     liste: CariHareketSatiri[],
     baslik: string,
     tutarBasligi: string,
-    tutar: (h: CariHareketSatiri) => number
+    tutar: (h: CariHareketSatiri) => number,
+    { kutu, boy }: ReturnType<typeof useKutuBoyu>
   ) => (
     <section className="ayar-bolum">
       <div className="analiz-liste-ust">
@@ -2548,8 +2555,8 @@ function AcikHesap({ hareketler }: { hareketler: CariHareketSatiri[] }) {
         </div>
       </section>
 
-      {tablo(borclar, "Borç hareketleri", "Borç", (h) => h.borc)}
-      {tablo(tahsilatlar, "Tahsilat hareketleri", "Tahsilat", (h) => h.alacak)}
+      {tablo(borclar, "Borç hareketleri", "Borç", (h) => h.borc, borcKutusu)}
+      {tablo(tahsilatlar, "Tahsilat hareketleri", "Tahsilat", (h) => h.alacak, tahsilatKutusu)}
     </div>
   );
 }

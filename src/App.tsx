@@ -203,9 +203,9 @@ function MobilAcilis() {
 }
 
 /**
- * Cihaza göre doğru arayüzü açıyor: telefon mobile, kasa bilgisayarı masaüstüne.
- * Tablet çevrilip görünüm değiştiğinde ekran da hangi sayfada olunursa olunsun
- * onunla birlikte geçiyor.
+ * Doğru arayüzü açıyor: kişinin personel kaydındaki seçim, o "ekrana göre" ise
+ * cihazın genişliği. Tablet çevrilip görünüm değiştiğinde ya da başka biri
+ * giriş yaptığında ekran hangi sayfada olunursa olunsun onunla birlikte geçiyor.
  */
 function GorunumKapisi() {
   const gorunum = useGorunum();

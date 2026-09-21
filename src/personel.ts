@@ -9,6 +9,12 @@ export type Rol = {
   hazir: boolean;
 };
 
+/**
+ * Kişinin hangi arayüzü açacağı. "ekran" cihazın genişliğine bakar; diğer
+ * ikisi cihaz ne olursa olsun sabitler.
+ */
+export type Arayuz = "ekran" | "mobil" | "masaustu";
+
 export type Personel = {
   id: number;
   ad: string;
@@ -22,6 +28,7 @@ export type Personel = {
   aktif: boolean;
   sira: number;
   bolgeIdler: number[];
+  arayuz: Arayuz;
 };
 
 export type PersonelAlanlari = {
@@ -32,6 +39,7 @@ export type PersonelAlanlari = {
   girisEngelli: boolean;
   aktif: boolean;
   bolgeIdler: number[];
+  arayuz: Arayuz;
   /** Boş bırakılırsa mevcut şifre korunur. */
   sifre?: string;
   /** null = PIN kaldırıldı, undefined = dokunulmadı. */
@@ -99,7 +107,7 @@ export async function rolleriGetir(): Promise<Rol[]> {
 }
 
 const ALANLAR =
-  "id, ad, telefon, eposta, auth_id, pin_var, rol_id, giris_engelli, aktif, sira, roller (ad)";
+  "id, ad, telefon, eposta, auth_id, pin_var, rol_id, giris_engelli, aktif, sira, arayuz, roller (ad)";
 
 // Bölge ataması ayrı tabloda; personel listesi ekranda tek satır olarak
 // göründüğü için iki sorgu birleştirilip tek tipe indiriliyor.
@@ -134,6 +142,7 @@ export async function personeliGetir(hepsi = false): Promise<Personel[]> {
     aktif: p.aktif ?? true,
     sira: p.sira ?? 0,
     bolgeIdler: bolgeler.get(p.id) ?? [],
+    arayuz: (p.arayuz ?? "ekran") as Arayuz,
   }));
 }
 
@@ -151,6 +160,7 @@ function satirAlanlari(a: PersonelAlanlari) {
     rol_id: a.rolId,
     giris_engelli: a.girisEngelli,
     aktif: a.aktif,
+    arayuz: a.arayuz,
   };
 }
 

@@ -17,11 +17,32 @@ import {
   rolleriGetir,
   sifreKurallari,
   telefonKullanimda,
+  type Arayuz,
   type Personel,
   type PersonelAlanlari,
   type Rol,
 } from "../personel";
 import type { Bolge } from "../types";
+
+// Cihaz ölçüsü işi temsil etmiyor: tablette duran kasiyer ile büyük telefonla
+// masa gezen garson aynı genişlikte olabiliyor. Seçim işletmecinin.
+const ARAYUZLER: { deger: Arayuz; ad: string; aciklama: string }[] = [
+  {
+    deger: "ekran",
+    ad: "Ekrana göre",
+    aciklama: "Telefonda mobil, bilgisayarda masaüstü arayüz açılır.",
+  },
+  {
+    deger: "mobil",
+    ad: "Her zaman mobil",
+    aciklama: "Masa gezip sipariş alanlar için; bilgisayardan girse de mobil açılır.",
+  },
+  {
+    deger: "masaustu",
+    ad: "Her zaman masaüstü",
+    aciklama: "Kasada duranlar için; tabletten girse de masaüstü arayüz açılır.",
+  },
+];
 
 function PersonelPaneli({
   kisi,
@@ -46,6 +67,7 @@ function PersonelPaneli({
   const [seciliBolgeler, setSeciliBolgeler] = useState<number[]>(kisi?.bolgeIdler ?? []);
   const [pinAcik, setPinAcik] = useState(kisi?.pinVar ?? false);
   const [pin, setPin] = useState("");
+  const [arayuz, setArayuz] = useState<Arayuz>(kisi?.arayuz ?? "ekran");
   const [girisEngelli, setGirisEngelli] = useState(kisi?.girisEngelli ?? false);
   const [aktif, setAktif] = useState(kisi?.aktif ?? true);
   const [hata, setHata] = useState("");
@@ -86,6 +108,7 @@ function PersonelPaneli({
       girisEngelli,
       aktif,
       bolgeIdler: seciliBolgeler,
+      arayuz,
       sifre: sifre || undefined,
       pin: pinAcik ? (pin || undefined) : null,
     });
@@ -182,6 +205,24 @@ function PersonelPaneli({
               </div>
             </div>
           )}
+
+          <div className="alan">
+            <label>Arayüz</label>
+            <div className="cip-secim">
+              {ARAYUZLER.map((a) => (
+                <button
+                  key={a.deger}
+                  className={arayuz === a.deger ? "aktif" : ""}
+                  onClick={() => setArayuz(a.deger)}
+                >
+                  {a.ad}
+                </button>
+              ))}
+            </div>
+            <small className="alan-ipucu">
+              {ARAYUZLER.find((a) => a.deger === arayuz)?.aciklama}
+            </small>
+          </div>
 
           <div className="alan-anahtarlar">
             <Anahtar

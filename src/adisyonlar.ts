@@ -141,7 +141,7 @@ export function yeniKalemId() {
 }
 
 const KALEM_ALANLARI =
-  "id, urun_id, porsiyon_id, ad, porsiyon, secimler, adet, fiyat, kdv_oran, durum, not_metni, indirim, indirim_tanim_id, indirim_ad, odenmez_id";
+  "id, urun_id, porsiyon_id, ad, kategori_ad, porsiyon, secimler, adet, fiyat, kdv_oran, durum, not_metni, indirim, indirim_tanim_id, indirim_ad, odenmez_id";
 
 type KalemSatiri = {
   id: number;
@@ -1649,6 +1649,9 @@ export async function kalemTasi(
     urun_id: k.urun_id,
     porsiyon_id: k.porsiyon_id,
     ad: k.ad,
+    // Kategori taşınan kalemden geliyor, yeniden hesaplanmıyor: ürün arada
+    // başka kategoriye alınmışsa iki masada iki ayrı kategori görünmesin.
+    kategori_ad: k.kategori_ad ?? null,
     porsiyon: k.porsiyon,
     secimler: k.secimler ?? [],
     adet: tasinan,

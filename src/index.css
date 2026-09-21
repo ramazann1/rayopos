@@ -7368,6 +7368,14 @@ body {
 /* Personel formu: alanlar birbirine yakın dursun, kısa olanlar yan yana. */
 .personel-form .alan { margin-bottom: 14px; }
 
+/* Seçilen arayüzün ne anlama geldiğini çipin altında bir satırla söylüyor. */
+.personel-form .alan-ipucu {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--soluk);
+}
+
 .personel-form .alan label em {
   float: right;
   font-style: normal;
