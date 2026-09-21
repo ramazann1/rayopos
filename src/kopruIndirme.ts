@@ -9,9 +9,9 @@
  * birlikte artırıyor.
  */
 export const KOPRU_INDIRME = {
-  surum: "1.3.44",
+  surum: "1.3.45",
   /** Dosyanın yayınlandığı adres. Sürüm numarası dosya adına giriyor. */
-  adres: "https://indir.rayopos.com.tr/rayopos-kopru-kurulum-1.3.44.exe",
+  adres: "https://indir.rayopos.com.tr/rayopos-kopru-kurulum-1.3.45.exe",
   /**
    * Dosya adreste duruyor mu. Alan adı alınıp dosya yüklenince `true` yapılır;
    * o ana kadar düğme sönük ve tıklanınca hiçbir yere gitmiyor.

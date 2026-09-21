@@ -423,6 +423,75 @@ düğmesi yok, yalnız Kaydet ile çıkılıyor.
 
 ---
 
+### Altyapı & Ölçek Turu (21 Eyl 2026) — veri saklama ve canlı sinyal
+
+Yedekleme/arşivleme yöntemi konuşulurken "Adisyo bunu nasıl yapıyor" diye
+canlı panelde ölçüldü. Üç bulgu çıktı, üçü de bizim mimari kararlarımızı
+etkiliyor.
+
+**1. Adisyo hiçbir veriyi silmiyor.**
+Ürün Satış Raporu 01.01.2023 – 21.09.2026 aralığına çekildi (3,7 yıl) ve tam
+detay geldi: S 47.760 müşteri / 37.624.635 TL, İÇ BAHÇE 5.972 / 6.267.294 TL,
+DIŞ BAHÇE 5.245 / 4.257.661 TL … Ürün bazında kırılım ve satır başına "Detay"
+linki de çalışıyor — yani 2023'teki tek bir adisyonun içine bakılabiliyor.
+Menüde **yedekleme, arşiv veya "verilerimi indir" diye bir bölüm yok**; her
+raporda Excel "İndir" düğmesi var. Kurumsal yedekleme müşteriye gösterilmiyor.
+
+**2. Canlı sinyal: SignalR, kendi sunucularında (DOĞRULANDI).**
+Kanıt: `POST hub.adisyo.com/adisyoHub/negotiate?negotiateVersion=1` yanıtında
+**yönlendirme yok** — sadece `connectionId`, `connectionToken` ve
+`availableTransports` (WebSockets / ServerSentEvents / LongPolling) dönüyor.
+Azure SignalR Service kullansalardı yanıt `*.service.signalr.net`'e giden bir
+`url` + `accessToken` içerirdi (o servis mesaj başına ücretli). İçermiyor.
+Bağlantının kendisi de doğrudan onlara gidiyor: `wss://hub.adisyo.com/adisyoHub`.
+DNS bilgi vermiyor — hub, api, ord, pos hepsi Cloudflare arkasında (104.26.8.153,
+104.26.9.153, 172.67.69.158), gerçek sunucu gizli.
+
+`hub.adisyo.com/adisyoHub/negotiate` — kalıcı WebSocket bağlantısı, olay
+olunca sunucu haber gönderiyor. Teknoloji olarak bizim Supabase Realtime'ımızla
+aynı iş. **Fark faturada:** hub kendilerinin olduğu için mesaj başına ücret
+ödemiyorlar, sabit sunucu kirası ödüyorlar. Biz Supabase'e mesaj başına
+ödüyoruz (5 M dahil, sonrası milyon başına 2,50 $).
+
+**3. İstek sayıları (canlı ölçüm, L1 masasında test adisyonu):**
+
+| İşlem | Adisyo sunucusuna giden istek |
+|---|---|
+| Ekran boşta, 85 saniye | **0** (giden 11 istek Microsoft Clarity analitiği) |
+| Masa açma | 6 (bir kısmı analitik) |
+| Sepete ürün ekleme | **0** — tarayıcıda birikiyor |
+| KAYDET | **3** |
+
+KAYDET'te gidenler: `ord.adisyo.com/api/SaveOrder/SaveOrder`,
+`ord.adisyo.com/api/orders/GetOrderForDetail`,
+`api.adisyo.com/api/gmp3/SaveGmp3OrderPrinterLocked` (yazıcı kilidi).
+
+**Klon için çıkarımlar:**
+1. **Detay silmek rekabet dezavantajı.** Rakip 3,7 yıl tutuyor; "bizde 3 ay
+   geriye bakabilirsiniz" satışta karşımıza çıkar. Arşivleme, veri yeri
+   açmak için değil ancak hız için yapılmalı — o da ölçülerek.
+2. **Kaydetme istek sayısında geride değiliz.** Bizde 4-5, Adisyo'da 3.
+   Yol haritasındaki "kaydetmeyi tek isteğe indir" maddesinin aciliyeti düştü.
+3. **Sepete ürün eklerken sunucuya gitmemek doğru desen** — bizde de öyle,
+   korunmalı.
+4. **Masa dinleme: Adisyo da herkese yayın yapıyor** (WebSocket mesajları
+   sayılarak ölçüldü — ilk turdaki "onlarda bu israf yok" çıkarımı YANLIŞTI,
+   o turda yalnız HTTP istekleri sayılmıştı, WebSocket sayılmamıştı).
+   Ölçüm: bir sekme **B5**'in sipariş ekranında beklerken başka sekmeden
+   **L1**'e ürün eklendi. B5'e L1 hakkında dört dolu mesaj geldi:
+   `SendOrderDataToRestaurant`, `SendTableOrderDataToRestaurant`,
+   `SendKitchenOrderDataToRestaurant`, `GetPrintResult`. Metot adları zaten
+   `...ToRestaurant` — masa veya garson kırılımı yok, bütün restorana yayın.
+   Boştayken yalnız `{"type":6}` canlılık sinyali (37 saniyede 2 adet).
+   **Çıkarım:** "sipariş ekranı yalnız kendi masasını dinlesin" Adisyo'da
+   **yok**; bu bizim kendi faturamıza özgü bir optimizasyon, rakibi yakalama
+   işi değil. Mesaj ekonomisinde zaten öndeyiz: bizim tek sinyalimiz olay
+   başına 1 mesaj, Adisyo 4 dolu paket gönderiyor. Fark şu ki onlar mesaj
+   başına ödemiyor (kendi hub'ları), biz ödüyoruz.
+5. **Ölçekte doğru yol kendi sunucusu.** Adisyo'nun mesaj faturası ödememesinin
+   sebebi bu. Bizim için de eşik geldiğinde aynı yol (bkz. tasarım dosyası
+   "Altyapı eşikleri").
+
 ## 6. MOBİL UYGULAMA İNCELEMESİ (iOS/Android, v1.0.198 — ekran görüntülerinden)
 
 ### Genel Mimari

@@ -158,6 +158,27 @@ export async function motorBaslat(ayar, bildir = () => {}) {
   zamanlayicilar.push(setInterval(yazicilariYokla, 30_000));
 
   /**
+   * Pencereden elle yoklama. Yazıcı çalışırken takıldığında yoklama sırasını
+   * beklemek gerekiyordu; kasadaki kişi yarım dakika "bozuk mu" diye bakıyor.
+   * Aralığı kısaltmak yerine bu düğme kondu — her yoklama bir PowerShell
+   * süreci açıyor, sık yoklamak boşuna yük.
+   *
+   * Liste de zorla tazeleniyor: yazıcı az önce tanıtılmış olabilir, bir
+   * dakikalık önbellekte eski bilgiyle durmasın.
+   */
+  const yoklaSimdi = async () => {
+    try {
+      await yazicilariGetir(true);
+      await yazicilariYokla();
+      kayitYaz("Yazıcılar elle yoklandı.");
+      return { tamam: true };
+    } catch (e) {
+      kayitYaz(`Yazıcılar yoklanamadı: ${e.message}`, "hata");
+      return { tamam: false, hata: e.message };
+    }
+  };
+
+  /**
    * Kasanın kendi ekranından gelen fiş: buluta uğramadan doğrudan yazıcıya.
    * Yazdırma işini buluttan gelen fişle aynı yol yapıyor, tek fark işin nereden
    * geldiği — kayıt satırında "yerel" diye ayrılıyor ki hangi yolun çalıştığı
@@ -206,6 +227,7 @@ export async function motorBaslat(ayar, bildir = () => {}) {
     oturum,
     cihaz,
     durumAl: () => ({ ...durum, kayitlar: [...kayitlar] }),
+    yoklaSimdi,
     durdur() {
       for (const z of zamanlayicilar) clearInterval(z);
       zamanlayicilar.length = 0;

@@ -244,6 +244,12 @@ ipcMain.handle("giris", async (_olay, { telefon, sifre }) => {
 
 ipcMain.handle("durum", () => sonDurum);
 
+// Yazıcı çalışırken takıldığında yoklama sırasını beklemesin diye elle yoklama.
+ipcMain.handle("yazicilari-yokla", async () => {
+  if (!motor) return { tamam: false, hata: "Köprü henüz açılmadı." };
+  return motor.yoklaSimdi();
+});
+
 // Cihaz kimliği giriş penceresinde yazıyor: destek hattı "hangi kasa" sorusunu
 // bununla ayırt ediyor.
 ipcMain.handle("kunye", async () => {

@@ -4,59 +4,107 @@
 ## 0. SIRADAKİ İŞ (21 Eyl 2026 güncellendi)
 
 > **Sıra (21 Eyl 2026 seans sonu):**
-> 1. **Canlıda fiş yazdırma denemesi.** Cafeyi açmaya engel olabilecek tek
->    açık bu: kasada gerçek yazıcıyla hiç denenmedi. 21 Eyl'deki kota
->    ölçümlerinde de köprü kapalıydı, yani hesap fişi yolu (`kuyruktan_al` →
->    `kuyruk_sonuc`) uçtan uca hiç çalışmadı. Kasada Chrome'un yerel ağ izni
->    sorusuna bak (`_headers` içindeki CSP `http://127.0.0.1:*`'a izin veriyor).
->    Bu bitince hesap fişinin ürettiği mesaj/veritabanı yükü de ölçülebilir —
->    şimdiki rakamlarda o kalem eksik.
-> 2. **Yedek + otomatik arşivleme — ÖNCE YÖNTEM TARTIŞILACAK** (Ramazan
->    kararı, 21 Eyl 2026). Koda geçilmeden önce yöntem beraber konuşulacak;
->    geri dönüşü olmayan bir iş, gerçek satış verisi siliniyor.
->    **Neden:** ölçüldü (21 Eyl) — veritabanı ayda 54 MB büyüyor, ücretsiz
->    paketin 500 MB'ı **8,2 ayda** doluyor. Mesaj ve trafik kotaları her ayın
->    8'inde sıfırlanıyor, veritabanı sıfırlanmıyor: dolan bir kap, ancak
->    silersen boşalıyor. Büyümenin çoğu `adisyon_kalemleri` (adisyon başına
->    ~4,8 KB) — gerçek veri, yani ancak arşivlenerek çıkar.
->    **Sıra bağımlılığı:** önce yedek, sonra arşivleme. Yedeği olmayan veriyi
->    silmek yok.
->    **Konuşulacak sorular:**
->    - Yedek nereye gidecek, kaç kopya saklanacak, şifreleme nasıl?
->    - Yedek geri yüklenerek denenecek mi? (Denenmemiş yedek yedek değildir.)
->    - Arşivde ne kadar geriye detay tutulacak, ötesi özete mi dönecek?
->    - Eski tarihe rapor çekilmek istenirse ekran nereden okuyacak?
->    - Mali kayıt (fiş/Z raporu) ile işletme detayı ayrı mı tutulacak?
->    - Arşiv nerede duracak: ayrı tablo, ayrı proje, yoksa dosya mı?
->    **Reddedilen çözüm (21 Eyl):** veritabanı doluluğunu Bağlantı Durumu
->    ekranında göstermek. Ramazan: "başka işletmeler bunu neden bilsin,
->    bizim barındırma sorunumuz onların ekranında işi yok." Doğru itiraz —
->    çözüm uyarı değil, sistemin kendiliğinden temiz kalması.
-> 3. **Otomatik arşivleme** — 2. maddenin ikinci yarısı, yedek bitmeden
->    başlanmıyor. Hedef: gecelik çalışan bir iş, tıpkı bugün kurulan fiş
->    kuyruğu temizliği gibi. Bitince konu kapanır, kimsenin bir tarihi
->    hatırlaması gerekmez.
-> 4. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
+> 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
+>    (21 Eyl 2026 Adisyo turu + Supabase fiyat ölçümü). Önceki iki madde
+>    "yedek + otomatik arşivleme" idi; ölçüm ikisini de değiştirdi.
+>    **Neden elendi:** 100 işletmede 5 yıllık faturanın dağılımı ölçüldü —
+>    sunucu 210 $, **canlı mesaj 312 $**, **disk yalnız 40 $**, trafik 14 $,
+>    abonelik 25 $ ≈ **591 $/ay** (işletme başına ~6 $). Arşivlemenin
+>    dokunduğu kalem disk: faturanın **%7'si**. Yanlış kaldıraç.
+>    Ayrıca Adisyo **3,7 yıllık detayı silmeden tutuyor** (ölçüldü, bkz.
+>    yol haritası "Altyapı & Ölçek Turu") — detay silmek rekabet dezavantajı.
+>    **Yerine geçen karar:** veri silinmez. Ücretsiz paketin 500 MB'ı bir
+>    **duvar** (dolunca durur, parayla genişletilemez); Pro'nun 8 GB'ı bir
+>    **yokuş** (aşınca GB başına 0,125 $/ay, durma yok).
+>    **Eşikler — ne zaman neye geçilecek:**
+>    - **Şimdi:** ücretsiz paket. Cafeyi aç, ürünü bitir. Alan ~8,2 ayda dolar.
+>    - **Alan dolmaya yaklaşınca:** **Supabase Pro, 25 $/ay.** Getirdiği:
+>      8 GB (12 yıl yeter), **otomatik günlük yedek 7 gün saklamalı** (yedek
+>      işini biz yazmıyoruz, konu kapanıyor), **mesaj kotası 2 M → 5 M**
+>      (9. maddedeki %52-83 kaygısı üçte birine iniyor). Harcama tavanı
+>      varsayılan açık — sürpriz fatura yok. Saniye saniye geri sarma (PITR)
+>      100 $/ay, ALINMAYACAK.
+>    - **30-40 işletmede (fatura ~200-300 $/ay):** **kendi sunucuna taşı.**
+>      Supabase açık kaynak, uygulamada tek satır değişmez, yalnız bağlantı
+>      adresi değişir. Hetzner eu-central gerçek fiyatları (21 Eyl 2026'da
+>      siteden okundu, KDV yok): CPX12 1ç/2GB €11,99 · CPX22 2ç/4GB €19,99 ·
+>      CPX32 4ç/8GB €35,99 · CPX42 8ç/16GB €69,99 · CPX52 12ç/24GB €100,99.
+>      100 işletme için CPX52 + yedek eklentisi ≈ **€120/ay**
+>      → 591 $ yerine ~€120, **yaklaşık 4,5 kat ucuz**; çünkü mesaj başına
+>      ücret diye bir kavram kalmıyor. **Adisyo'nun yaptığı tam olarak bu**
+>      (`hub.adisyo.com` kendi SignalR sunucuları).
+>      **Bedeli:** sistem yöneticisi sen olursun — yedek, güncelleme, güvenlik
+>      yaması, çökerse ayağa kaldırma. Cumartesi 20:00'de sunucu düşerse
+>      100 restoran sipariş alamaz. Eşik gelmeden girilmez.
+>      **EŞİKTEN ÖNCE NEDEN OLMAZ — ölçüldü, 21 Eyl 2026:** tek cafe için
+>      kendi sunucun **Supabase'den pahalı**. Ücretsiz paket 0 TL, Pro €23;
+>      rahat çalışacak en küçük makine (CPX32) €35,99. Yani bedava olanı
+>      bırakıp hem daha pahalı hem daha çok iş çıkaran bir şeye geçmek olur.
+>      Tasarruf ancak fatura €120'yi geçince, yani 30-40 işletmede başlıyor.
+>      *(Hetzner hesabı 21 Eyl'de açıldı ama doğrulama için $25 kredi
+>      istediğinden ve fiyatlar görülünce mantık kalmadığından durduruldu.
+>      Hesap duruyor; SSH anahtarı `~/.ssh/rayopos-sunucu` hazır.)*
+>    - **Taşınma günü geldiğinde geçmiş veri:** Supabase = PostgreSQL, kendi
+>      sunucumuzdaki de PostgreSQL. `pg_dump`/`pg_restore` ile adisyonlar,
+>      kalemler, tahsilatlar, RLS kuralları, tetikleyiciler ve kullanıcı
+>      hesapları **tamamı** taşınır; analiz ekranları aynı tablolardan
+>      okuduğu için hiçbir rapor bozulmaz. Ürün fotoğrafları dosya olduğu
+>      için ayrı adımda kopyalanır. Kopya alındıktan sonra eskiye yazılan
+>      sipariş kaybolacağından **geçiş cafe kapalıyken** yapılır.
+>    **Reddedilen çözümler:**
+>    - *Veritabanı doluluğunu Bağlantı Durumu ekranında göstermek* (21 Eyl).
+>      Ramazan: "başka işletmeler bunu neden bilsin, bizim barındırma
+>      sorunumuz onların ekranında işi yok."
+>    - *Başka servise geçmek* (Neon, Firebase, Appwrite, Nhost, PocketBase).
+>      Hepsinde ya canlı sinyal/giriş/RLS yok ya da SQL değil; tasarruf
+>      yüzde otuz, iş yükü aylar. Supabase'den çıkmanın tek mantıklı yolu
+>      Supabase'i kendin çalıştırmak.
+>    - *3 ay detay + aylık ürün özeti* (21 Eyl'de önerildi, aynı gün elendi).
+>      Rakip 3,7 yıl tutarken detay silmek satışta eksik olarak karşımıza
+>      çıkar; üstelik kurtardığı para faturanın %7'si.
+> 2. **Sipariş ekranı yalnız kendi masasını dinlesin** — ölçekte faturanın
+>    asıl kaldıracı (21 Eyl Adisyo turuyla doğrulandı, önceki listede 10.
+>    maddede "isteğe bağlı, acil değil" notuyla duruyordu).
+>    Bugün garsonun telefonu **bütün masaların** sinyalini alıyor;
+>    `adisyon_id` süzgeciyle sunucu tarafında elenebilir.
+>    **Neden yukarı alındı:** 100 işletme faturasının %53'ü canlı mesaj
+>    (312 $/ay). Mesajı %60-70 azaltmak faturayı 591 → ~390 $'a, işletme
+>    başına 6 → 3,9 $'a indiriyor. Tek işletmede fark etmez, ürünü satmaya
+>    başlayınca en pahalı kalem burası. Kendi sunucumuza geçsek bile işe
+>    yarıyor — orada parayı değil makineyi rahatlatıyor.
+>    **Adisyo karşılaştırması (ÖLÇÜLDÜ, 21 Eyl — ilk çıkarım yanlıştı):**
+>    Adisyo'da da **aynı israf var**, hatta daha fazlası. WebSocket mesajları
+>    sayıldı: bir sekme B5'in sipariş ekranında beklerken başka sekmeden L1'e
+>    ürün eklendi; B5'e L1 hakkında **dört dolu mesaj** geldi
+>    (`SendOrderDataToRestaurant`, `SendTableOrderDataToRestaurant`,
+>    `SendKitchenOrderDataToRestaurant`, `GetPrintResult`). Metot adları
+>    zaten `...ToRestaurant` — masaya/garsona değil, bütün restorana yayın.
+>    Boştayken yalnız `{"type":6}` canlılık sinyali geliyor (37 sn'de 2).
+>    **Yani bu madde Adisyo'yu yakalamak için değil.** Onlar hub'ı kendileri
+>    çalıştırdığı için mesaj bedava; biz mesaj başına ödüyoruz. Üstelik
+>    mesaj ekonomisinde **onlardan öndeyiz**: bizim tek sinyalimiz olay başına
+>    1 mesaj, onlarınki 4 dolu paket. Gerekçe rekabet değil, kendi faturamız.
+> 3. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
 >    10:33: "belgeler kayıt otoritesine iletildi"). Seans başında sor/WHOIS'e
 >    bak; gelince Cloudflare Pages'te özel alan adı olarak bağlanır. Erişim
 >    sorunu tekrarlarsa geçici olarak `pos.egzozcafe.com` bağlanabilir
 >    (ikisi de aynı Cloudflare hesabında).
-> 5. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
+> 4. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.
 >    Kod elendi: canlıdaki derleme, `_headers` ile birlikte temiz tarayıcıda
 >    sorunsuz açılıyor.
-> 6. **Artık tablolar silinsin mi** — `adisyonlar_eski` (8 satır, `isletme_id`
+> 5. **Artık tablolar silinsin mi** — `adisyonlar_eski` (8 satır, `isletme_id`
 >    bile yok) ve `kayit_denemeleri` (2 satır). İkisinde de RLS açık ama tek
 >    kural yok. Denetimde çıktı, Ramazan kararı bekliyor.
-> 7. **Dizinsiz yabancı anahtarlar** — 48 sütunda yabancı anahtar var, dizin
+> 6. **Dizinsiz yabancı anahtarlar** — 48 sütunda yabancı anahtar var, dizin
 >    yok. Hata değil, hız işi; istasyon ekranındaki gibi **ölçerek** bakılacak,
 >    tahminle indeks eklenmeyecek.
-> 8. **`eposta_hesabi` sınırlanmalı mı** — giriş yapmadan çağrılabiliyor
+> 7. **`eposta_hesabi` sınırlanmalı mı** — giriş yapmadan çağrılabiliyor
 >    (zorunlu, giriş ekranı kullanıyor) ve e-postayı bilen kişi telefon
 >    numarasını öğrenebiliyor, üstelik bütün işletmelerde arıyor. Toplu liste
 >    çekilemediği için düşük öncelikli; çözüm `istek_ip` + deneme sayacı.
-> 9. **Arayüzü personel kaydı seçsin** (Ramazan kararı, 19 Eyl 2026). Bugün
+> 8. **Arayüzü personel kaydı seçsin** (Ramazan kararı, 19 Eyl 2026). Bugün
 >    mobil mi masaüstü mü kararını yalnız ekran genişliği veriyor
 >    (`src/mobil/mobilTercih.ts`, 820px). Olması gereken: **hangi personelin
 >    hangi arayüzü açacağına işletmeci karar verir** — personel kaydında
@@ -64,19 +112,41 @@
 >    "ekrana göre", yani bugünkü davranış. Gerekçe: garson ile kasiyerin işi
 >    ayrı; cihaz ölçüsü bu ayrımı temsil etmiyor. Mağaza uygulaması gündeme
 >    gelirse konu yeniden açılacak.
-> 10. **Kota işinden kalanlar (isteğe bağlı, acil değil).** 21 Eyl ölçümüyle
->    gerçekçi senaryoda mesaj kotası %52-83 arasında; aşağıdakiler pay
->    bırakmak için, zorunluluk değil.
->    - **Sipariş ekranı yalnız kendi masasını dinlesin.** Bugün garsonun
->      telefonu bütün masaların sinyalini alıyor; `adisyon_id` süzgeciyle
->      sunucu tarafında elenebilir.
->    - **Kaydetmeyi tek isteğe indirmek.** Bir kayıt 4-5 ayrı istek atıyor.
->      Mesaj kazancı artık yok (800 ms dizgin onu zaten hallediyor) ama
->      kaydetme hızlanır ve yarım kalan kayıt olmaz. **Önce cafede gerçek
->      telefonla süre ölçülecek** — garson beklemiyorsa yapılmayacak.
-> 11. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
+> 9. **Kaydetmeyi tek isteğe indirmek — ACİLİYETİ DÜŞTÜ** (21 Eyl ölçümü).
+>    Bizde bir kayıt 4-5 ayrı istek atıyor. Ölçüldü: **Adisyo da 3 istek
+>    atıyor** (`SaveOrder`, `GetOrderForDetail`, `SaveGmp3OrderPrinterLocked`).
+>    Yani bu kalemde rakipten geride değiliz. Mesaj kazancı da yok (800 ms
+>    dizgin onu zaten hallediyor). Geriye kalan tek gerekçe hız ve yarım
+>    kalan kayıt. **Önce cafede gerçek telefonla süre ölçülecek** — garson
+>    beklemiyorsa yapılmayacak.
+>    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
+>    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
+>    tek seferde gönderiliyor.)*
+> 10. Sonra aşağıdaki liste kaldığı yerden (Analiz'in kalan sekmeleri…).
 >
 > **Yapılanlar (21 Eyl 2026):**
+> - **Canlıda fiş yazdırma çalıştı.** Kasada gerçek yazıcıyla denendi,
+>   fiş bastı. `kuyruktan_al` → `kuyruk_sonuc` yolu uçtan uca ilk kez
+>   çalıştı; Chrome'un yerel ağ izni sorun çıkarmadı. **Cafeyi açmaya
+>   engel olan son açık kapandı.** Kalan ölçüm: hesap fişinin ürettiği
+>   mesaj/veritabanı yükü şimdiki rakamlara eklenebilir.
+> - **Köprüye "Şimdi yokla" düğmesi.** Fiş denemesinde çıktı: yazıcı
+>   çalışırken takılınca köprü penceresi çevrimiçi göstermedi, Ramazan
+>   15-20 sn bekleyip programı yeniden başlattı. Kusur değildi —
+>   **yazıcı yoklaması 30 saniyede bir** dönüyor (`motor.js`), sırası
+>   gelmemişti. Aralık kısaltılmadı: her yoklama kasada bir PowerShell
+>   süreci açıyor. Yerine köprü penceresindeki Yazıcılar başlığının yanına
+>   düğme kondu (`yoklaSimdi` → `ipcMain "yazicilari-yokla"` → `durum.js`);
+>   basınca yazıcı listesi **zorla** tazeleniyor (az önce tanıtılmış yazıcı
+>   60 sn'lik önbellekte kalmasın) ve hemen yoklanıyor.
+> - **Adisyo altyapı turu + Supabase fiyat ölçümü** (detay: pos-yol-haritasi.md
+>   "Altyapı & Ölçek Turu"). Canlı panelde ölçüldü: Adisyo 3,7 yıllık detayı
+>   silmeden tutuyor, menüsünde yedek/arşiv bölümü yok, canlı sinyali
+>   **kendi SignalR sunucusunda** (`hub.adisyo.com`) — mesaj başına ücret
+>   ödemiyorlar. Boşta 85 saniyede sıfır istek, sepete ürün eklerken sıfır
+>   istek, KAYDET'te üç istek. Sonuç: **yedek + arşivleme işi listeden
+>   çıktı**, yerine altyapı eşikleri kondu (1. madde) ve mesaj
+>   optimizasyonu 10. sıradan 3. sıraya çıktı.
 > - **Tek sinyal kuruldu** (`sql/2026-09-20-tek-sinyal.sql`). `masa_degisim`
 >   tablosu — adisyon kimliği + değişim anı, veri taşımıyor. Adisyon, tur,
 >   kalem, tahsilat ve hesap fişi üstünde **ifade başına** çalışan

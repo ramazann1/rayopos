@@ -340,6 +340,52 @@ button.ana:disabled {
   margin: 16px 0 8px;
 }
 
+/* Başlık ile yanındaki düğme aynı satırda; düğme sağa yaslanıyor. */
+.liste h2.baslik-satir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Yazıcı yoklaması 30 saniyede bir dönüyor. Yazıcıyı çalışırken takan kişi
+   sıranın gelmesini beklemesin diye bu düğme var. */
+.yokla {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--kart);
+  border: 1px solid var(--cizgi);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.yokla svg {
+  width: 14px;
+  height: 14px;
+}
+
+.yokla:disabled {
+  cursor: default;
+  color: var(--soluk);
+}
+
+.yokla:disabled svg {
+  animation: doner 900ms linear infinite;
+}
+
+@keyframes doner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .satirlar {
   display: flex;
   flex-direction: column;

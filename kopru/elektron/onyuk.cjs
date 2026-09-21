@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("kopru", {
   giris: (bilgi) => ipcRenderer.invoke("giris", bilgi),
   durumAl: () => ipcRenderer.invoke("durum"),
   kunye: () => ipcRenderer.invoke("kunye"),
+  yazicilariYokla: () => ipcRenderer.invoke("yazicilari-yokla"),
   kopyala: (metin) => ipcRenderer.invoke("kopyala", metin),
   pencereyiKapat: () => ipcRenderer.invoke("pencereyi-kapat"),
   durumDinle: (isle) => ipcRenderer.on("durum", (_olay, durum) => isle(durum)),

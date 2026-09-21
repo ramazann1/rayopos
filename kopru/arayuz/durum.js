@@ -137,5 +137,17 @@ kopru.kunye().then((k) => {
 kopru.durumAl().then(ciz);
 kopru.durumDinle(ciz);
 
+// Elle yoklama. Yoklama sürerken düğme kapalı kalıyor; sonucu ayrıca
+// yazmıyoruz, yazıcı satırları zaten yerinde güncelleniyor.
+bul("yeniden").onclick = async (olay) => {
+  const dugme = olay.currentTarget;
+  dugme.disabled = true;
+  try {
+    await kopru.yazicilariYokla();
+  } finally {
+    dugme.disabled = false;
+  }
+};
+
 bul("kodKopyala").onclick = () => kopru.kopyala(sonDurum?.oturum?.kod ?? "");
 bul("hepsiniKopyala").onclick = () => kopru.kopyala(ozetMetni());
