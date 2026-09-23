@@ -8,6 +8,7 @@ import Siparis from "./pages/Siparis";
 import MenuStudyosu from "./pages/MenuStudyosu";
 import Malzemeler from "./pages/Malzemeler";
 import StokHareketleri from "./pages/StokHareketleri";
+import StokSayim from "./pages/StokSayim";
 import Istasyon from "./pages/Istasyon";
 import KasaGecmisi from "./pages/KasaGecmisi";
 import Giderler from "./pages/Giderler";
@@ -139,6 +140,9 @@ function App() {
         {/* Hesabın kendi ekranı: ödeme sipariş almaktan ayrı bir an. */}
         <Route path="/mobil/mutfak" element={<MobilKabuk><MobilIstasyon /></MobilKabuk>} />
         <Route path="/mobil/satis" element={<MobilKabuk><MobilSatis /></MobilKabuk>} />
+        {/* Sayım raf başında telefonla yapılan bir iş; masaüstündeki ekranın
+            aynısı açılıyor, telefon farkı yalnız CSS'te. */}
+        <Route path="/mobil/sayim" element={<MobilKabuk><StokSayim mobil /></MobilKabuk>} />
         <Route path="/mobil/ben" element={<MobilKabuk><Ben /></MobilKabuk>} />
         <Route path="/siparis/:masaId" element={<Siparis />} />
         <Route path="/adisyon/:adisyonId" element={<Siparis />} />
@@ -156,6 +160,7 @@ function App() {
           <Route path="/stok" element={<Navigate to="/stok/malzemeler" replace />} />
           <Route path="/stok/malzemeler" element={<Malzemeler />} />
           <Route path="/stok/hareketler" element={<StokHareketleri />} />
+          <Route path="/stok/sayim" element={<StokSayim />} />
           {/* Kasa takibi kapalıysa geçmiş ekranı yok; başlık doğrudan Giderler'i açar. */}
           <Route
             path="/kasa"

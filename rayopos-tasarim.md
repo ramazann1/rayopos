@@ -1,7 +1,7 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (23 Eyl 2026 güncellendi)
+## 0. SIRADAKİ İŞ (23 Eyl 2026 güncellendi — sayım seansı)
 
 > **Sıra (21 Eyl 2026 seans sonu):**
 > 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
@@ -100,20 +100,68 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **STOK MODÜLÜ — başladı, sırada SAYIM EKRANI.** Veri modeli, Malzemeler
->    ve Hareketler ekranları 23 Eyl 2026'da yazıldı (aşağıda). Kapsam ve
->    kararlar 2. maddede. **Sıradaki adım: Sayım ekranı** — üç adımlı
->    (kapsam seç → körleme sayım → rapor → onay). Ondan sonra reçete,
->    otomatik düşüm, maliyet/kârlılık raporu.
->    **Sayımla birlikte gelecek küçük işler:** malzeme kartından "bu malzemenin
->    hareketleri" kısayolu · İşletme Ayarları'na *eksi stoğa izin ver* anahtarı
->    (koda bağlandı, ekran düğmesi yok, varsayılan açık) · fire/çıkış raporu
->    (sebep kırılımıyla, ortalama maliyet üzerinden TL).
+> 6. **STOK MODÜLÜ — sırada REÇETE ve OTOMATİK DÜŞÜM.** Veri modeli,
+>    Malzemeler, Hareketler ve Sayım ekranları yazıldı (23 Eyl 2026, aşağıda).
+>    Kapsam ve kararlar 2. maddede. **Sıradaki adım: reçete** — ürünün hangi
+>    malzemeden ne kadar harcadığı; ardından adisyon kapanınca otomatik düşüm
+>    ve maliyet/kârlılık raporu.
+>    **Sırada duran küçük işler:** malzeme kartından "bu malzemenin hareketleri"
+>    kısayolu · İşletme Ayarları'na *eksi stoğa izin ver* anahtarı (koda
+>    bağlandı, ekran düğmesi yok, varsayılan açık) · fire/çıkış raporu (sebep
+>    kırılımıyla, ortalama maliyet üzerinden TL) · **geçmiş sayımlar listesi**
+>    (`sayimlariGetir` yazıldı ama ekranı yok; onaylı sayım ay sonu maliyet
+>    hesabının kapanış rakamı) · **mobil alt sekme çubuğundaki dolu mercan
+>    kapsül** (bütün mobil ekranların ortak dili, ayrı karar).
 > 7. **Kendi takvim bileşenimiz.** Tarih kutusuna basınca açılan takvim
 >    Chrome'un kendi arayüzü; CSS oraya erişemiyor, Ramazan görüntüsünü
 >    beğenmedi (23 Eyl 2026). Kendi takvimimiz yazılırsa Giderler, Analiz
 >    süzgeci ve stok hareketleri birlikte kullanacak — ortak bileşen işi,
 >    tek ekranlık değil. Stok modülü bitince ele alınacak.
+>
+> **Yapılanlar (23 Eyl 2026 — ikinci seans, sayım):**
+> - **Sayım ekranı** (`src/pages/StokSayim.tsx`, `src/stokSayim.ts`,
+>   `sql/2026-09-23-stok-sayim.sql`). Üç adım: kapsam seç (tümü/grup/kritik) →
+>   körleme sayım → fark raporu → onay. Rapor onaylanana kadar stokta hiçbir
+>   şey değişmiyor; onayda yalnız farkı olan malzemeye hareket yazılıyor.
+>   Aynı anda tek açık sayım olabiliyor, kapanan sayımın kalemleri
+>   tetikleyiciyle kilitleniyor.
+> - **KARAR: sayımın kendi yetkisi var — `stok.sayim`** (Ramazan, 23 Eyl).
+>   Stoğu görmek (`stok.gor`) ve mal girmek (`stok.yonet`) ayrı işler; sayım
+>   stoğu denetleyip düzelten bir iş, kimin yapacağına işletme ayrı karar
+>   versin. Yönetici ve Müdür rollerine göçte veriliyor.
+> - **KARAR: sapma sınırı %10 değil %8** (Ramazan, 23 Eyl). Raporda bu oranı
+>   geçen satır işaretleniyor; onayı engellemiyor, uyarıyor.
+> - **KARAR: mobilde yalnız Sayım sekmesi** (Ramazan, 23 Eyl). Stok modülünün
+>   telefonda yeri yoktu. Sayım raf başında telefonla yapılan iş olduğu için
+>   alt sekme çubuğuna eklendi, **yalnız `stok.sayim` yetkisi olanda görünüyor**.
+>   Malzemeler ve Hareketler masa başı işi, mobile taşınmadı. Ekran ayrı
+>   yazılmadı — masaüstündeki bileşen `mobil` bayrağıyla açılıyor, fark CSS'te.
+> - **KARAR: sistem miktarı sayım açılırken donuyor, defter o anki miktara
+>   yazıyor.** Rapor kişinin saydığı ana ait farkı gösteriyor; hareket ise
+>   malzemenin o anki miktarına göre yazılıyor, çünkü sayım sürerken satış
+>   olduysa donmuş rakam stoğu yanlış yere çekerdi.
+> - **Boş kutu ile sıfır ayrı bilgi:** boş = sayılmadı (stoğa dokunulmuyor),
+>   sıfır = hiç kalmamış.
+> - **KARAR: sayım ekranında mercan yalnız seçim ve tek birincil eylem için**
+>   (Ramazan, 23 Eyl — "her yerde çok yoğun mercan var, göz yoruyor").
+>   Başlık ikonu, ipucu işareti, özet kart ikonları ve modal başlık dairesi
+>   nötr tona alındı; her adımda dolu mercan bir tane kaldı (Başlat / Onayla),
+>   ikinci eylem çerçeveli. Kural `.sayim-sayfa` önekiyle yalnız bu ekranda —
+>   diğer ekranlara yayılması ayrı karar. **Ölçüm:** `index.css`'te mercan 587
+>   yerde geçiyor, 89'u dolu zemin, 28'i seçim durumu.
+> - **DERS: ipucu tek kısa cümledir.** Üç ipucu da paragraf uzunluğundaydı;
+>   Ramazan "aptala anlatır gibi" dedi. Balon başlığı da kaldırıldı — tek
+>   cümle için ayrı başlık fazlalık.
+> - **DERS: `--yazi` diye bir değişken yok, `--metin` var.** Olmayan değişken
+>   yazılınca renk uygulanmıyor ve telefon düğme yazısını kendi varsayılan
+>   mavisiyle çiziyordu. "Telefonda yazılar mavi" şikâyetinin kaynağı buydu.
+> - **DERS: ızgarada `1fr` taşırır.** `1fr` bir hücrenin en dar içeriğinden
+>   (`₺1.234,56`) daha dar olamıyor; rapor tablosu telefonda sayfayı yana
+>   kaydırılabilir yapıyordu. Telefonda sütun `minmax(0, 1fr)` yazılır.
+> - **DERS: telefonda ipucu balonu işarete değil satıra hizalanır.** İşaretin
+>   x konumuna yaslanınca ya sağdan taşıyor ya daracık bir sütuna sıkışıyor;
+>   ayrıca yukarı açılan balon ekranın üstünde kırpılıyor. Balon başlık
+>   satırının tamamına, aşağı doğru açılıyor.
 >
 > **Yapılanlar (23 Eyl 2026):**
 > - **Stok veri modeli kuruldu** (`sql/2026-09-22-stok-veri-modeli.sql`).

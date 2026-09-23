@@ -27,6 +27,12 @@ const ROTA_YETKILERI: [string, string][] = [
   // Stoğu görmek ile değiştirmek ayrı yetkiler; ekranın kapısı görme yetkisi,
   // ekle/düzenle düğmeleri yönetme yetkisine bakıyor.
   ["/stok", "stok.gor"],
+  // Sayım stoğu görmek ya da mal girmek değil, stoğu denetleyip düzelten ayrı
+  // bir iş; kimin yapacağına işletme ayrı karar versin diye kendi yetkisi var.
+  ["/stok/sayim", "stok.sayim"],
+  // Telefondaki sayım sekmesi aynı ekranı açıyor, kapısı da aynı olmalı:
+  // menüden gizlemek koruma değil, adres elle yazılabiliyor.
+  ["/mobil/sayim", "stok.sayim"],
   ["/istasyon", "mutfak.ekran"],
   ["/kasa/gecmis", "kasa.ac_kapat"],
   ["/kasa/giderler", "kasa.gider"],

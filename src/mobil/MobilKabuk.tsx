@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Armchair, ChartColumn, ChefHat, UserRound } from "lucide-react";
+import { Armchair, ChartColumn, ChefHat, ClipboardList, UserRound } from "lucide-react";
 import { yolaGirebilir } from "../rotaYetkileri";
 
 /**
@@ -16,6 +16,9 @@ const SEKMELER: Sekme[] = [
   { yol: "/mobil/masalar", ad: "Masalar", ikon: Armchair, yetkiYolu: "/siparis" },
   { yol: "/mobil/mutfak", ad: "İstasyon", ikon: ChefHat, yetkiYolu: "/istasyon" },
   { yol: "/mobil/satis", ad: "Satış", ikon: ChartColumn, yetkiYolu: "/mobil/satis" },
+  // Sayım yalnız stok.sayim yetkisi olanda çıkıyor: garsonun çubuğunda
+  // hiç işi yok, deponun sorumlusu için ise telefon asıl çalışma yüzeyi.
+  { yol: "/mobil/sayim", ad: "Sayım", ikon: ClipboardList, yetkiYolu: "/stok/sayim" },
   { yol: "/mobil/ben", ad: "Ben", ikon: UserRound, yetkiYolu: "/mobil/ben" },
 ];
 

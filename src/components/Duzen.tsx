@@ -95,6 +95,7 @@ export const menuBolumleri: Bolum[] = [
 export const stokBolumleri: Bolum[] = [
   { yol: "/stok/malzemeler", ad: "Malzemeler", ikon: Package },
   { yol: "/stok/hareketler", ad: "Hareketler", ikon: History },
+  { yol: "/stok/sayim", ad: "Sayım", ikon: ClipboardList },
 ];
 
 export const kasaBolumleri: Bolum[] = [
