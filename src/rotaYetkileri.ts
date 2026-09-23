@@ -24,6 +24,9 @@ const ROTA_YETKILERI: [string, string][] = [
   ["/mobil/satis", "rapor.gun_sonu"],
   ["/adisyon", "siparis.al"],
   ["/menu", "tanim.menu"],
+  // Stoğu görmek ile değiştirmek ayrı yetkiler; ekranın kapısı görme yetkisi,
+  // ekle/düzenle düğmeleri yönetme yetkisine bakıyor.
+  ["/stok", "stok.gor"],
   ["/istasyon", "mutfak.ekran"],
   ["/kasa/gecmis", "kasa.ac_kapat"],
   ["/kasa/giderler", "kasa.gider"],

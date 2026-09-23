@@ -6,6 +6,8 @@ import { ayarlar, ayarlariGetir, isletmeKimliginiGetir } from "./isletmeAyarlari
 import Salon from "./pages/Salon";
 import Siparis from "./pages/Siparis";
 import MenuStudyosu from "./pages/MenuStudyosu";
+import Malzemeler from "./pages/Malzemeler";
+import StokHareketleri from "./pages/StokHareketleri";
 import Istasyon from "./pages/Istasyon";
 import KasaGecmisi from "./pages/KasaGecmisi";
 import Giderler from "./pages/Giderler";
@@ -151,6 +153,9 @@ function App() {
         <Route element={<DuzenKabugu />}>
           <Route path="/" element={<Salon />} />
           <Route path="/menu/:bolum" element={<MenuStudyosu />} />
+          <Route path="/stok" element={<Navigate to="/stok/malzemeler" replace />} />
+          <Route path="/stok/malzemeler" element={<Malzemeler />} />
+          <Route path="/stok/hareketler" element={<StokHareketleri />} />
           {/* Kasa takibi kapalıysa geçmiş ekranı yok; başlık doğrudan Giderler'i açar. */}
           <Route
             path="/kasa"

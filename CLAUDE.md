@@ -76,8 +76,15 @@ kurallar iki yüzeyde birebir aynı sonucu vermelidir.
 - **Vurgu rengi mercan** (`--mercan`). Pastel veya çok renkli paletler ana
   ekranlarda kullanılmaz; renk seçici yalnızca kategori/ürün gibi kullanıcının
   kendi etiketlediği yerlerde vardır.
-- Bir ekranın veya bölümün ne işe yaradığını anlatan açıklama cümleleri düz
-  paragraf değil, `components/Bilgi.tsx` ile yazılır (yuvarlak "i" ikonlu kutu).
+- Açıklama cümleleri hiçbir zaman düz paragraf değildir. İki yerden biriyle
+  yazılır, uzunluğuna göre (22 Eyl 2026 kararı):
+  - **Tek cümlelik ekran/bölüm açıklaması** → başlığın yanına
+    `components/Ipucu.tsx` (küçük "i" işareti, üstüne gelince balon).
+    Tam genişlikte bir kutu tek cümle için sayfanın en değerli yerini,
+    listenin üstünü yiyor.
+  - **Birden çok cümlelik, gerçekten okunması gereken anlatım** →
+    `components/Bilgi.tsx` (yuvarlak "i" ikonlu kutu). Genellikle bir modalın
+    ya da kurulum adımının içinde.
 
 ## Teknoloji
 

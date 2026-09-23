@@ -1,7 +1,7 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (22 Eyl 2026 güncellendi)
+## 0. SIRADAKİ İŞ (23 Eyl 2026 güncellendi)
 
 > **Sıra (21 Eyl 2026 seans sonu):**
 > 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
@@ -100,12 +100,74 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **STOK MODÜLÜ — sıradaki büyük iş.** 22 Eyl 2026'da görsel maddelerin
->    tamamı ertelenince (aşağıdaki 1a ve 1c) sıra buraya geldi; kapsam ve
->    alınmış kararlar aşağıda 2. maddede duruyor. **Adisyo turu tamamlandı:**
->    1 Eyl 2026 (ilk tur) + 22 Eyl 2026 (her ekran ve her modal, ikinci tur);
->    bulgular pos-yol-haritasi.md "13. STOK MODÜLÜ — DERİN TUR" ve "12.7".
->    Sıradaki adım: **veri modeli + Malzemeler ekranı.**
+> 6. **STOK MODÜLÜ — başladı, sırada SAYIM EKRANI.** Veri modeli, Malzemeler
+>    ve Hareketler ekranları 23 Eyl 2026'da yazıldı (aşağıda). Kapsam ve
+>    kararlar 2. maddede. **Sıradaki adım: Sayım ekranı** — üç adımlı
+>    (kapsam seç → körleme sayım → rapor → onay). Ondan sonra reçete,
+>    otomatik düşüm, maliyet/kârlılık raporu.
+>    **Sayımla birlikte gelecek küçük işler:** malzeme kartından "bu malzemenin
+>    hareketleri" kısayolu · İşletme Ayarları'na *eksi stoğa izin ver* anahtarı
+>    (koda bağlandı, ekran düğmesi yok, varsayılan açık) · fire/çıkış raporu
+>    (sebep kırılımıyla, ortalama maliyet üzerinden TL).
+> 7. **Kendi takvim bileşenimiz.** Tarih kutusuna basınca açılan takvim
+>    Chrome'un kendi arayüzü; CSS oraya erişemiyor, Ramazan görüntüsünü
+>    beğenmedi (23 Eyl 2026). Kendi takvimimiz yazılırsa Giderler, Analiz
+>    süzgeci ve stok hareketleri birlikte kullanacak — ortak bileşen işi,
+>    tek ekranlık değil. Stok modülü bitince ele alınacak.
+>
+> **Yapılanlar (23 Eyl 2026):**
+> - **Stok veri modeli kuruldu** (`sql/2026-09-22-stok-veri-modeli.sql`).
+>   `malzeme_gruplari`, `malzemeler`, `stok_belgeleri`, `stok_hareketleri` +
+>   RLS + `stok.gor` / `stok.yonet` yetkileri. **Miktarlar en küçük birimde
+>   tam sayı** (gram/ml/adet); malzemenin `birim` alanı yalnız gösterim —
+>   un kiloyla, maya gramla sayılıyor, herkese kilo dayatmak "0,004 kg maya"
+>   gibi okunmaz rakam çıkarıyordu. **Stok yalnız hareketle değişir:**
+>   `malzemeler.miktar` sütununa güncelleme yetkisi verilmiyor, miktarı
+>   tetikleyici yazıyor ve `onceki`/`sonraki` alanlarını dolduruyor.
+> - **Malzemeler ekranı** (`src/pages/Malzemeler.tsx`, `src/stok.ts`).
+>   Kart+liste, grup renginde sol şerit, kritik seviyede turuncu / eksi stokta
+>   kırmızı satır, üstte üç özet kartı. **Kritik seviyeler toplu girilebiliyor**
+>   (Adisyo'da tek tek girildiği için 30 malzemenin yalnız birinde doluydu).
+> - **Stok hareketleri ekranı** (`src/pages/StokHareketleri.tsx`,
+>   `src/stokHareket.ts`). Giriş / fire / çıkış, tek pencerede çok kalem,
+>   malzeme arama kutusu, satır başına anlık **"yeni miktar"**. Defter satırı
+>   `eski → değişim → yeni`. Sebepler: fire = döküldü/bozuldu/kırıldı,
+>   çıkış = personel/iade/numune/etkinlik (`2026-09-22-stok-belge-sebebi.sql`).
+> - **KARAR DEĞİŞTİ: hareket düzenlenebilir ve silinebilir** (Ramazan, 23 Eyl).
+>   Defter önce değişmez kurgulanmıştı (yanlış kayıt ters hareketle
+>   düzeltilecekti); Ramazan ters kayıt istemedi, doğrudan düğme istedi.
+>   Çözüm `sql/2026-09-22-stok-hareket-duzenle.sql`: silme ve düzenleme
+>   veritabanı işlevleriyle yapılıyor, işlev sonrasında o malzemenin bütün
+>   hareketlerini zaman sırasına dizip **zinciri baştan kuruyor** ve miktarı
+>   yeniden hesaplıyor. Doğrudan update/delete yetkisi kapalı kaldı — zincir
+>   yalnız bu yoldan değişebiliyor.
+> - **Ağırlıklı ortalama maliyet** (aynı dosya). Fiyat her alışta değiştiği
+>   için tek "fiyat" yanlış cevap veriyor: 20 lt × 32 TL + 30 lt × 36 TL →
+>   ortalama 34,40. Yalnız girişlerden, yalnız fiyatı girilmiş satırlardan
+>   hesaplanıyor. Fire tutarı, sayım farkının parası ve reçete maliyeti bu
+>   rakamdan okunacak.
+> - **KURAL DEĞİŞTİ: açıklama cümleleri.** Tek cümlelik ekran/bölüm açıklaması
+>   artık `Bilgi` kutusu değil, başlığın yanındaki `Ipucu` ("i" işareti); çok
+>   cümlelik anlatım `Bilgi` kutusunda kalıyor. Sebep: tek cümle için tam
+>   genişlikte kutu listenin üstündeki en değerli yeri yiyordu. CLAUDE.md
+>   güncellendi.
+> - **Ipucu balonu yeniden tasarlandı.** Koyu kutuydu, ekranda yabancı
+>   duruyordu ve 268 px'e sıkışan metin beş satıra bölünüyordu. Artık kart
+>   zemini + hairline çerçeve + 340 px, isteğe bağlı mercan başlık satırı.
+>   `AyarSatiri` üzerinden bütün ayar ekranlarını etkiliyor.
+> - **Modal açılış animasyonu düzeldi.** `scale(0.97)` → 1 ile açılan pencerede
+>   tarayıcı yazıyı önce küçük ölçekte çizip sonra yeniden çiziyordu; harfler
+>   bir an başka yazı tipi gibi görünüyordu. Ramazan'ın şikâyeti buydu, ilk
+>   teşhisim (font yükleme) yanlıştı — Chrome'da ölçülüp bulundu. Açılış artık
+>   `translateY(6px)`. **Beş modal birden** bu kareyi kullanıyor.
+> - **DERS: öneksiz sınıf adı.** Defter satırına `hrk-satir giris` yazılmıştı;
+>   `.giris` uygulamanın giriş ekranının sınıfı (`min-height: 100vh`) olduğu
+>   için satırlar ekran boyunda uzadı. Tip sınıfları `hrk-giris` / `hrk-fire` /
+>   `hrk-cikis` oldu. Ortak isim alanına çıplak sınıf yazılmaz.
+> - **DERS: tasarım önce taslak.** Malzemeler ekranında onlarca tur düzeltme
+>   yapıldı (çip sıraları, yandan açılan panel, koyu balon, fazla mercan).
+>   Hareketler ekranında önce taslak gösterilip onay alındı, tek turda geçti.
+>   Yeni ekranda **önce taslak** gösterilecek.
 >
 > **Yapılanlar (22 Eyl 2026):**
 > - **Adisyo stok modülü ikinci turu — her ekran, her modal.** Chrome'la canlı
@@ -1927,6 +1989,36 @@
 >    toplu girilebilir** (Adisyo'da tek tek girildiği için 30 malzemenin
 >    yalnız birinde dolu). **Stok yalnız hareketle değişir** — Adisyo'daki
 >    gibi ürün kartından elle düzeltme yolu olmayacak.
+>    **Karar (22 Eyl 2026): sayım ayrı ekran, sonunda rapor.** Giriş/fire/çıkış
+>    anlık işlerdir, tek pencerede biter. Sayım ise bir *süreç*: kişi elinde
+>    telefonla raf raf geziyor, yarım saat sürüyor, yarıda kesilebiliyor.
+>    Bu yüzden **Stok → Sayım** kendi ekranı olacak, üç adımlı: (1) kapsam seç
+>    (tümü / grup / yalnız kritikler), sayım açık kalır; (2) kapsamdaki
+>    malzemeler alt alta, her satırda tek kutu; (3) **bitir → rapor**.
+>    Rapor onaylanmadan hiçbir hareket yazılmaz. Raporda fark tablosu
+>    (sistem · sayılan · fark · **fark tutarı**), uyarılar (%10'u geçen sapma,
+>    hiç sayılmayanlar, ölçüsü şüpheli rakam) ve özet bulunur. Onaylanınca
+>    yalnız farkı olan malzemeye hareket yazılır; sıfır fark deftere girmez.
+>    **Neden rapor şart:** sayımın işi stoğu düzeltmek değil, teorik ile fiili
+>    arasındaki farkı ölçmek. Fark yazılmamış fireyi, porsiyon aşımını, kayıt
+>    dışı satışı ve hatalı girişi ele veriyor; ayrıca ay sonu maliyet hesabı
+>    (açılış + alış − kapanış) kapanış rakamını sayımdan alıyor.
+>    **Karar (22 Eyl 2026): körleme sayım.** Sayarken sistemdeki miktar
+>    **görünmez**, raporda görünür. Rakamı gören kişi 24 saysa bile "yanlış
+>    saymışımdır" deyip 25 yazıyor, sayım kendini doğrulayan bir tiyatroya
+>    dönüyordu. Ramazan kararı.
+>    **Karar (22 Eyl 2026): fire ile çıkış ayrı, ikisinde de sebep var.**
+>    Sebepsiz fire raporu "ne kadar" der, "neden" demez; Adisyo'da sebep yok.
+>    Ama sebep listesine "personel" koymak yanlıştı — fire **kayıp** demek
+>    (döküldü / bozuldu / kırıldı), personel yemeği ise bilinçli tüketimdir.
+>    İkisi aynı torbaya girerse fire raporu şişer ve yanlış yerde önlem
+>    alınır. Bu yüzden: **Fire** = döküldü · bozuldu · kırıldı. **Çıkış** =
+>    satılmadan bilinçli tüketim: personel yemeği · satıcıya iade · numune ·
+>    etkinlik. Çıkış olmasaydı personele giden mal sayımda "kayıp" olarak
+>    karşımıza çıkardı. Sebep belgede tutuluyor, kalemde değil: bir fire fişi
+>    genelde tek bir olaydır (buzdolabı bozuldu → beş kalem, tek sebep).
+>    **Karar (22 Eyl 2026): hareket penceresinde malzeme arama kutusu**,
+>    açılır liste değil: 200 malzemede açılır liste kullanılmaz hâle geliyor.
 > 3. **Gelişmiş raporlar** — saatlik ciro, personel performansı, karşılaştırmalı analiz
 > 4. **Cari / veresiye modülü**
 > 5. **Masasız adisyonun çevrimdışı açılması** — offline'ın açık kalan tek ucu

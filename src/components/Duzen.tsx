@@ -6,6 +6,7 @@ import {
   Banknote,
   BookOpenText,
   BookUser,
+  Boxes,
   Building2,
   ChartColumn,
   ChefHat,
@@ -15,10 +16,12 @@ import {
   FileText,
   Gift,
   HandCoins,
+  History,
   LayoutGrid,
   ListChecks,
   Lock,
   LogOut,
+  Package,
   Percent,
   PieChart,
   Printer,
@@ -87,6 +90,13 @@ export const menuBolumleri: Bolum[] = [
   { yol: "/menu/aktarim", ad: "İçe/Dışa Aktar", ikon: ArrowLeftRight },
 ];
 
+// Stok kendi başlığı altında büyüyecek: bugün yalnız malzeme tanımı var,
+// stok girişi/sayımı ve hareket defteri sonraki adımlarda buraya eklenecek.
+export const stokBolumleri: Bolum[] = [
+  { yol: "/stok/malzemeler", ad: "Malzemeler", ikon: Package },
+  { yol: "/stok/hareketler", ad: "Hareketler", ikon: History },
+];
+
 export const kasaBolumleri: Bolum[] = [
   { yol: "/kasa/gecmis", ad: "Kasa Geçmişi", ikon: HandCoins },
   { yol: "/kasa/giderler", ad: "Giderler", ikon: Banknote },
@@ -116,6 +126,7 @@ const baglantilar = [
   { yol: "/kasa", ad: "Kasa", ikon: "kasa", obek: "Gün içinde", alt: kasaBolumleri },
   { yol: "/musteriler", ad: "Müşteriler", ikon: "musteri", obek: "Gün içinde" },
   { yol: "/menu", ad: "Menü Stüdyosu", ikon: "menu", obek: "Tanımlar", alt: menuBolumleri },
+  { yol: "/stok", ad: "Stok", ikon: "stok", obek: "Tanımlar", alt: stokBolumleri },
   { yol: "/analiz", ad: "Analiz", ikon: "analiz", obek: "Yönetim", alt: analizBolumleri },
   { yol: "/ayarlar", ad: "İşletme Ayarları", ikon: "ayar", obek: "Yönetim", alt: ayarBolumleri },
 ];
@@ -144,6 +155,7 @@ function Ikon({ tip }: { tip: string }) {
   if (tip === "istasyon") return <UtensilsCrossed />;
   if (tip === "analiz") return <ChartColumn />;
   if (tip === "musteri") return <UsersRound />;
+  if (tip === "stok") return <Boxes />;
   return <LayoutGrid />;
 }
 

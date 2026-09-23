@@ -36,6 +36,9 @@ export type IsletmeAyarlari = {
   /** Kullanılmayan sipariş türü arayüzde hiç durmasın. */
   gelalAcik: boolean;
   paketAcik: boolean;
+  /** Stok eksiye düşebilir mi. Kapalıysa sonucu eksiye düşüren hareket
+   *  kaydedilemez; açıkken eksi stok engel değil, kırmızı bir uyarıdır. */
+  eksiStokIzin: boolean;
   /** Kasa takibi yapılmıyorsa kasa ekranları arayüzde hiç durmaz. */
   kasaTakibi: boolean;
   kasaKapanisZorunlu: boolean;
@@ -70,6 +73,7 @@ const VARSAYILAN: IsletmeAyarlari = {
   masaDurgunlukDk: 45,
   gelalAcik: true,
   paketAcik: true,
+  eksiStokIzin: true,
   kasaTakibi: false,
   kasaKapanisZorunlu: false,
   kasaKapanisUyari: "",
@@ -127,6 +131,7 @@ async function ayarlariOku(): Promise<IsletmeAyarlari> {
     masaDurgunlukDk: s?.masa_durgunluk_dk ?? VARSAYILAN.masaDurgunlukDk,
     gelalAcik: s?.gelal_acik ?? VARSAYILAN.gelalAcik,
     paketAcik: s?.paket_acik ?? VARSAYILAN.paketAcik,
+    eksiStokIzin: s?.eksi_stok_izin ?? VARSAYILAN.eksiStokIzin,
     kasaTakibi: s?.kasa_takibi ?? VARSAYILAN.kasaTakibi,
     kasaKapanisZorunlu: s?.kasa_kapanis_zorunlu ?? VARSAYILAN.kasaKapanisZorunlu,
     kasaKapanisUyari: saat(s?.kasa_kapanis_uyari, VARSAYILAN.kasaKapanisUyari),
@@ -162,6 +167,7 @@ export async function ayarlariKaydet(degisen: Partial<IsletmeAyarlari>) {
       masa_durgunluk_dk: yeni.masaDurgunlukDk,
       gelal_acik: yeni.gelalAcik,
       paket_acik: yeni.paketAcik,
+      eksi_stok_izin: yeni.eksiStokIzin,
       kasa_takibi: yeni.kasaTakibi,
       kasa_kapanis_zorunlu: yeni.kasaKapanisZorunlu,
       // Saat alanı boşsa uyarı kapalı demektir; boş metin time'a yazılamıyor.

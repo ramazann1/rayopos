@@ -8754,33 +8754,47 @@ body {
   opacity: 1;
 }
 
+/* Balon koyu bir kutuydu: uygulamanın geri kalanı beyaz kart ve ince çizgi
+   olduğu için ekranda tek başına yabancı duruyordu, üstelik 268 px'e sıkışan
+   metin beş satıra bölünüyordu. Artık diğer yüzeylerle aynı dilde — kart
+   zemini, hairline çerçeve, yumuşak gölge — ve daha geniş. */
 .ipucu-balon {
   position: absolute;
-  left: 0;
-  bottom: calc(100% + 9px);
+  left: -6px;
+  bottom: calc(100% + 11px);
   z-index: 40;
-  width: 268px;
-  padding: 11px 13px;
-  border-radius: 11px;
-  background: var(--metin);
-  color: #fff;
+  width: 340px;
+  max-width: min(340px, 70vw);
+  padding: 12px 14px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  color: var(--soluk);
   font-size: 13.5px;
   font-weight: 400;
-  line-height: 1.5;
-  box-shadow: 0 6px 22px rgba(20, 32, 48, 0.22);
+  line-height: 1.55;
+  text-align: left;
+  box-shadow: var(--g3);
   opacity: 0;
   visibility: hidden;
   transform: translateY(4px);
   transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
 }
 
+/* Ok, üçgen kenarlıkla değil döndürülmüş kare ile çiziliyor: balonun
+   çerçevesi olduğu için okun da iki kenarının çizgili olması gerekiyor. */
 .ipucu-balon::after {
   content: "";
   position: absolute;
   top: 100%;
-  left: 5px;
-  border: 6px solid transparent;
-  border-top-color: var(--metin);
+  left: 12px;
+  width: 11px;
+  height: 11px;
+  margin-top: -6px;
+  background: var(--kart);
+  border-right: 1px solid var(--cizgi);
+  border-bottom: 1px solid var(--cizgi);
+  transform: rotate(45deg);
 }
 
 .ipucu:hover .ipucu-balon,
@@ -15987,8 +16001,13 @@ body {
   animation: up-gir var(--gecis-yavas);
 }
 
+/* Açılış hareketi büyüterek değil kaydırarak yapılıyor. scale(0.97) ile
+   pencere büyürken tarayıcı içindeki yazıyı önce küçük ölçekte çiziyor,
+   animasyon bitince yeniden çiziyordu: harfler bir an başka bir yazı tipi
+   gibi görünüp sonra yerine oturuyordu. Ölçek değişmeyince yazı tek seferde
+   doğru çiziliyor. Beş modal da bu kareyi kullanıyor. */
 @keyframes up-gir {
-  from { opacity: 0; transform: scale(0.97); }
+  from { opacity: 0; transform: translateY(6px); }
 }
 
 .up-ust {
@@ -19299,4 +19318,1407 @@ body:has(.up-fon, .menu-perde) {
 .istasyon-kartlar-yukleniyor .cember {
   border-color: #3a464b;
   border-top-color: #ff7a59;
+}
+
+/* --- Stok: Malzemeler ekranı ------------------------------------------- */
+/* Adisyo'nun stok ekranı gri bir tablo; burası kart düzeni. Satırın solunda
+   grubun rengiyle çizilmiş bir şerit, ikon, ortada miktar. Kritik seviyeye
+   düşen ve eksiye geçen satır rengini kendi kendine değiştiriyor — rapora
+   bakmadan listede görünsün. */
+
+.stok-ozet {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 220px));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stok-ozet-kart {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  box-shadow: var(--g1);
+}
+
+.stok-ozet-im {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-or);
+  background: var(--mercan-sis);
+  color: var(--mercan);
+}
+
+.stok-ozet-kart em {
+  font-style: normal;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stok-ozet-kart small {
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+/* Sayı sıfırken kart sakin duruyor; dolduğu anda rengini alıyor. */
+.stok-ozet-kart.uyari .stok-ozet-im {
+  background: rgba(240, 160, 61, 0.16);
+  color: #d9821b;
+}
+
+.stok-ozet-kart.tehlike .stok-ozet-im {
+  background: rgba(224, 49, 49, 0.13);
+  color: #e03131;
+}
+
+.stok-suzgec {
+  flex-wrap: wrap;
+}
+
+.stok-grup-nokta {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--r-tam);
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.stok-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stok-satir {
+  --satir-renk: var(--cizgi-koyu);
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) 150px 120px auto;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px 11px 11px;
+  border: 1px solid var(--cizgi);
+  border-left: 4px solid var(--satir-renk);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  font-size: 14.5px;
+  transition: border-color var(--gecis), box-shadow var(--gecis);
+}
+
+.stok-satir:hover {
+  box-shadow: var(--g2);
+}
+
+.stok-im {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-or);
+  background: var(--kart-ust);
+  border: 1px solid var(--cizgi);
+  color: var(--soluk);
+}
+
+.stok-ad,
+.stok-miktar {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stok-ad {
+  font-weight: 600;
+}
+
+.stok-satir small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--soluk);
+}
+
+.stok-miktar {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  align-items: flex-end;
+}
+
+.stok-rozet {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: var(--r-tam);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.stok-rozet.uyari {
+  background: rgba(240, 160, 61, 0.16);
+  color: #b96d13;
+}
+
+.stok-rozet.tehlike {
+  background: rgba(224, 49, 49, 0.13);
+  color: #e03131;
+}
+
+.stok-satir.kritik {
+  --satir-renk: #f0a03d;
+  background: #fffaf2;
+}
+
+.stok-satir.eksi {
+  --satir-renk: #e03131;
+  background: #fef5f4;
+}
+
+.stok-satir.kritik .stok-im {
+  background: rgba(240, 160, 61, 0.16);
+  border-color: rgba(240, 160, 61, 0.35);
+  color: #b96d13;
+}
+
+.stok-satir.eksi .stok-im {
+  background: rgba(224, 49, 49, 0.12);
+  border-color: rgba(224, 49, 49, 0.28);
+  color: #e03131;
+}
+
+/* Kullanımdan kaldırılan malzeme listede kalıyor ama öne çıkmıyor. Yazı
+   soluklaştırılmıyor — yalnız zemin çekiliyor, kural gereği metin okunur. */
+.stok-satir.pasif {
+  background: var(--kart-ust);
+  border-style: dashed;
+}
+
+.stok-satir button {
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-kk);
+  padding: 8px 10px;
+  background: var(--kart);
+  color: var(--soluk);
+  cursor: pointer;
+}
+
+.stok-satir button:hover {
+  border-color: var(--cizgi-koyu);
+  color: var(--metin);
+}
+
+/* Malzeme kartındaki mevcut stok kutusu: rakam okunuyor ama düzenlenemiyor,
+   sebebi de hemen altında yazıyor. */
+.stok-panel-durum {
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart-ust);
+  padding: 12px 14px;
+}
+
+.stok-panel-durum span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stok-panel-durum b {
+  margin-left: auto;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stok-panel-durum p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+.stok-anahtar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  cursor: pointer;
+}
+
+.stok-anahtar span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stok-anahtar small {
+  grid-column: 2;
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+.stok-grup-ekleme {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0 12px;
+}
+
+.stok-grup-ekleme input {
+  flex: 1;
+}
+
+.stok-bos-satir {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--soluk);
+}
+
+/* Kritik seviyeler penceresi: hepsi alt alta, tek oturuşta doldurulsun. */
+.stok-kritik-panel {
+  max-width: 560px;
+}
+
+.stok-kritik-ara {
+  margin: 14px 0 10px;
+}
+
+.stok-kritik-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.stok-kritik-satir {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+}
+
+.stok-kritik-ad {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stok-kritik-ad small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--soluk);
+}
+
+.stok-kritik-giris {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.stok-kritik-giris input {
+  width: 100%;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stok-kritik-giris em {
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--soluk);
+  min-width: 22px;
+}
+
+/* Telefonda sütunlar yan yana sığmıyor: satır iki sıraya düşüyor, miktar
+   adın altına geçiyor. Yazı küçülüyor ama koyu tonda kalıyor. */
+@media (max-width: 820px) {
+  .stok-ozet {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .stok-ozet-kart {
+    padding: 10px;
+    column-gap: 9px;
+  }
+
+  .stok-ozet-im {
+    width: 34px;
+    height: 34px;
+  }
+
+  .stok-ozet-kart em {
+    font-size: 18px;
+  }
+
+  .stok-ozet-kart small {
+    font-size: 11.5px;
+  }
+
+  .stok-satir {
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+  }
+
+  .stok-miktar {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .stok-durum {
+    grid-column: 2 / 4;
+    grid-row: 3;
+  }
+
+  .stok-durum:empty {
+    display: none;
+  }
+
+  .stok-kritik-satir {
+    grid-template-columns: 1fr 110px;
+  }
+}
+
+/* Stok modalları ortak kabukta (.up-fon / .up-modal): ekranın ortasında,
+   yandan kayan çekmece değil. Kabuk 940 px'e kadar genişliyor, buradaki
+   formlar tek sütun olduğu için daraltılıyor. */
+.stok-modal {
+  align-self: center;
+  width: 100%;
+  max-width: 460px;
+  max-height: 88vh;
+}
+
+.stok-modal-im {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-tam);
+  background: var(--mercan-sis);
+  color: var(--mercan);
+}
+
+.stok-modal-govde {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 22px 4px;
+}
+
+/* Etiket kuralı ayar çekmecesine bağlıydı (.ayar-panel .alan label); bu
+   modal oraya girmediği için kendi kuralını taşıyor. */
+.stok-modal .alan {
+  margin-bottom: 16px;
+}
+
+.stok-modal .alan label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+.stok-modal .gider-ikili {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stok-kritik-panel {
+  max-width: 560px;
+}
+
+@media (max-width: 820px) {
+  .stok-modal,
+  .stok-kritik-panel {
+    max-width: 100%;
+    max-height: 92vh;
+  }
+
+  .stok-modal-govde {
+    padding: 16px 16px 4px;
+  }
+}
+
+/* Süzgeç şeridi: ayar ekranlarındaki alt şeridin aynısı, yanında sayaç.
+   Sayı "boş" bilgisini de veriyor — grupta kaç malzeme var, tıklamadan
+   görünüyor. */
+.stok-serit {
+  margin: 0 0 16px;
+}
+
+.stok-serit-sayi {
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: var(--r-tam);
+  background: var(--kart-ust);
+  color: var(--soluk);
+}
+
+.alt-sekme.aktif .stok-serit-sayi {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+/* Bölüm başlığındaki ikincil eylemler: birincil düğmeyle (Malzeme ekle) aynı
+   ağırlıkta görünmesinler, ama silik de olmasınlar. */
+.stok-yan-tus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--metin);
+  cursor: pointer;
+  transition: border-color var(--gecis), background var(--gecis);
+}
+
+.stok-yan-tus:hover {
+  border-color: var(--soluk);
+  background: var(--kart-ust);
+}
+
+/* Grup seçicinin yanındaki "yeni grup" tuşu kutuya bitişik duruyor. */
+.stok-grup-alan {
+  display: flex;
+  gap: 6px;
+}
+
+.stok-grup-alan select {
+  flex: 1;
+  min-width: 0;
+}
+
+.stok-grup-alan button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  flex-shrink: 0;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+  color: var(--soluk);
+  cursor: pointer;
+  transition: border-color var(--gecis), color var(--gecis);
+}
+
+.stok-grup-alan button:hover {
+  border-color: var(--mercan);
+  color: var(--mercan);
+}
+
+/* Grup penceresi: renk tek yuvarlak nokta, palet tıklanınca açılıyor.
+   Ortak renk seçici bütün paletini satır içine seriyor — geniş kategori
+   panelinde doğru, dar liste satırında ekranı boyuyordu. */
+.stok-renk-tus {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-tam);
+  color: var(--soluk);
+  cursor: pointer;
+  transition: transform var(--gecis), border-color var(--gecis);
+}
+
+.stok-renk-tus:hover {
+  transform: scale(1.08);
+  border-color: var(--soluk);
+}
+
+.stok-renk-modal {
+  align-self: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+.stok-renk-izgara {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 9px;
+  padding: 18px 20px 22px;
+}
+
+.stok-renk-kare {
+  display: grid;
+  place-items: center;
+  height: 42px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  color: var(--soluk);
+  cursor: pointer;
+  transition: transform var(--gecis), box-shadow var(--gecis);
+}
+
+.stok-renk-kare:hover {
+  transform: scale(1.06);
+}
+
+.stok-renk-kare.secili {
+  box-shadow: 0 0 0 2px var(--kart), 0 0 0 4px var(--metin);
+}
+
+.stok-grup-ekleme {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 16px 0 14px;
+}
+
+.stok-grup-ekleme input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  font: inherit;
+  font-size: 14px;
+  color: var(--metin);
+  background: var(--kart);
+}
+
+.stok-grup-ekleme input:focus {
+  outline: none;
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 3px var(--mercan-sis);
+}
+
+.stok-ekle-tus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--r-kk);
+  background: var(--mercan);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+}
+
+.stok-ekle-tus:disabled {
+  background: var(--kart-ust);
+  border-color: var(--cizgi);
+  color: var(--soluk);
+  cursor: default;
+}
+
+.stok-grup-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stok-grup-satir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+}
+
+.stok-grup-ad {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.stok-grup-satir input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--mercan);
+  border-radius: var(--r-kk);
+  font: inherit;
+  font-size: 14px;
+}
+
+.stok-grup-satir input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--mercan-sis);
+}
+
+.stok-grup-satir > button:not(.stok-renk-tus) {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-kk);
+  background: none;
+  color: var(--soluk);
+  cursor: pointer;
+  transition: background var(--gecis), color var(--gecis);
+}
+
+.stok-grup-satir > button:not(.stok-renk-tus):hover {
+  background: var(--kart-ust);
+  color: var(--metin);
+}
+
+/* Süzgeç penceresindeki grup kartlarının rengi noktadan okunuyor. */
+.stok-grup-nokta.buyuk {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- Gruplar penceresi -------------------------------------------------
+   Tek ritim: her şey aynı yükseklikte satır. Ekleme satırı listenin
+   devamı, düzenleme satırın içinde oluyor; pencerede ayrı form bloğu yok.
+   İşlemler satırın üstüne gelince çıkıyor — yedi grupta on dört ikon
+   birden görünmesin. */
+.gp-modal {
+  align-self: center;
+  width: 100%;
+  max-width: 380px;
+}
+
+.gp-liste {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.gp-satir {
+  --grup-renk: var(--cizgi-koyu);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 46px;
+  padding: 0 8px 0 10px;
+  border-radius: var(--r-kk);
+  border-left: 3px solid transparent;
+  transition: background var(--gecis), border-color var(--gecis);
+}
+
+.gp-satir:hover {
+  background: var(--zemin);
+  border-left-color: var(--grup-renk);
+}
+
+.gp-satir.duzenleniyor {
+  background: var(--mercan-sis);
+  border-left-color: var(--mercan);
+}
+
+/* Ad hem etiket hem düğme: tıklayınca yerinde düzenlemeye geçiyor, ayrı
+   kalem ikonu gerekmiyor. */
+.gp-ad {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--metin);
+  text-align: left;
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gp-sayi {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--soluk);
+  font-variant-numeric: tabular-nums;
+}
+
+.gp-islem {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-kk);
+  background: none;
+  color: var(--soluk);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--gecis), background var(--gecis), color var(--gecis);
+}
+
+.gp-satir:hover .gp-islem,
+.gp-islem:focus-visible {
+  opacity: 1;
+}
+
+.gp-islem:hover {
+  background: rgba(224, 49, 49, 0.12);
+  color: #e03131;
+}
+
+.gp-giris {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--metin);
+}
+
+.gp-giris:focus {
+  outline: none;
+  border-color: var(--mercan);
+}
+
+.gp-onay {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-kk);
+  background: var(--mercan);
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--gecis), color var(--gecis);
+}
+
+.gp-onay:disabled {
+  background: none;
+  color: var(--soluk);
+  cursor: default;
+}
+
+/* Ekleme satırı listeden kesik çizgiyle ayrılıyor: aynı ritimde ama
+   "burası henüz kayıt değil" diyor. */
+.gp-yeni {
+  margin-top: 4px;
+  border-top: 1px dashed var(--cizgi);
+  border-radius: 0 0 var(--r-kk) var(--r-kk);
+}
+
+.gp-yeni:hover {
+  background: none;
+  border-left-color: transparent;
+}
+
+.gp-hata {
+  margin: 0;
+  padding: 10px 16px 16px;
+  font-size: 13.5px;
+  color: #e03131;
+}
+
+/* Kritik seviye kutusu: rakam girilen yer ekranın asıl işi, o yüzden
+   iri ve hizalı. Birim kutunun içinde duruyor — dışarıda küçük gri bir
+   ek gibi durunca hem okunmuyor hem kutu çıplak kalıyordu. */
+.stok-kritik-giris {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.stok-kritik-giris input {
+  width: 100%;
+  padding: 11px 44px 11px 14px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--metin);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--gecis), box-shadow var(--gecis);
+}
+
+.stok-kritik-giris input::placeholder {
+  font-weight: 400;
+  color: var(--soluk);
+}
+
+.stok-kritik-giris input:focus {
+  outline: none;
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 3px var(--mercan-sis);
+}
+
+.stok-kritik-giris em {
+  position: absolute;
+  right: 14px;
+  font-style: normal;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--soluk);
+  pointer-events: none;
+}
+
+.stok-kritik-satir {
+  padding: 11px 14px;
+}
+
+.stok-kritik-ad {
+  font-size: 15px;
+}
+
+.stok-kritik-satir {
+  grid-template-columns: 1fr 170px;
+}
+
+/* Malzeme araması bölüm başlığında duruyor; başlık esnek olduğu için kutuya
+   kendi genişliğini vermek gerekiyor, yoksa düğmeleri sıkıştırıyor. */
+.ayar-bolum-ust .ayar-arama {
+  flex: 0 1 240px;
+  margin: 0;
+}
+
+/* Anahtar satırı modalın içinde kendi çerçevesiyle duruyor: form alanlarının
+   altında sınırsız bir satır gibi asılı kalmasın. */
+.stok-modal-govde .anahtar-satir {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart-ust);
+}
+
+/* Kutu kendi içinde kayıyor (useKutuBoyu ölçüyor). Sağda kaydırma çubuğu
+   belirince satırlar zıplamasın diye yer baştan ayrılıyor. */
+.stok-liste {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+}
+
+/* Satır sonundaki iki işlem tek öbekte duruyor; telefonda da birlikte
+   taşınsınlar diye sarmalanmış hâlde. */
+.stok-islem {
+  display: flex;
+  gap: 6px;
+}
+
+.stok-satir .stok-islem button.tehlike:hover {
+  border-color: rgba(224, 49, 49, 0.45);
+  background: rgba(224, 49, 49, 0.08);
+  color: #e03131;
+}
+
+@media (max-width: 820px) {
+  .stok-satir .stok-islem {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+/* Mercan bu ekranda fazla yer kaplıyordu: özet kartının ikonu, seçili süzgeç
+   ve ekleme düğmesi aynı anda dolu mercandı, vurgu olmaktan çıkıp zemin
+   rengine dönüyordu. Geriye tek dolu mercan kalıyor — birincil eylem.
+   Kurallar stok şeridine bağlı, diğer ekranların alt şeridi eskisi gibi. */
+.stok-serit .alt-sekme.aktif {
+  background: var(--mercan-sis);
+  border-color: var(--mercan);
+  color: var(--mercan);
+}
+
+.stok-serit .alt-sekme.aktif .stok-serit-sayi {
+  background: var(--kart);
+  color: var(--mercan);
+}
+
+/* Nötr özet kartının ikonu da mercandı; oysa o kart bir uyarı değil,
+   yalnız sayı söylüyor. Uyarı ve tehlike kartları rengini koruyor. */
+.stok-ozet-kart .stok-ozet-im {
+  background: var(--kart-ust);
+  border: 1px solid var(--cizgi);
+  color: var(--soluk);
+}
+
+.stok-ozet-kart.uyari .stok-ozet-im {
+  background: rgba(240, 160, 61, 0.16);
+  border-color: rgba(240, 160, 61, 0.3);
+  color: #b96d13;
+}
+
+.stok-ozet-kart.tehlike .stok-ozet-im {
+  background: rgba(224, 49, 49, 0.13);
+  border-color: rgba(224, 49, 49, 0.26);
+  color: #e03131;
+}
+
+/* Balonun başlık satırı: açıklamanın neye dair olduğunu okumadan önce
+   söylüyor. Mercan burada tek satırlık küçük bir vurgu, kutu dolmuyor. */
+.ipucu-baslik {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mercan);
+}
+
+.ipucu-baslik svg {
+  flex-shrink: 0;
+}
+
+/* --- Stok hareketleri ---------------------------------------------------
+   Defter satırı Malzemeler'dekiyle aynı ritimde ama sağdaki alan farklı:
+   orada tek rakam var, burada "eski → değişim → yeni" üçlüsü. Stoğun o an
+   ne olduğu değil, nasıl o hâle geldiği okunuyor. */
+
+.hrk-satir {
+  --satir-renk: var(--cizgi-koyu);
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px 11px 11px;
+  border: 1px solid var(--cizgi);
+  border-left: 4px solid var(--satir-renk);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  font-size: 14.5px;
+}
+
+.hrk-satir.hrk-giris { --satir-renk: #12b886; }
+.hrk-satir.hrk-fire  { --satir-renk: #e03131; }
+.hrk-satir.hrk-cikis { --satir-renk: #f0a03d; }
+
+.hrk-im {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-or);
+  background: var(--kart-ust);
+  border: 1px solid var(--cizgi);
+  color: var(--soluk);
+}
+
+.hrk-satir.hrk-giris .hrk-im {
+  background: rgba(18, 184, 134, 0.12);
+  border-color: rgba(18, 184, 134, 0.3);
+  color: #0c8f68;
+}
+
+.hrk-satir.hrk-fire .hrk-im {
+  background: rgba(224, 49, 49, 0.12);
+  border-color: rgba(224, 49, 49, 0.28);
+  color: #e03131;
+}
+
+.hrk-satir.hrk-cikis .hrk-im {
+  background: rgba(240, 160, 61, 0.16);
+  border-color: rgba(240, 160, 61, 0.32);
+  color: #b96d13;
+}
+
+.hrk-ad {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.hrk-ad small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--soluk);
+}
+
+.hrk-defter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hrk-defter b {
+  font-weight: 500;
+  color: var(--soluk);
+}
+
+.hrk-defter b.sonuc {
+  font-weight: 700;
+  color: var(--metin);
+}
+
+.hrk-defter svg {
+  color: var(--cizgi-koyu);
+  flex-shrink: 0;
+}
+
+.hrk-defter em {
+  font-style: normal;
+  font-weight: 600;
+}
+
+.hrk-defter em.arti { color: #0c8f68; }
+.hrk-defter em.eksi { color: #e03131; }
+
+/* --- Yeni hareket penceresi --- */
+.hrk-modal {
+  max-width: 640px;
+}
+
+.hrk-tablo {
+  margin: 4px 0 16px;
+}
+
+.hrk-basliklar,
+.hrk-satir-giris {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px 96px 34px;
+  gap: 8px;
+  align-items: center;
+}
+
+.hrk-basliklar.fiyatli,
+.hrk-satir-giris.fiyatli {
+  grid-template-columns: minmax(0, 1fr) 96px 96px 90px 34px;
+}
+
+.hrk-basliklar {
+  margin-bottom: 7px;
+  font-size: 12.5px;
+  color: var(--soluk);
+}
+
+.hrk-sonuc-basi {
+  text-align: right;
+}
+
+.hrk-satir-giris {
+  margin-bottom: 7px;
+}
+
+.hrk-satir-giris input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+  font: inherit;
+  font-size: 14px;
+  color: var(--metin);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.hrk-satir-giris input:focus {
+  outline: none;
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 3px var(--mercan-sis);
+}
+
+/* Kaydetmeden önce sonucu söyleyen sütun. Yazılamıyor, o yüzden kutu değil
+   düz metin: girilecek yerle okunacak yer karışmasın. */
+.hrk-sonuc {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--metin);
+}
+
+.hrk-sonuc.bos { color: var(--soluk); font-weight: 400; }
+.hrk-sonuc.eksi { color: #e03131; }
+
+.hrk-satir-sil {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: var(--r-kk);
+  background: none;
+  color: var(--soluk);
+  cursor: pointer;
+}
+
+.hrk-satir-sil:hover:not(:disabled) {
+  background: rgba(224, 49, 49, 0.1);
+  color: #e03131;
+}
+
+.hrk-satir-sil:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hrk-satir-ekle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 3px;
+  padding: 10px 12px;
+  border: none;
+  border-top: 1px dashed var(--cizgi);
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--soluk);
+  cursor: pointer;
+}
+
+.hrk-satir-ekle:hover {
+  color: var(--mercan);
+}
+
+/* Malzeme arama kutusu ve önerileri. */
+.hrk-secici {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+  color: var(--soluk);
+}
+
+.hrk-secici:focus-within {
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 3px var(--mercan-sis);
+}
+
+.hrk-secici input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--metin);
+  text-align: left;
+}
+
+.hrk-secici input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.hrk-oneriler {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  box-shadow: var(--g3);
+}
+
+.hrk-oneriler button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--r-kk);
+  background: none;
+  font: inherit;
+  color: var(--metin);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hrk-oneriler button:hover {
+  background: var(--zemin);
+}
+
+.hrk-oneriler span {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.hrk-oneriler small {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--soluk);
+}
+
+.hrk-oneriler em {
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--soluk);
+  font-variant-numeric: tabular-nums;
+}
+
+.hrk-uyari {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-kk);
+  background: rgba(240, 160, 61, 0.14);
+  font-size: 13.5px;
+  color: #8a5210;
+}
+
+.hrk-alt .hrk-ozet {
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--soluk);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 820px) {
+  .hrk-satir {
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+  }
+
+  .hrk-defter {
+    grid-column: 1 / 3;
+    justify-content: space-between;
+    font-size: 13.5px;
+  }
+
+  .hrk-modal {
+    max-width: 100%;
+  }
+
+  /* Telefonda dört sütun sığmıyor: satır kendi içinde iki sıraya düşüyor,
+     malzeme üstte tam genişlikte. */
+  .hrk-basliklar {
+    display: none;
+  }
+
+  .hrk-satir-giris,
+  .hrk-satir-giris.fiyatli {
+    grid-template-columns: 1fr 1fr 34px;
+    gap: 7px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--cizgi);
+  }
+
+  .hrk-secici {
+    grid-column: 1 / 4;
+  }
+
+  .hrk-sonuc {
+    grid-column: 1 / 3;
+    text-align: left;
+  }
+
+  .hrk-satir-sil {
+    grid-column: 3;
+  }
+}
+
+.hrk-uyari.tehlike {
+  background: rgba(224, 49, 49, 0.12);
+  color: #b02525;
+}
+
+/* Sonekli kutuda sağ dolgu birime yer açıyor (.up-sonek input). Satır kuralı
+   dolguyu tek satırda yeniden yazdığı için o payı siliyordu: rakam ile "lt"
+   üst üste biniyordu. Pay burada geri veriliyor. */
+.hrk-satir-giris .up-sonek input {
+  padding-right: 34px;
+}
+
+/* Tarih ile saat tek alanın içinde yan yana; ayrı iki etiket koymak formu
+   gereksiz uzatıyordu. */
+.hrk-zaman > div {
+  display: grid;
+  grid-template-columns: 1fr 96px;
+  gap: 8px;
+}
+
+/* Defter satırındaki düzenle/sil ikilisi Malzemeler'dekiyle aynı görünüyor. */
+.hrk-satir .stok-islem button {
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-kk);
+  padding: 8px 10px;
+  background: var(--kart);
+  color: var(--soluk);
+  cursor: pointer;
+}
+
+.hrk-satir .stok-islem button:hover {
+  border-color: var(--cizgi-koyu);
+  color: var(--metin);
+}
+
+.hrk-satir .stok-islem button.tehlike:hover {
+  border-color: rgba(224, 49, 49, 0.45);
+  background: rgba(224, 49, 49, 0.08);
+  color: #e03131;
+}
+
+@media (max-width: 820px) {
+  .hrk-satir {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .hrk-satir .stok-islem {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .hrk-defter {
+    grid-column: 1 / 4;
+  }
 }
