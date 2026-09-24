@@ -4228,6 +4228,7 @@ body {
 /* Açık/kapalı ayar anahtarı */
 
 .anahtar-satir {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -4257,8 +4258,15 @@ body {
   color: var(--soluk);
 }
 
+/* Gizli onay kutusu satırın içinde kalsın. Konumlanmış bir atası olmadığı
+   için sayfanın köküne göre yerleşiyor, kendi boyu kadar aşağı taşıyordu:
+   uzun pencerelerde sağda tarayıcının kaydırma çubuğunu çıkarıp ekranı
+   daraltan şey buydu. */
 .anahtar-satir input {
   position: absolute;
+  inset: 0 auto auto 0;
+  width: 0;
+  height: 0;
   opacity: 0;
   pointer-events: none;
 }
@@ -19268,6 +19276,7 @@ body:has(.up-fon, .menu-perde) {
   margin: auto;
 }
 
+
 /* --- Halka paleti canlandırıldı ---
    Önce tek renk ailesi kullanılıyordu: mercanın açılan kademeleri. Dilim sayısı
    arttıkça tonlar birbirine yaklaşıp soluyor, üçüncü dilimden sonra hepsi aynı
@@ -21279,4 +21288,411 @@ body:has(.up-fon, .menu-perde) {
 .m-sayim .ipucu:hover .ipucu-balon,
 .m-sayim .ipucu:focus .ipucu-balon {
   transform: translateY(0);
+}
+
+/* ---------- Reçete ---------- */
+/* Porsiyon kutusundaki özet satırı: reçete kendi penceresinde, burada yalnız
+   kaç malzeme ve ne maliyet olduğu yazıyor. Seçenek grubu düğmesiyle aynı
+   dilde — tek satır, sağda eylem. */
+.up-recete-satir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  text-align: left;
+  background: var(--kart-ust);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  cursor: pointer;
+  transition: border-color var(--gecis);
+}
+
+.up-recete-satir:hover {
+  border-color: var(--mercan);
+}
+
+.up-recete-satir > svg {
+  flex: none;
+  color: var(--soluk);
+}
+
+.up-recete-satir .up-recete-ad {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.up-recete-satir .up-recete-ozet {
+  flex: 1;
+  font-size: 14px;
+  color: var(--soluk);
+  font-variant-numeric: tabular-nums;
+}
+
+.up-recete-tus {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mercan);
+}
+
+/* --- reçete penceresi --- */
+/* Yükseklik perdeye değil ekrana göre sınırlanıyor. `max-height: 100%` kayan
+   bir perdenin içinde tutmuyor: pencere içerik eklendikçe büyüyüp perdeyi
+   kaydırılabilir yapıyordu, sağda tarayıcının çubuğu çıkıp ekranı daraltıyordu.
+   Artık pencere ekranı hiç aşmıyor, uzayan liste kendi içinde kayıyor. */
+.rcp-pencere {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 820px;
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+  background: var(--kart);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-bk);
+  box-shadow: var(--g3);
+  animation: up-gir var(--gecis-yavas);
+}
+
+/* Reçetenin kendisi solda, malzeme seçimi sağda kalıcı duruyor: arka arkaya
+   birkaç malzeme ekleniyor, her seferinde bir düğmeye basmak yoruyor. */
+.rcp-govde {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  gap: 18px;
+  padding: 20px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Alt sınır, pencerenin boşken ve ilk satır eklendiğinde aynı boyda kalması
+   için: yoksa ekran her satırda bir zıplıyor. */
+.rcp-sol {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 260px;
+}
+
+.rcp-tablo {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sütunlar sabit: ad esner, miktar ve tutar hep aynı yerde kalır ki satırlar
+   alt alta okunabilsin. minmax(0, 1fr) — 1fr en dar içerikten (₺1.234,56)
+   daha dar olamıyor ve satırı taşırıyor. */
+.rcp-baslik,
+.rcp-satir {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 118px 104px 34px;
+  gap: 10px;
+  align-items: center;
+}
+
+.rcp-baslik {
+  padding-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--soluk);
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.rcp-baslik span:nth-child(3) {
+  text-align: right;
+}
+
+.rcp-satir {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.rcp-ad {
+  font-size: 14px;
+  color: var(--metin);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Miktar kutusu ürün panelindeki alanlarla aynı dilde. `.up-alan` sarmalayıcısı
+   burada yok, o yüzden kutu tarayıcının kendi varsayılan çerçevesiyle
+   çiziliyordu — köşeli, ince siyah çizgili, sayfaya yabancı. */
+.rcp-satir input {
+  width: 100%;
+  padding: 9px 30px 9px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--metin);
+  background: var(--kart);
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--gecis), box-shadow var(--gecis);
+}
+
+.rcp-satir input:focus {
+  outline: none;
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 3px var(--mercan-sis);
+}
+
+.rcp-satir .up-sonek em {
+  color: var(--soluk);
+}
+
+.rcp-tutar {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--metin);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rcp-tutar.yok {
+  color: var(--soluk);
+}
+
+.rcp-sil {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  color: var(--soluk);
+  background: none;
+  border: 0;
+  border-radius: var(--r-kk);
+  cursor: pointer;
+  transition: background var(--gecis), color var(--gecis);
+}
+
+.rcp-sil:hover {
+  color: #e03131;
+  background: rgba(224, 49, 49, 0.14);
+}
+
+/* Özet alt şeritte, düğmenin solunda. Şerit onsuz tek düğmeyle boş duruyordu,
+   rakamlar da reçete uzadıkça aşağı kayıyordu. */
+.rcp-alt {
+  gap: 18px;
+}
+
+.rcp-alt .up-tus.kaydet {
+  margin-left: auto;
+}
+
+.rcp-ozet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  min-width: 0;
+}
+
+.rcp-ozet div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rcp-ozet small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+.rcp-ozet strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--metin);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Boş reçetenin kendi ekranı: ikon, tek başlık, tek yönlendirme. Pencerenin
+   yüksekliğini de o tutuyor — dolduğunda ekran zıplamasın. */
+.rcp-yok {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 240px;
+  padding: 20px;
+  text-align: center;
+}
+
+.rcp-yok svg {
+  color: var(--cizgi-koyu);
+}
+
+.rcp-yok strong {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.rcp-yok p {
+  max-width: 320px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--soluk);
+}
+
+.rcp-sag-basi {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.rcp-sag {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--kart-ust);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+}
+
+.rcp-arama {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: var(--kart);
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+}
+
+.rcp-arama svg {
+  flex: none;
+  color: var(--soluk);
+}
+
+.rcp-arama input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--metin);
+  background: none;
+  border: 0;
+  outline: none;
+}
+
+.rcp-liste {
+  display: flex;
+  flex-direction: column;
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.rcp-liste button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 8px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--metin);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--r-kk);
+  cursor: pointer;
+}
+
+.rcp-liste button:hover {
+  color: var(--mercan);
+  background: var(--kart);
+}
+
+.rcp-liste button svg {
+  flex: none;
+  color: var(--soluk);
+}
+
+.rcp-liste button span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rcp-liste button em {
+  flex: none;
+  font-style: normal;
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+.rcp-bos {
+  margin: 6px 2px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--soluk);
+}
+
+/* Telefonda iki sütun sığmıyor: malzeme seçimi reçetenin üstüne geçiyor,
+   önce ekleniyor sonra miktar yazılıyor. */
+@media (max-width: 760px) {
+  .rcp-govde {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .rcp-sag {
+    order: -1;
+  }
+
+  .rcp-liste {
+    max-height: 200px;
+  }
+
+  .rcp-baslik {
+    display: none;
+  }
+
+  .rcp-satir {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 34px;
+  }
+
+  .rcp-ad {
+    grid-column: 1 / -1;
+    font-weight: 500;
+  }
+
+  .rcp-ozet {
+    flex: 1;
+    gap: 14px;
+    justify-content: space-between;
+  }
+
+  .rcp-alt {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .rcp-ozet strong {
+    font-size: 15px;
+  }
+}
+
+/* Kategori listesi kapalıyken tamamen gizli; açılır başlık zaten kaç kategori
+   seçildiğini yazıyor. */
+.up-kategori-kutu.gizli {
+  display: none;
 }

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Bilgi from "../components/Bilgi";
 import UrunPaneli from "../components/UrunPaneli";
+import { receteleriGetir, receteMaliyetleriGetir } from "../recete";
 import OnayModal from "../components/OnayModal";
 import Bildirim from "../components/Bildirim";
 import SiralamaModal from "../components/SiralamaModal";
@@ -34,6 +35,7 @@ import {
   menuGetir,
   maliyetleriGetir,
   maliyetleriIsle,
+  receteleriIsle,
   kategoriEkle,
   kategoriGuncelle,
   kategoriSil,
@@ -695,9 +697,20 @@ export default function MenuStudyosu() {
     // Maliyet menüyle birlikte gelmiyor (kâr marjı satış ekranlarına
     // düşmesin); menü ekranı onu ayrıca isteyip ürünlere işliyor.
     const oku = async () => {
-      const [veri, maliyetler] = await Promise.all([menuGetir(), maliyetleriGetir()]);
+      const [veri, maliyetler, receteler, receteMaliyetleri] = await Promise.all([
+        menuGetir(),
+        maliyetleriGetir(),
+        receteleriGetir(),
+        receteMaliyetleriGetir(),
+      ]);
       setKategoriler(veri.kategoriler);
-      setUrunler(maliyetleriIsle(veri.urunler, maliyetler));
+      setUrunler(
+        receteleriIsle(
+          maliyetleriIsle(veri.urunler, maliyetler),
+          receteler,
+          receteMaliyetleri
+        )
+      );
       setGruplar(veri.gruplar);
       setBirimler(veri.birimler);
       setKdvler(veri.kdvler);

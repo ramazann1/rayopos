@@ -1,0 +1,38 @@
+- [Doküman "yok" demeden önce ara](dokumanda-yok-demeden-once-ara.md) — eksik listesi çıkarırken önce grep, sonra üçe ayırarak sun.
+- [Seans sonu commit'i Claude yapar](rayopos-seans-sonu-commit-claude-yapar.md) — Ramazan'a git komutu listesi verme, kendin çalıştır.
+- [Yeni modülden önce Adisyo turu](rayopos-yeni-modulden-once-adisyo-turu.md) — derin turu yapılmamış modülde plan değil, önce beraber canlı tur.
+- [Görsel hatada önce önbellek](rayopos-gorsel-hatada-once-onbellek.md) — stil ters görünüyorsa ilk şüpheli tarayıcı önbelleği, sert yenileme istet.
+- [Arayüze yeni kavram ekleme](rayopos-arayuzde-yeni-kavram-ekleme.md) — çip/mod/ek düğme yerine mevcut deseni genişlet, en sade seçeneği ilk sıraya koy.
+- [Arayüz metinleri genel dille](rayopos-arayuz-metinleri-genel-dille.md) — Ramazan'a değil, ürünü satın alacak işletmeciye yazılır; soluk küçük punto olmaz.
+- [Liste satırı düzeni](rayopos-liste-satiri-duzeni.md) — sütunlar sabit, açıklama "i" ikonunda, ayar kendi anahtarının altında.
+- [Açıklama cümleleri](rayopos-aciklama-cumleleri-bilgi-kutusu.md) — düz paragraf yok; tek cümle başlıktaki Ipucu, çok cümle Bilgi kutusu.
+- [Tipografi ve renk](rayopos-tipografi-ve-renk.md) — silik yazı YASAK, Poppins, vurgu mercan; soluk yazı çıkarsa iki tuzağa bak.
+- [Tasarımda "Claude izi" olmasın](rayopos-tasarim-claude-izi-olmasin.md) — kalıp form ve her alanın altında açıklama yok; ekran şık ve doğal dursun.
+- [Her yerde ikon](rayopos-her-yerde-ikon.md) — lucide-react; düz karakter simgesi (× ← ✓ ⌫) kullanılmaz, ikon ilk seferde konur.
+- [Dosya yolu tarifi](rayopos-dosya-yolu-tarifi.md) — gizli klasörde ayar değiştirtme, yolu/komutu ver.
+- [Karar alınınca hemen dosyaya](rayopos-karar-alininca-hemen-dosyaya.md) — sıra/kapsam kararı seans sonuna bırakılmaz, o an yazılır.
+- [Adisyo ekran kayitlari](rayopos-adisyo-video-kayitlari.md) — video paylasiliyor; once kontakt sayfasi cikar, sonra sik kare.
+- [Adisyo canli tarayici turu](rayopos-adisyo-canli-tarayici-turu.md) — masaustu turu Chrome ile canli; hicbir sey degistirilmez, olcerek bak.
+- [Ortak sinifa dokunmadan once say](rayopos-ortak-sinifa-dokunmadan-once-say.md) — kac ekran kullaniyor; ortaksa onekli kendi sinifini ver.
+- [Mağazaya çıkış kuralları](rayopos-magazaya-cikis-kurallari.md) — canlıya geçmeden önce oku: paket adı, geliştirici hesabı, Capacitor kararı.
+- [Güvenlik personeli zorlamasın](rayopos-guvenlik-personeli-zorlamasin.md) — görünmez önlem kabul, günlük işe dokunan reddediliyor.
+- [Kural role değil yetkiye](rayopos-kural-role-degil-yetkiye.md) — "garson bunu yapmaz" varsayımı yasak, ürün başka işletmelere satılıyor.
+- [Tarihi dosyadan okuma](rayopos-tarihi-dosyadan-okuma.md) — seans notunun tarihi gerçek günden yazılır, dosyadaki eski tarihten devam edilmez.
+- [Masaüstü–mobil eşitliği](rayopos-masaustu-mobil-esitligi.md) — bilgisayarda yapılan değişiklik mobilde de yapılır, söylenmesi beklenmez.
+- [Büyük dosya baştan yazılmaz](rayopos-buyuk-dosya-bastan-yazilmaz.md) — index.css gibi dosyalarda Edit ile yerinde düzenle, yoksa Vite boş kopyayı alır.
+- [CSS özgüllüğünü say](rayopos-css-ozgullugu-say.md) — ortak kabuğu ezen kural sessizce kaybediyor; "yazdım ama değişmedi" bunun belirtisi.
+- [Korumalı alan çıktısı görünmez](rayopos-korumali-alan-ciktisi.md) — proje dışına yazılan dosyayı Ramazan göremiyor; proje içine kopyala.
+- [Grafik değil cümle](rayopos-grafik-degil-cumle.md) — soyut grafik reddediliyor; Adisyo turundan sonra kırılımları kopyalama.
+- [Göndermeden önce build](rayopos-gondermeden-once-build.md) — tsc --noEmit yetmiyor, push öncesi npm.cmd run build.
+- [Supabase'e tarayıcıdan bak](rayopos-supabase-tarayicidan-teshis.md) — yetki/RLS hatasında kişiyi taklit et, geri alınan işlemle canlandır.
+- [Tarayıcı testi Chrome ile](rayopos-tarayici-testi-chrome-ile.md) — dev sunucusunun sertifikası dahili paneli engelliyor, Ramazan'ın Chrome'u kullanılır.
+- [Yetki kapsamı grep'le ölçülmez](rayopos-yetki-grep-ile-olculmez.md) — kilitler tetikleyici parametresinde; prova betiğini çalıştır.
+- [Python yok, Edit kullan](rayopos-python-yok-edit-kullan.md) — betik denemesi yok, dosya değişikliği doğrudan Edit ile.
+- [Yavaşlıkta önce ölç](rayopos-yavaslikta-once-olc.md) — tahminle sorgu değiştirme, Chrome'da süreleri ölçüp varyant yarıştır.
+- [Altyapı sınırını müşteriye gösterme](rayopos-altyapi-sinirini-musteriye-gosterme.md) — kota/doluluk ürün ekranına konmaz; çözüm uyarı değil otomatik temizlik.
+- [Fiyat ve rakam doğrulanmadan söylenmez](rayopos-fiyat-rakam-dogrulanmadan-soylenmez.md) — dış servis fiyatı hafızadan değil siteden okunur, yoksa yanlış karara götürüyor.
+- [Panelden toplu güncellemede işletme filtresi](rayopos-panelden-toplu-guncelleme-isletme-filtresi.md) — Supabase panelinde RLS yok; ad üstünden eşleşme başka işletmenin verisini yazıyor.
+- [Adisyo'da "yok" demeden parametrelere bak](rayopos-adisyo-yok-demeden-parametrelere-bak.md) — kırka yakın anahtar davranışı değiştiriyor; kusur sanılan şey ayar olabilir.
+- [Onay mesajında yıldız](rayopos-onay-mesajinda-yildiz.md) — kararı belirleyen bilgi *yıldız* arasına alınır, koyu yazılır.
+- [Yeni ekranda önce taslak](rayopos-yeni-ekranda-once-taslak.md) — kodlamadan önce taslağı göster, onay al; elli turluk düzeltmeyi önlüyor.
+- [Hafıza depoya kopyalanır](rayopos-hafiza-depoya-kopyalanir.md) — iki bilgisayar var; seans sonunda claude-hafizasi/ klasörünü tazele.

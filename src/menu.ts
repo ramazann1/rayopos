@@ -2,6 +2,8 @@ import { supabase } from "./supabase";
 import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
 import { hataysaFirlat, onbellekliGetir } from "./onbellek";
 import { tazeleyiciTanit } from "./tanimAbonelik";
+import { receteYaz } from "./recete";
+import type { ReceteMaliyeti, ReceteSatiri } from "./recete";
 import type {
   MenuBirim,
   MenuKategori,
@@ -167,6 +169,35 @@ export function maliyetleriIsle(urunler: MenuUrun[], harita: Map<number, number>
       ...p,
       maliyet: p.id != null ? harita.get(p.id) : undefined,
     })),
+  }));
+}
+
+/**
+ * Reçeteleri ve reçeteden çıkan maliyeti porsiyonlara işler.
+ *
+ * Reçetesi olan porsiyonda elle girilen maliyet geçerli değil: maliyet
+ * malzeme fiyatından hesaplanıyor. İçinde fiyatı girilmemiş malzeme varsa
+ * rakam yazılmıyor — yanlış maliyet, boş maliyetten kötü.
+ */
+export function receteleriIsle(
+  urunler: MenuUrun[],
+  receteler: Map<number, ReceteSatiri[]>,
+  maliyetler: Map<number, ReceteMaliyeti>
+) {
+  return urunler.map((u) => ({
+    ...u,
+    porsiyonlar: u.porsiyonlar.map((p) => {
+      if (p.id == null) return p;
+      const recete = receteler.get(p.id);
+      if (!recete?.length) return p;
+      const m = maliyetler.get(p.id);
+      return {
+        ...p,
+        recete,
+        receteMaliyetiEksik: m?.eksik ?? true,
+        maliyet: m && !m.eksik ? m.maliyet : undefined,
+      };
+    }),
   }));
 }
 
@@ -500,7 +531,12 @@ async function urunuYaz(u: MenuUrun) {
           yazmayiDenetle(sonuc, "Porsiyon eklenemedi.");
           porsiyonId = (sonuc.data as any)?.id;
         }
-        if (porsiyonId) await porsiyonGruplariYaz(porsiyonId, p.grupIdler);
+        if (porsiyonId) {
+          await porsiyonGruplariYaz(porsiyonId, p.grupIdler);
+          // Reçete porsiyon yazıldıktan sonra: yeni porsiyonun numarası
+          // ancak burada belli oluyor.
+          if (p.recete) await receteYaz(porsiyonId, p.recete);
+        }
       })
     );
   };

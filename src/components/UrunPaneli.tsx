@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Bilgi from "./Bilgi";
 import {
   Check,
+  ChefHat,
   ChevronDown,
   CupSoda,
   Info,
@@ -15,7 +16,7 @@ import Anahtar from "./Anahtar";
 import RenkSecici from "./RenkSecici";
 import MenuGorunumu from "./MenuGorunumu";
 import type { MenuAlanlari } from "./MenuGorunumu";
-import { paraMetin, paraSayi, paraYaz } from "../para";
+import { paraGoster, paraMetin, paraSayi, paraYaz } from "../para";
 import { altKategoriler, varsayilanBirim } from "../menu";
 import type {
   MenuBirim,
@@ -26,6 +27,16 @@ import type {
   MenuUrun,
 } from "../types";
 import type { Istasyon } from "../yazicilar";
+import RecetePenceresi, {
+  receteMaliyeti,
+  receteSatirlari,
+  receteTaslagi,
+} from "./RecetePenceresi";
+import Ipucu from "./Ipucu";
+import type { ReceteTaslagi } from "./RecetePenceresi";
+import type { ReceteSatiri } from "../recete";
+import { malzemeleriGetir } from "../stok";
+import type { Malzeme } from "../stok";
 
 // Para alanları taslakta metin, kaydederken sayı. Boş bırakılan alan 0 değil
 // "tanımsız" demektir — tür fiyatında bu ayrım önemli.
@@ -41,6 +52,11 @@ type PorsiyonTaslak = {
   paketFiyat: string;
   varsayilan: boolean;
   grupIdler: number[];
+  // Reçete ekranda malzemenin kendi ölçüsüyle yazılıyor; çevirmek için
+  // malzeme listesi gerekiyor ve o liste sonradan geliyor. Kayıtlı reçete
+  // önce ham hâlde bekliyor, liste gelince taslağa dönüşüyor.
+  receteHam: ReceteSatiri[];
+  recete: ReceteTaslagi[];
 };
 
 /**
@@ -64,15 +80,20 @@ const taslakYap = (p: MenuPorsiyon): PorsiyonTaslak => {
     paketFiyat: paraMetin(p.paketFiyat) || (ayrildi ? eski : ""),
     varsayilan: p.varsayilan,
     grupIdler: p.grupIdler,
+    receteHam: p.recete ?? [],
+    recete: [],
   };
 };
 
-const porsiyonYap = (t: PorsiyonTaslak): MenuPorsiyon => ({
+const porsiyonYap = (t: PorsiyonTaslak, malzemeler: Malzeme[]): MenuPorsiyon => ({
   id: t.id,
   birimId: t.birimId,
   ad: t.ad,
   fiyat: paraSayi(t.fiyat) ?? 0,
-  maliyet: paraSayi(t.maliyet),
+  // Reçetesi olan porsiyonda elle maliyet tutulmuyor: tek doğru rakam
+  // reçeteden çıkan. İki yerde iki maliyet dursaydı hangisinin geçerli
+  // olduğu ekrandan okunmazdı.
+  maliyet: t.recete.length ? undefined : paraSayi(t.maliyet),
   barkod: t.barkod.trim() || undefined,
   // Masa fiyatı ayrı tutulmuyor: tek fiyatın kendisi masa fiyatı.
   masaFiyat: undefined,
@@ -80,6 +101,7 @@ const porsiyonYap = (t: PorsiyonTaslak): MenuPorsiyon => ({
   paketFiyat: paraSayi(t.paketFiyat),
   varsayilan: t.varsayilan,
   grupIdler: t.grupIdler,
+  recete: receteSatirlari(t.recete, malzemeler),
 });
 
 // Tür fiyatı tek fiyattan gerçekten ayrışıyor mu. Menülerde üç tür çoğu zaman
@@ -122,6 +144,8 @@ export default function UrunPaneli({
     paketFiyat: "",
     varsayilan,
     grupIdler: [],
+    receteHam: [],
+    recete: [],
   });
 
   const [ad, setAd] = useState(urun.ad);
@@ -159,7 +183,30 @@ export default function UrunPaneli({
   // Seçenek grubu bağlama kendi penceresinde: liste uzayınca ürün penceresi
   // aşağı doğru büyüyordu.
   const [grupPencere, setGrupPencere] = useState<number | null>(null);
+  const [recetePencere, setRecetePencere] = useState<number | null>(null);
   const [menuAcik, setMenuAcik] = useState(false);
+
+  // Malzemeler menüyle gelmiyor, panel açılınca bir kez okunuyor. Liste
+  // gelince kayıtlı reçete ham hâlden taslağa çevriliyor: miktar ekranda
+  // malzemenin kendi ölçüsüyle görünsün diye (200 ml, 1,5 kg).
+  const [malzemeler, setMalzemeler] = useState<Malzeme[]>([]);
+  useEffect(() => {
+    let gecerli = true;
+    malzemeleriGetir().then((liste) => {
+      if (!gecerli) return;
+      setMalzemeler(liste);
+      setPorsiyonlar((eski) =>
+        eski.map((p) =>
+          p.receteHam.length
+            ? { ...p, recete: receteTaslagi(p.receteHam, liste), receteHam: [] }
+            : p
+        )
+      );
+    });
+    return () => {
+      gecerli = false;
+    };
+  }, []);
 
   const varsayilanKdv = kdvler.find((k) => k.varsayilan);
   // Ürün kendi istasyonunu seçmezse kategorisininki geçerli; birden çok
@@ -170,6 +217,11 @@ export default function UrunPaneli({
   const anaKategoriler = kategoriler.filter(
     (k) => !k.ustId || !kategoriler.some((x) => x.id === k.ustId)
   );
+  const [kategoriAcik, setKategoriAcik] = useState(false);
+  const seciliKategoriAdlari = kategoriler
+    .filter((k) => kategoriIdler.includes(k.id))
+    .map((k) => k.ad)
+    .join(", ");
   const [altAcik, setAltAcik] = useState<number[]>([]);
   const altKatla = (id: number) =>
     setAltAcik((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
@@ -255,7 +307,9 @@ export default function UrunPaneli({
       favori,
       satistaGorunur,
       mutfaktaGorunur,
-      porsiyonlar: porsiyonlar.filter((p) => p.birimId).map(porsiyonYap),
+      porsiyonlar: porsiyonlar
+        .filter((p) => p.birimId)
+        .map((p) => porsiyonYap(p, malzemeler)),
       kategoriIdler,
       ...menuAlan,
       aciklama: menuAlan.aciklama.trim(),
@@ -263,6 +317,16 @@ export default function UrunPaneli({
   };
 
   const p = porsiyonlar[secili];
+  // Reçetesi olan porsiyonun maliyet kutusu kilitli ve reçeteden çıkan rakamı
+  // yazıyor; fiyatı girilmemiş malzeme varsa rakam yerine çizgi.
+  const receteHesabi = p ? receteMaliyeti(p.recete, malzemeler) : null;
+  const receteMaliyetMetni =
+    p?.recete.length && receteHesabi && !receteHesabi.eksik
+      ? receteHesabi.maliyet.toFixed(2).replace(".", ",")
+      : "";
+  const receteOzeti =
+    receteHesabi && !receteHesabi.eksik ? paraGoster(receteHesabi.maliyet) : "—";
+
   const onizlemeFiyat = porsiyonlar.find((x) => x.varsayilan)?.fiyat || p?.fiyat;
   const onizlemeBirim = porsiyonlar.find((x) => x.varsayilan)?.ad || p?.ad;
 
@@ -451,14 +515,20 @@ export default function UrunPaneli({
                       </div>
                     </div>
                     <div className="up-alan">
-                      <label htmlFor="up-maliyet">Maliyet</label>
+                      <label htmlFor="up-maliyet">
+                        Maliyet
+                        {p.recete.length > 0 && (
+                          <Ipucu>Reçete girildiği için maliyet malzeme fiyatından hesaplanıyor.</Ipucu>
+                        )}
+                      </label>
                       <div className="up-sonek">
                         <input
                           id="up-maliyet"
-                          value={p.maliyet}
+                          value={p.recete.length ? receteMaliyetMetni : p.maliyet}
                           onChange={(e) => porsiyonDegis(secili, { maliyet: paraYaz(e.target.value) })}
                           placeholder="—"
                           inputMode="decimal"
+                          disabled={p.recete.length > 0}
                         />
                         <em>₺</em>
                       </div>
@@ -563,16 +633,39 @@ export default function UrunPaneli({
                       </button>
                     </div>
                   </div>
+
+                  {/* Reçete kendi penceresinde; burada yalnız özeti duruyor.
+                      Panelin içinde açık dururken malzeme listesi uzadıkça
+                      pencere büyüyüp karışıyordu. */}
+                  <button className="up-recete-satir" onClick={() => setRecetePencere(secili)}>
+                    <ChefHat size={16} />
+                    <span className="up-recete-ad">Reçete</span>
+                    <span className="up-recete-ozet">
+                      {p.recete.length === 0
+                        ? "Girilmedi"
+                        : `${p.recete.length} malzeme · maliyet ${receteOzeti}`}
+                    </span>
+                    <span className="up-recete-tus">
+                      {p.recete.length === 0 ? "Oluştur" : "Düzenle"}
+                    </span>
+                  </button>
                 </div>
               )}
             </section>
 
+            {/* Kategori çoğu düzenlemede değişmiyor; liste uzun olduğu için
+                kapalı açılıyor. Kapalıyken hangi kategoride olduğu başlıkta
+                yazıyor, açmadan görünsün diye. */}
             <section>
-              <div className="up-blok-basi">
-                Kategoriler
-                <em className="up-sayac">{kategoriIdler.length} seçili</em>
-              </div>
-              <div className="up-kategori-kutu">
+              <button
+                className="up-katlanir-basi tek"
+                onClick={() => setKategoriAcik(!kategoriAcik)}
+              >
+                {kategoriAcik ? <Minus size={15} /> : <Plus size={15} />}
+                <span>Kategoriler</span>
+                <small>{seciliKategoriAdlari || "seçilmedi"}</small>
+              </button>
+              <div className={kategoriAcik ? "up-kategori-kutu" : "up-kategori-kutu gizli"}>
                 {anaKategoriler.map((k) => {
                   const altlar = altKategoriler(kategoriler, k.id);
                   const seciliAlt = altlar.filter((a) => kategoriIdler.includes(a.id)).length;
@@ -657,6 +750,17 @@ export default function UrunPaneli({
           <button className="up-tus kaydet" disabled={!gecerli} onClick={kaydet}>Kaydet</button>
         </footer>
       </div>
+
+      {recetePencere !== null && porsiyonlar[recetePencere] && (
+        <RecetePenceresi
+          porsiyonAd={porsiyonlar[recetePencere].ad}
+          satirlar={porsiyonlar[recetePencere].recete}
+          malzemeler={malzemeler}
+          satisFiyati={paraSayi(porsiyonlar[recetePencere].fiyat) ?? 0}
+          degistir={(recete) => porsiyonDegis(recetePencere, { recete })}
+          onKapat={() => setRecetePencere(null)}
+        />
+      )}
 
       {grupPencere !== null && (
         <div className="up-fon ust" onClick={() => setGrupPencere(null)}>

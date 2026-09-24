@@ -33,3 +33,10 @@ dist-ssr
 
 # Paketlerken uretilen gomulu sunucu bilgisi
 kopru/src/sunucu-gomulu.js
+
+# Supabase bağlantı bilgisi depoda duruyor: içindeki anahtar `anon` yani
+# herkese açık olan. Vite `VITE_` ile başlayan değişkenleri zaten derlenmiş
+# dosyaya gömüyor, siteye giren herkesin tarayıcısına iniyor — gizlenecek bir
+# şey değil. Veriyi koruyan anahtarın gizliliği değil, RLS kuralları.
+# `service_role` anahtarı BURAYA YAZILMAZ: o RLS'i tamamen atlar.
+!.env.local

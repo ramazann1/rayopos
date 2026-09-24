@@ -1,3 +1,5 @@
+import type { ReceteSatiri } from "./recete";
+
 export type Masa = {
   id: number;
   bolgeId: number;
@@ -141,6 +143,11 @@ export type MenuPorsiyon = {
   paketFiyat?: number;
   varsayilan: boolean;
   grupIdler: number[]; // seçenek grupları porsiyona bağlıdır
+  // Reçete de porsiyona bağlıdır: "Tam" ile "Yarım" aynı malzemeden farklı
+  // miktar harcıyor. Menü sorgusuyla gelmiyor, maliyet gibi ayrı okunuyor.
+  recete?: ReceteSatiri[];
+  // Reçetede fiyatı hiç girilmemiş malzeme var — maliyet eksik, "₺0" değil.
+  receteMaliyetiEksik?: boolean;
 };
 
 export type MenuSecenek = {

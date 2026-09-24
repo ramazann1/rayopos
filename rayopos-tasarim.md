@@ -1,7 +1,7 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (23 Eyl 2026 güncellendi — sayım seansı)
+## 0. SIRADAKİ İŞ (24 Eyl 2026 güncellendi — reçete ve maliyet seansı)
 
 > **Sıra (21 Eyl 2026 seans sonu):**
 > 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
@@ -100,11 +100,26 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **STOK MODÜLÜ — sırada REÇETE ve OTOMATİK DÜŞÜM.** Veri modeli,
->    Malzemeler, Hareketler ve Sayım ekranları yazıldı (23 Eyl 2026, aşağıda).
->    Kapsam ve kararlar 2. maddede. **Sıradaki adım: reçete** — ürünün hangi
->    malzemeden ne kadar harcadığı; ardından adisyon kapanınca otomatik düşüm
->    ve maliyet/kârlılık raporu.
+> 6. **STOK MODÜLÜ — sırada MALİYETİ EKRANDA GÖSTERMEK, sonra OTOMATİK DÜŞÜM.**
+>    Veri modeli, Malzemeler, Hareketler, Sayım ve **Reçete** ekranları yazıldı
+>    (24 Eyl 2026, aşağıda). Kapsam ve kararlar 2. maddede.
+>    **Sıradaki adım — maliyet görünür olsun:** malzemenin ortalama maliyeti ve
+>    son alış fiyatı hiçbir ekranda yazmıyor, bugün yalnız Supabase'den
+>    okunabiliyor. Adisyo bunu *Stok Durum Raporu*'nda `Birim Tutar(₺)` ve
+>    `Toplam Tutar(₺)` sütunlarıyla veriyor (24 Eyl turu); bizde Malzemeler
+>    listesindeki satıra girecek.
+>    **Ardından:** adisyon kapanınca reçeteden otomatik düşüm → maliyet/kârlılık
+>    raporu.
+>    **Reçeteden kalan iki iş:**
+>    - **Reçete tipi üçlüsü ekranda yok** (Normal / Çıkarılabilir / Opsiyonel).
+>      Veritabanı sütunu duruyor, arayüzden kaldırıldı (Ramazan, 24 Eyl):
+>      seçenek gruplarına bağlanmadan hiçbir işe yaramıyordu — "soğansız"
+>      denince reçetedeki soğanın düşmemesi gerekiyor, o bağ henüz yok.
+>      Seçenek grubu ↔ reçete satırı bağı kurulunca geri gelecek.
+>    - **İç içe reçete** (yarı mamul: kendi reçetesi olan malzeme, "kremalı
+>      mantar sosu"). Tablo buna hazır (`sahip_malzeme_id` sütunu baştan
+>      kondu) ama ekranı yok; bir de **Üretim ekranı** gerekiyor ("bugün 5 kg
+>      sos yaptım" → krema/mantar düşer, sos stoğu artar).
 >    **Sırada duran küçük işler:** malzeme kartından "bu malzemenin hareketleri"
 >    kısayolu · İşletme Ayarları'na *eksi stoğa izin ver* anahtarı (koda
 >    bağlandı, ekran düğmesi yok, varsayılan açık) · fire/çıkış raporu (sebep
@@ -117,6 +132,62 @@
 >    beğenmedi (23 Eyl 2026). Kendi takvimimiz yazılırsa Giderler, Analiz
 >    süzgeci ve stok hareketleri birlikte kullanacak — ortak bileşen işi,
 >    tek ekranlık değil. Stok modülü bitince ele alınacak.
+>
+> **Yapılanlar (24 Eyl 2026 — reçete ve maliyet):**
+> - **Reçete** (`sql/2026-09-23-recete.sql`, `src/recete.ts`,
+>   `src/components/RecetePenceresi.tsx`). Porsiyonun hangi malzemeden ne kadar
+>   harcadığı. Menü Stüdyosu → ürün paneli → porsiyon kutusundaki tek satırlık
+>   özetten kendi penceresinde açılıyor: solda reçete tablosu, sağda kalıcı
+>   malzeme arama listesi, altta maliyet/satış/kâr şeridi.
+> - **KARAR: reçete porsiyona ait, ürüne değil.** "Tam" ile "Yarım" aynı
+>   malzemeden farklı miktar harcıyor. **Otomatik oranlama yapılmıyor**
+>   (Ramazan sordu, 24 Eyl): porsiyon adı ölçü değil etiket — "Küçük" kahvede
+>   süt yarılanıyor ama çekirdek aynı kalıyor. Ad'a bakıp bölmek yanlış olduğu
+>   yerde sessizce yanlış olur. İleride "başka porsiyondan kopyala ×0,5"
+>   kolaylığı düşünülebilir, karar kullanıcıda kalır.
+> - **KARAR: reçeteli porsiyonda elle maliyet kutusu kilitleniyor**, rakam
+>   reçeteden hesaplanıyor. İki yerde iki maliyet dursa hangisinin geçerli
+>   olduğu ekrandan okunmuyordu. Maliyet kopyalanıp saklanmıyor,
+>   `porsiyon_recete_maliyetleri` görünümü her okunuşta hesaplıyor — süt
+>   zamlanınca yüzlerce porsiyonun kopyasını kimse tazelemez.
+> - **HATA DÜZELTİLDİ: ortalama maliyet ömür boyu değil yürüyen**
+>   (`sql/2026-09-24-yuruyen-ortalama-maliyet.sql`). Eski hesap bugüne kadarki
+>   BÜTÜN girişleri ortalıyordu; ortalama maliyet ise "elimdeki malın bana kaça
+>   mal olduğu" demek. Bir yıl önce 100 lt süt 10 TL'den alınıp bitmişse
+>   bugünkü 2 lt × 100 TL'nin ortalaması 11,76 değil **100** olmalı. Artık
+>   defter zaman sırasıyla yürüyor: her girişte o an eldeki stok üzerinden
+>   yeniden kuruluyor, çıkış ortalamayı değiştirmiyor. **Ramazan yakaladı** —
+>   "1 sene önce 10 TL, bugün 100 TL alsam ne olur" sorusuyla.
+>   Gerçek veride doğrulandı: süt 26,47 → **75,00 TL/lt**.
+> - **Hassasiyet 4 → 6 ondalık.** Birim maliyet en küçük birim başına
+>   tutuluyor; kilosu 0,12 TL olan dökme malzemede gram maliyeti 0,00012 iken
+>   0,0001'e yuvarlanıp %17 sapma veriyordu.
+> - **KARAR: fiyatsız giriş ortalamaya hiç girmiyor** — ne parası ne miktarı.
+>   Sıfır sayılsaydı ortalamayı haksız yere aşağı çekerdi. Eksi stok da giriş
+>   anında sıfır sayılıyor; eksi miktarla çarpım ortalamayı bozardı.
+> - **KARAR: rakamın adı "Kâr", ama yanında ipucu var** (Ramazan, 24 Eyl —
+>   "kârda birçok değişken var, faturalar, personel giderleri"). Önce "Malzeme
+>   payı" denendi, beğenilmedi. Adisyo'nun Maliyet-Karlılık Raporu da aynı
+>   ayrımı yapıyor: Ciro − Ürün Maliyeti = **Brüt Kâr**, Gider/Masraf sonrası
+>   **Net Kâr**. İpucu "yalnız malzeme farkı" diyor.
+> - **KARAR: ürün panelinde Kategoriler şeridi kapalı açılıyor**, QR menü
+>   görünümüyle aynı desende; kapalıyken seçili kategori adı sağda yazıyor.
+>   Panel çok şişiyordu.
+> - **DERS: iç içe perde dıştakini taşırıyor.** Reçete penceresi ürün
+>   panelinin içine çiziliyordu; `backdrop-filter` sabit konumlu çocuklar için
+>   kuşatan kutu yarattığından iç perde dıştakine bağlanıp onu kaydırılabilir
+>   yapıyordu. Çözüm: pencere React portal ile sayfa köküne çiziliyor.
+> - **DERS: `.anahtar-satir input` sayfanın köküne yerleşiyordu.**
+>   `position: absolute` ama konumlanmış atası yok — gizli onay kutusu kendi
+>   boyu kadar aşağı sarkıp uzun pencerelerde sağda kaydırma çubuğu
+>   çıkarıyordu. Reçeteden önce de vardı, orada ortaya çıktı.
+> - **Adisyo turu (24 Eyl): maliyet yöntemi ÖLÇÜLEMEDİ.** eGZOZ'da hiçbir
+>   malzemeye alış fiyatı girilmemiş, `Birim Tutar` sütununun tamamı sıfır.
+>   Yöntem standart formülden doğrulandı, rakibin ekranından değil.
+> - **`.env.local` artık depoda** — içindeki anahtar `anon`, Vite onu zaten
+>   derlenmiş dosyaya gömüyor; veriyi koruyan RLS. `service_role` yazılmaz.
+> - **`claude-hafizasi/` klasörü** — Claude'un çalışma kuralları projeye
+>   aynalandı, iki bilgisayardan çalışılacağı için.
 >
 > **Yapılanlar (23 Eyl 2026 — ikinci seans, sayım):**
 > - **Sayım ekranı** (`src/pages/StokSayim.tsx`, `src/stokSayim.ts`,
