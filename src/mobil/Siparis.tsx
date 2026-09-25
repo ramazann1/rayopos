@@ -34,7 +34,7 @@ import MasaSecim from "../components/MasaSecim";
 import { kalemiUygula } from "./KalemIslemleri";
 import OnayModal from "../components/OnayModal";
 import AltSayfa from "./AltSayfa";
-import { MENU_ANAHTAR, agacUrunleri, menuGetir, porsiyonFiyat, urunKdv } from "../menu";
+import { MENU_ANAHTAR, agacUrunleri, menuGetir, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
 import { useTanimEtkisi } from "../tanimAbonelik";
 import { bolgeleriGetir, hedefOnayMesaji, masaGetir } from "../masalar";
 import {
@@ -291,6 +291,7 @@ export default function MobilSiparis() {
         {
           id: yeniKalemId(),
           urunId: urun.id,
+          porsiyonId: porsiyonKimligi(urun, porsiyon),
           ad: urun.ad,
           fiyat,
           adet: 1,

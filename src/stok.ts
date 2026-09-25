@@ -179,6 +179,28 @@ export async function malzemeEkle(alanlar: MalzemeAlanlari) {
   }
 }
 
+/**
+ * Hazır ürünün stok karşılığı: kola, su gibi olduğu gibi satılan ürün için
+ * aynı adla "adet" ölçülü malzeme. Aynı adda malzeme zaten varsa yenisi
+ * açılmıyor, o kullanılıyor — işletme kolayı önce Malzemeler'e girmiş olabilir.
+ */
+export async function hazirUrunMalzemesi(ad: string): Promise<Malzeme> {
+  const temiz = ad.trim();
+  const mevcut = (await malzemeleriGetir()).find(
+    (m) => m.ad.toLocaleLowerCase("tr") === temiz.toLocaleLowerCase("tr")
+  );
+  if (mevcut) return mevcut;
+
+  const { error } = await supabase
+    .from("malzemeler")
+    .insert(satira({ grupId: null, ad: temiz, kod: "", birim: "adet", kritikSeviye: 0, aktif: true }));
+  if (error) throw new Error("Stok kaydı açılamadı. Stok yönetme yetkiniz olmayabilir.");
+
+  const yeni = (await malzemeleriGetir()).find((m) => m.ad === temiz);
+  if (!yeni) throw new Error("Stok kaydı açılamadı.");
+  return yeni;
+}
+
 export async function malzemeGuncelle(id: number, alanlar: MalzemeAlanlari) {
   const { error } = await supabase
     .from("malzemeler")

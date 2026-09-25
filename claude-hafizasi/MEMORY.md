@@ -23,6 +23,7 @@
 - [CSS özgüllüğünü say](rayopos-css-ozgullugu-say.md) — ortak kabuğu ezen kural sessizce kaybediyor; "yazdım ama değişmedi" bunun belirtisi.
 - [Korumalı alan çıktısı görünmez](rayopos-korumali-alan-ciktisi.md) — proje dışına yazılan dosyayı Ramazan göremiyor; proje içine kopyala.
 - [Grafik değil cümle](rayopos-grafik-degil-cumle.md) — soyut grafik reddediliyor; Adisyo turundan sonra kırılımları kopyalama.
+- [Tür denetimi tsc -b](rayopos-tur-denetimi-tsc-b.md) — `tsc --noEmit -p .` hiçbir şey denetlemiyor, `npx.cmd tsc -b` kullan.
 - [Göndermeden önce build](rayopos-gondermeden-once-build.md) — tsc --noEmit yetmiyor, push öncesi npm.cmd run build.
 - [Supabase'e tarayıcıdan bak](rayopos-supabase-tarayicidan-teshis.md) — yetki/RLS hatasında kişiyi taklit et, geri alınan işlemle canlandır.
 - [Tarayıcı testi Chrome ile](rayopos-tarayici-testi-chrome-ile.md) — dev sunucusunun sertifikası dahili paneli engelliyor, Ramazan'ın Chrome'u kullanılır.

@@ -21,7 +21,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { MENU_ANAHTAR, menuGetir, agacUrunleri, altKategoriler, porsiyonFiyat, urunKdv } from "../menu";
+import { MENU_ANAHTAR, menuGetir, agacUrunleri, altKategoriler, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
 import { useTanimEtkisi } from "../tanimAbonelik";
 import {
   CEVRIMDISI_ADISYON,
@@ -446,7 +446,17 @@ export default function Siparis() {
       if (var_mi) return s.map((k) => (k === var_mi ? { ...k, adet: k.adet + 1 } : k));
       return [
         ...s,
-        { id: yeniKalemId(), urunId: urun.id, ad, fiyat, adet: 1, porsiyon, secimler, kdvOran },
+        {
+          id: yeniKalemId(),
+          urunId: urun.id,
+          porsiyonId: porsiyonKimligi(urun, porsiyon),
+          ad,
+          fiyat,
+          adet: 1,
+          porsiyon,
+          secimler,
+          kdvOran,
+        },
       ];
     });
   };

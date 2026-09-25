@@ -5,6 +5,7 @@ import { masraflariGetir, odemeAdi, type Masraf } from "./masraflar";
 import { denetimGetir, denetimYaz } from "./denetim";
 export type { DenetimSatiri } from "./denetim";
 import { kisaAd } from "./personel";
+import { yetkiVar } from "./oturum";
 import { supabase } from "./supabase";
 import { istasyonlariGetir, urunIstasyonlari } from "./yazicilar";
 import type { SepetKalemi } from "./types";
@@ -244,13 +245,16 @@ export type AnalizAdisyon = {
   odemeler: { tip: string; tutar: number }[];
 };
 
-const ALANLAR = `id, adisyon_no, tip, durum, iptal_sebep, acilis, kapanis, indirim, ad, kisi_sayisi,
+// Maliyet yalnız stok yönetme yetkisi olana isteniyor; satır güvenliği zaten
+// boş döndürüyor ama gereksiz birleştirme de yapılmasın.
+const alanlar = () => `id, adisyon_no, tip, durum, iptal_sebep, acilis, kapanis, indirim, ad, kisi_sayisi,
        musteri_ad, masa_id, kuver_tutar, garsoniye_tutar,
        masa:masalar (ad, bolge_id, bolgeler (ad)),
        acan:personel!adisyonlar_acan_id_fkey (id, ad),
        turlar (garson:personel!turlar_garson_id_fkey (id, ad),
                adisyon_kalemleri (id, urun_id, ad, kategori_ad, adet, fiyat, kdv_oran, durum, indirim,
-                                   odenmez:odenmez_id (ad))),
+                                   odenmez:odenmez_id (ad)
+                                   ${yetkiVar("stok.yonet") ? ", kalem_maliyetleri (maliyet, eksik)" : ""})),
        tahsilatlar (tip, tutar, bahsis)`;
 
 async function varsayilanKdvOrani() {
@@ -266,7 +270,10 @@ function satiraCevir(s: any, varsayilanKdv?: number): AnalizAdisyon {
   const kalemler: SepetKalemi[] = [];
   for (const tur of s.turlar ?? []) {
     for (const k of tur.adisyon_kalemleri ?? []) {
+      const mal = Array.isArray(k.kalem_maliyetleri) ? k.kalem_maliyetleri[0] : k.kalem_maliyetleri;
       kalemler.push({
+        maliyet: mal ? Number(mal.maliyet) : undefined,
+        maliyetEksik: mal?.eksik || undefined,
         id: k.id,
         urunId: k.urun_id ?? undefined,
         // Kalem, ürünü adisyona yazan garsonu taşıyor: ciro masayı açana değil
@@ -371,7 +378,7 @@ async function adisyonlariCek(bas: Date, bit: Date, f: AnalizFiltre) {
   const [{ data }, varsayilanKdv] = await Promise.all([
     supabase
       .from("adisyonlar")
-      .select(ALANLAR)
+      .select(alanlar())
       .or(
         `and(kapanis.gte.${bas.toISOString()},kapanis.lt.${bit.toISOString()}),` +
           `and(kapanis.is.null,acilis.gte.${bas.toISOString()},acilis.lt.${bit.toISOString()})`
@@ -745,6 +752,15 @@ export type UrunSatiri = {
   ciro: number;
   ikram: number;
   iptal: number;
+  /**
+   * Kârlılık yalnız maliyeti bilinen satışlardan hesaplanıyor: reçetesi
+   * sonradan girilen üründe eski satışlar maliyetsiz. Bilinmeyeni sıfır
+   * saymak kârı olduğundan yüksek gösterirdi.
+   */
+  maliyet: number;
+  maliyetliMiktar: number;
+  maliyetliCiro: number;
+  maliyetEksik: boolean;
   /** Önceki dönemdeki karşılığı; kıyas yoksa boş kalıyor, sıfır yazılmıyor. */
   oncekiCiro?: number;
   oncekiMiktar?: number;
@@ -772,6 +788,11 @@ export type UrunOzeti = {
   ciro: number;
   ikram: number;
   oncekiCiro: number | null;
+  /** Satılanların maliyeti ve o satışların cirosu — brüt kâr cümlesi. */
+  maliyet: number;
+  maliyetliCiro: number;
+  /** İkram edilen ürünlerin malzemesi; kâra değil kayba yazılıyor. */
+  ikramMaliyeti: number;
 };
 
 /** "Salep alanların %40'ı yanında Çay da almış" cümlesinin rakamları. */
@@ -904,6 +925,7 @@ export function analizUrunleri(
 
   const satirlar = new Map<string, UrunSatiri>();
   const sepetler: string[][] = [];
+  let ikramMaliyeti = 0;
   for (const a of adisyonlar) {
     if (a.durum !== "kapali") continue;
     // Bölge masadan geliyor; gel al ve paket siparişin masası yok, onlar kendi
@@ -929,13 +951,25 @@ export function analizUrunleri(
           ciro: 0,
           ikram: 0,
           iptal: 0,
+          maliyet: 0,
+          maliyetliMiktar: 0,
+          maliyetliCiro: 0,
+          maliyetEksik: false,
         } as UrunSatiri);
 
-      if (k.durum === "ikram") satir.ikram += tutar(k);
-      else if (k.durum === "iptal") satir.iptal += tutar(k);
+      if (k.durum === "ikram") {
+        satir.ikram += tutar(k);
+        ikramMaliyeti += k.maliyet ?? 0;
+      } else if (k.durum === "iptal") satir.iptal += tutar(k);
       else {
         satir.miktar += k.adet;
         satir.ciro += tutar(k);
+        if (k.maliyet != null) {
+          satir.maliyet += k.maliyet;
+          satir.maliyetliMiktar += k.adet;
+          satir.maliyetliCiro += tutar(k);
+          if (k.maliyetEksik) satir.maliyetEksik = true;
+        }
 
         const b = bolgeler.get(bolgeAd) ?? { ad: bolgeAd, tutar: 0, adet: 0 };
         b.tutar += tutar(k);
@@ -970,6 +1004,10 @@ export function analizUrunleri(
             ciro: 0,
             ikram: 0,
             iptal: 0,
+            maliyet: 0,
+            maliyetliMiktar: 0,
+            maliyetliCiro: 0,
+            maliyetEksik: false,
           } as UrunSatiri);
         hedef.oncekiCiro = (hedef.oncekiCiro ?? 0) + tutar(k);
         hedef.oncekiMiktar = (hedef.oncekiMiktar ?? 0) + k.adet;
@@ -1027,6 +1065,9 @@ export function analizUrunleri(
     cesit: liste.filter((s) => s.miktar > 0).length,
     ciro: liste.reduce((t, s) => t + s.ciro, 0),
     ikram: liste.reduce((t, s) => t + s.ikram, 0),
+    maliyet: liste.reduce((t, s) => t + s.maliyet, 0),
+    maliyetliCiro: liste.reduce((t, s) => t + s.maliyetliCiro, 0),
+    ikramMaliyeti,
   };
 }
 

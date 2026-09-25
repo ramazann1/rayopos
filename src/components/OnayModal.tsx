@@ -67,7 +67,19 @@ export default function OnayModal({
             <h3>{baslik}</h3>
           </div>
         )}
-        <p>{vurgula(mesaj)}</p>
+        {/* İlk satır cümle, alttaki satırlar liste: "stok yetersiz" gibi
+            birden çok kalemi sayan mesaj tek paragrafa sıkışmasın. */}
+        <p>{vurgula(mesaj.split("\n")[0])}</p>
+        {mesaj.includes("\n") && (
+          <ul className="onay-liste">
+            {mesaj
+              .split("\n")
+              .slice(1)
+              .map((satir, i) => (
+                <li key={i}>{vurgula(satir)}</li>
+              ))}
+          </ul>
+        )}
 
         {sebepler && (
           <div className="onay-sebepler">

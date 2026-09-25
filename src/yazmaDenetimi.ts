@@ -19,6 +19,9 @@ function hataMetni(hata: { code?: string; message?: string }, mesaj: string) {
   if (/row-level security/i.test(metin) || /permission denied/i.test(metin))
     return "Bu işlem için yetkiniz yok.";
   if (hata.code === "42501") return metin || "Bu işlem için yetkiniz yok.";
+  // Kural ihlalini veritabanı kendi cümlesiyle söylüyor ("Stok yetersiz: ...");
+  // önüne genel bir "kaydedilemedi" eklemek sebebi gölgeliyordu.
+  if (hata.code === "P0001" && metin) return metin;
   if (hata.code === "23505") return `${mesaj} Aynı kayıt zaten var.`;
   if (hata.code === "23503") return `${mesaj} Bu kayıt başka kayıtlarda kullanılıyor.`;
   return hata.message ? `${mesaj} (${hata.message})` : mesaj;

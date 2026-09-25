@@ -23,6 +23,19 @@ export function porsiyonFiyat(p: MenuPorsiyon, tur: SiparisTuru = "masa") {
   return ozel ?? p.fiyat;
 }
 
+/**
+ * Kaleme yazılacak porsiyon kimliği. Reçete porsiyona bağlı olduğu için stok
+ * düşümü bu kimliğe bakıyor; yalnız porsiyonun adı yazıldığında kalem
+ * reçetesiyle eşleşmiyor, stok hiç düşmüyordu.
+ */
+export function porsiyonKimligi(u: MenuUrun, ad?: string) {
+  const p =
+    (ad ? u.porsiyonlar.find((x) => x.ad === ad) : undefined) ??
+    u.porsiyonlar.find((x) => x.varsayilan) ??
+    u.porsiyonlar[0];
+  return p?.id;
+}
+
 // Seçenek grupları porsiyona bağlı; ürün seviyesindeki sayaç ve rozetler için birleştirilir.
 export function urunGrupIdleri(u: MenuUrun) {
   return [...new Set(u.porsiyonlar.flatMap((p) => p.grupIdler))];

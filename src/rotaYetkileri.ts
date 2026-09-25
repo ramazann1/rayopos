@@ -74,6 +74,10 @@ export function yolaGirebilir(yol: string) {
   // yok. Giderler kasadan bağımsız tutuluyor: kasa açıp kapatmayan işletmenin
   // de faturası, kirası var.
   if (yol.startsWith("/kasa/gecmis") && !ayarlar().kasaTakibi) return false;
+  // Kârlılık hem ciroyu hem alış maliyetini gösteriyor: rapor yetkisinin
+  // üstüne stok yönetme yetkisi de isteniyor, malzemenin kaça alındığını
+  // ciroyu gören herkes görmesin.
+  if (yol.startsWith("/analiz/karlilik") && !yetkiVar("stok.yonet")) return false;
 
   const kod = yolYetkisi(yol);
   return !kod || yetkiVar(kod);

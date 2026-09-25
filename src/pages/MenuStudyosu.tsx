@@ -796,6 +796,7 @@ export default function MenuStudyosu() {
     }, "Kategori kaydedilemedi.");
     if (!oldu) return;
     setPencere(null);
+    setBildirim(pencere?.kategori ? "Kategori güncellendi" : "Kategori eklendi");
     yukle();
   };
 
@@ -812,6 +813,7 @@ export default function MenuStudyosu() {
       mesaj: `"${k.ad}" kategorisi silinsin mi?`,
       devam: async () => {
         if (!(await dene(() => kategoriSil(k.id), "Kategori silinemedi."))) return;
+        setBildirim(`${k.ad} silindi`);
         if (seciliId === k.id) setSeciliId(k.ustId ?? null);
         yukle();
       },
@@ -825,6 +827,7 @@ export default function MenuStudyosu() {
     }, "Sıra kaydedilemedi.");
     if (!oldu) return;
     setSiralama(null);
+    setBildirim("Sıralama kaydedildi");
     yukle();
   };
 
@@ -835,6 +838,7 @@ export default function MenuStudyosu() {
       return;
     }
     setPanel(null);
+    setBildirim(u.id ? `${u.ad} güncellendi` : `${u.ad} eklendi`);
     yukle();
   };
 
@@ -873,6 +877,7 @@ export default function MenuStudyosu() {
       mesaj: `"${u.ad}" silinsin mi?`,
       devam: async () => {
         if (!(await dene(() => urunSil(u.id!), "Ürün silinemedi."))) return;
+        setBildirim(`${u.ad} silindi`);
         yukle();
         setPanel(null);
       },
@@ -895,6 +900,7 @@ export default function MenuStudyosu() {
     );
     if (!oldu) return;
     setGrupPencere(null);
+    setBildirim(grupPencere?.grup ? "Seçenek grubu güncellendi" : "Seçenek grubu eklendi");
     yukle();
   };
 
@@ -907,6 +913,7 @@ export default function MenuStudyosu() {
       mesaj: `"${g.ad}" grubu silinsin mi?`,
       devam: async () => {
         if (!(await dene(() => grupSil(g.id), "Seçenek grubu silinemedi."))) return;
+        setBildirim(`${g.ad} silindi`);
         yukle();
         setGrupPencere(null);
       },

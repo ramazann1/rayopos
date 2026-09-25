@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowDownLeft,
   ArrowRight,
-  ArrowUpRight,
+  CalendarDays,
   Check,
+  ChevronRight,
+  Clock,
   History,
+  Layers,
   Package,
   Pencil,
   Plus,
   Search,
+  StickyNote,
+  Tag,
   Trash2,
+  UserRound,
   X,
 } from "lucide-react";
 import StokBasligi from "../components/StokBasligi";
@@ -22,6 +27,13 @@ import { useKutuBoyu } from "../kutuBoyu";
 import { yetkiVar } from "../oturum";
 import { ayarlar } from "../isletmeAyarlari";
 import { paraGoster, paraSayi, paraYaz } from "../para";
+import {
+  DonemPenceresi,
+  StokTipIkonu as TipIkonu,
+  donemAdi,
+  donemAraligiKur,
+  type StokDonemi as Donem,
+} from "../components/StokDonemi";
 import {
   malzemeleriGetir,
   miktarGoster,
@@ -39,7 +51,9 @@ import {
   hareketGuncelle,
   hareketSil,
   hareketleriGetir,
+  elleDuzenlenir,
   sebepAdi,
+  tipAdi,
   tipBilgisi,
   type BelgeKalemi,
   type HareketDuzeltme,
@@ -48,7 +62,7 @@ import {
 } from "../stokHareket";
 
 const gunMetni = (t: string) =>
-  new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
+  new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
 
 const saatMetni = (t: string) =>
   new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
@@ -59,11 +73,53 @@ const yerelSaat = (t: Date) =>
 const yerelTarih = (t: Date) =>
   `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
 
-function TipIkonu({ tip, boy = 17 }: { tip: string; boy?: number }) {
-  if (tip === "giris") return <ArrowDownLeft size={boy} />;
-  if (tip === "fire") return <Trash2 size={boy} />;
-  if (tip === "cikis") return <ArrowUpRight size={boy} />;
-  return <History size={boy} />;
+/**
+ * Defter fiş fiş okunuyor. On kalemlik bir alış satır satır dökülünce
+ * liste bir günde yüz satırı buluyor, asıl aranan fiş kayboluyordu; bir
+ * malzemenin satır satır geçmişi malzemenin kendi kartının işi.
+ */
+type Fis = {
+  belgeId: number;
+  tip: string;
+  sebep: string | null;
+  aciklama: string;
+  kisi: string;
+  zaman: string;
+  kalemler: Hareket[];
+  /** Yalnız fiyatı girilmiş kalemlerin toplamı; hiçbiri fiyatlı değilse null. */
+  tutar: number | null;
+};
+
+function fisleriKur(hareketler: Hareket[]): Fis[] {
+  const fisler = new Map<number, Fis>();
+  for (const h of hareketler) {
+    let f = fisler.get(h.belgeId);
+    if (!f) {
+      f = {
+        belgeId: h.belgeId,
+        tip: h.tip,
+        sebep: h.sebep,
+        aciklama: h.aciklama,
+        kisi: h.kisi,
+        zaman: h.zaman,
+        kalemler: [],
+        tutar: null,
+      };
+      fisler.set(h.belgeId, f);
+    }
+    f.kalemler.push(h);
+    if (h.birimMaliyet != null) {
+      f.tutar = (f.tutar ?? 0) + Math.abs(h.miktar) * h.birimMaliyet;
+    }
+  }
+  return [...fisler.values()];
+}
+
+/** "Süt, Un, Kahve +5" — fişi açmadan içinde ne olduğu okunsun. */
+function kalemOzeti(f: Fis) {
+  const adlar = f.kalemler.map((k) => k.malzemeAd);
+  const ilk = adlar.slice(0, 3).join(", ");
+  return adlar.length > 3 ? `${ilk} +${adlar.length - 3}` : ilk;
 }
 
 export default function StokHareketleri() {
@@ -73,6 +129,9 @@ export default function StokHareketleri() {
   const [ara, setAra] = useState("");
   const [suzgec, setSuzgec] = useState<"tumu" | HareketTipi>("tumu");
   const [pencere, setPencere] = useState(false);
+  const [acikFisId, setAcikFisId] = useState<number | null>(null);
+  const [donem, setDonem] = useState<Donem>({ kod: "tumu", bas: "", bit: "" });
+  const [donemPenceresi, setDonemPenceresi] = useState(false);
   const [duzenlenen, setDuzenlenen] = useState<Hareket | null>(null);
   const [silinecek, setSilinecek] = useState<Hareket | null>(null);
   const [bildirim, setBildirim] = useState("");
@@ -81,25 +140,39 @@ export default function StokHareketleri() {
   const yonetebilir = yetkiVar("stok.yonet");
 
   const tazele = async () => {
-    const [h, m] = await Promise.all([hareketleriGetir(), malzemeleriGetir()]);
+    const [h, m] = await Promise.all([
+      hareketleriGetir(donemAraligiKur(donem)),
+      malzemeleriGetir(),
+    ]);
     setHareketler(h);
     setMalzemeler(m);
   };
 
   useEffect(() => {
     tazele().then(() => setYukleniyor(false));
-  }, []);
+  }, [donem]);
 
+  const fisler = useMemo(() => fisleriKur(hareketler), [hareketler]);
+
+  // Arama fişin içindeki malzeme adlarını da tarıyor: "süt" yazınca içinde
+  // süt geçen alış fişleri geliyor.
   const gorunen = useMemo(() => {
-    const liste = suzgec === "tumu" ? hareketler : hareketler.filter((h) => h.tip === suzgec);
-    return liste.filter((h) =>
-      eslesiyor(`${h.malzemeAd} ${h.kisi} ${h.aciklama} ${sebepAdi(h.tip, h.sebep)}`, ara)
+    const liste = suzgec === "tumu" ? fisler : fisler.filter((f) => f.tip === suzgec);
+    return liste.filter((f) =>
+      eslesiyor(
+        `${f.kalemler.map((k) => k.malzemeAd).join(" ")} ${f.kisi} ${f.aciklama} ${sebepAdi(f.tip, f.sebep)}`,
+        ara
+      )
     );
-  }, [hareketler, suzgec, ara]);
+  }, [fisler, suzgec, ara]);
 
   const { kutu, boy } = useKutuBoyu(gorunen.length);
 
-  const sayac = (tip: string) => hareketler.filter((h) => h.tip === tip).length;
+  const sayac = (tip: string) => fisler.filter((f) => f.tip === tip).length;
+
+  // Açık fiş kimliğiyle tutuluyor: düzenleme sonrası liste tazelenince
+  // pencere güncel kalemlerle açık kalsın, silinen son kalemle kapansın.
+  const acikFis = fisler.find((f) => f.belgeId === acikFisId) ?? null;
 
   return (
     <>
@@ -116,7 +189,7 @@ export default function StokHareketleri() {
                 onClick={() => setSuzgec("tumu")}
               >
                 <History size={15} /> Tümü
-                <em className="stok-serit-sayi">{hareketler.length}</em>
+                <em className="stok-serit-sayi">{fisler.length}</em>
               </button>
               {HAREKET_TIPLERI.map((t) => (
                 <button
@@ -140,6 +213,13 @@ export default function StokHareketleri() {
                 </Ipucu>
               </h2>
               <AramaKutusu deger={ara} degistir={setAra} yer="Hareket ara" />
+              <button
+                className={donem.kod === "tumu" ? "stok-yan-tus" : "stok-yan-tus dolu"}
+                title="Tarihe göre süz"
+                onClick={() => setDonemPenceresi(true)}
+              >
+                <CalendarDays size={16} /> {donemAdi(donem)}
+              </button>
               {yonetebilir && (
                 <button className="ayar-ekle" onClick={() => setPencere(true)}>
                   <Plus size={15} /> Yeni hareket
@@ -153,11 +233,13 @@ export default function StokHareketleri() {
                 <p>
                   {ara
                     ? `"${ara}" ile eşleşen hareket yok.`
-                    : hareketler.length === 0
-                      ? "Henüz stok hareketi yok. Mal girişi, fire ve çıkışlar buradan işlenir."
-                      : "Bu tipte hareket yok."}
+                    : hareketler.length === 0 && donem.kod !== "tumu"
+                      ? `${donemAdi(donem)} için hareket yok.`
+                      : hareketler.length === 0
+                        ? "Henüz stok hareketi yok. Mal girişi, fire ve çıkışlar buradan işlenir."
+                        : "Bu tipte hareket yok."}
                 </p>
-                {yonetebilir && hareketler.length === 0 && (
+                {yonetebilir && hareketler.length === 0 && donem.kod === "tumu" && (
                   <button className="ayar-ekle" onClick={() => setPencere(true)}>
                     <Plus size={15} /> İlk hareketi gir
                   </button>
@@ -165,63 +247,62 @@ export default function StokHareketleri() {
               </div>
             ) : (
               <div className="stok-liste" ref={kutu} style={{ maxHeight: boy || undefined }}>
-                {gorunen.map((h) => {
-                  const arti = h.miktar > 0;
-                  const sebep = sebepAdi(h.tip, h.sebep);
-                  return (
-                    <div key={h.id} className={`hrk-satir hrk-${h.tip}`}>
-                      <span className="hrk-im"><TipIkonu tip={h.tip} boy={18} /></span>
+                {gorunen.map((f) => (
+                  <button
+                    key={f.belgeId}
+                    className={`sfis-satir hrk-${f.tip}`}
+                    onClick={() => setAcikFisId(f.belgeId)}
+                  >
+                    <span className="sfis-im"><TipIkonu tip={f.tip} boy={19} /></span>
 
-                      <span className="hrk-ad">
-                        {h.malzemeAd}
-                        <small>
-                          {[
-                            tipBilgisi(h.tip).ad,
-                            sebep,
-                            `${gunMetni(h.zaman)} ${saatMetni(h.zaman)}`,
-                            h.kisi,
-                            h.aciklama,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </small>
+                    <span className="sfis-govde">
+                      <span className="sfis-baslik">
+                        <b>{tipAdi(f.tip)}</b>
                       </span>
-
-                      {/* Eski → değişim → yeni: stoğun o an ne olduğu değil,
-                          nasıl o hâle geldiği okunuyor. */}
-                      <span className="hrk-defter">
-                        <b>{miktarGoster(h.onceki, h.birim)}</b>
-                        <ArrowRight size={14} />
-                        <em className={arti ? "arti" : "eksi"}>
-                          {arti ? "+" : "−"}
-                          {miktarGoster(Math.abs(h.miktar), h.birim)}
-                        </em>
-                        <ArrowRight size={14} />
-                        <b className="sonuc">{miktarGoster(h.sonraki, h.birim)}</b>
+                      <span className="sfis-kalemler">{kalemOzeti(f)}</span>
+                      <span className="sfis-kunye">
+                        <span><CalendarDays size={13} /> {gunMetni(f.zaman)}</span>
+                        <span><Clock size={13} /> {saatMetni(f.zaman)}</span>
+                        {f.kisi && <span><UserRound size={13} /> {f.kisi}</span>}
                       </span>
+                    </span>
 
-                      {yonetebilir && (
-                        <span className="stok-islem">
-                          <button onClick={() => setDuzenlenen(h)} title="Düzenle">
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            className="tehlike"
-                            onClick={() => setSilinecek(h)}
-                            title="Sil"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </span>
+                    <span className="sfis-sag">
+                      <span className="sfis-sayi"><Layers size={13} /> {f.kalemler.length} kalem</span>
+                      {f.tip === "giris" && f.tutar != null && (
+                        <b className="sfis-tutar">{paraGoster(f.tutar)}</b>
                       )}
-                    </div>
-                  );
-                })}
+                    </span>
+
+                    <ChevronRight size={18} className="sfis-ok" />
+                  </button>
+                ))}
               </div>
             )}
           </section>
         )}
       </div>
+
+      {donemPenceresi && (
+        <DonemPenceresi
+          donem={donem}
+          onSec={(d) => {
+            setDonem(d);
+            setDonemPenceresi(false);
+          }}
+          onKapat={() => setDonemPenceresi(false)}
+        />
+      )}
+
+      {acikFis && (
+        <FisPenceresi
+          fis={acikFis}
+          duzenlenir={yonetebilir && elleDuzenlenir(acikFis.tip)}
+          onKapat={() => setAcikFisId(null)}
+          onDuzenle={setDuzenlenen}
+          onSil={setSilinecek}
+        />
+      )}
 
       {pencere && (
         <HareketPenceresi
@@ -281,6 +362,109 @@ export default function StokHareketleri() {
       {hata && <OnayModal mesaj={hata} tekTus onKapat={() => setHata("")} />}
       {bildirim && <Bildirim mesaj={bildirim} onKapat={() => setBildirim("")} />}
     </>
+  );
+}
+
+/** Fişin içi: kalemler defter düzeninde, düzeltme kalem satırında. */
+function FisPenceresi({
+  fis,
+  duzenlenir,
+  onKapat,
+  onDuzenle,
+  onSil,
+}: {
+  fis: Fis;
+  duzenlenir: boolean;
+  onKapat: () => void;
+  onDuzenle: (h: Hareket) => void;
+  onSil: (h: Hareket) => void;
+}) {
+  const tarih = new Date(fis.zaman).toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const sebep = sebepAdi(fis.tip, fis.sebep);
+
+  return (
+    <div className="up-fon" onClick={onKapat}>
+      <div className={`up-modal sfis-modal hrk-${fis.tip}`} onClick={(e) => e.stopPropagation()}>
+        <header className="sfis-ust">
+          <span className="sfis-im buyuk"><TipIkonu tip={fis.tip} boy={21} /></span>
+          <div className="sfis-ust-yazi">
+            <h3>{tipAdi(fis.tip)} fişi</h3>
+          </div>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+        </header>
+
+        <div className="sfis-kunye genis">
+          <span><CalendarDays size={14} /> {tarih}</span>
+          <span><Clock size={14} /> {saatMetni(fis.zaman)}</span>
+          {fis.kisi && <span><UserRound size={14} /> {fis.kisi}</span>}
+          {sebep && <span><Tag size={14} /> {sebep}</span>}
+        </div>
+
+        {fis.aciklama && (
+          <p className="sfis-not"><StickyNote size={15} /> {fis.aciklama}</p>
+        )}
+
+        <div className="sfis-liste">
+          {fis.kalemler.map((h) => {
+            const arti = h.miktar > 0;
+            return (
+              <div key={h.id} className="sfis-kalem">
+                <span className="sfis-kalem-ad">
+                  <Package size={15} /> {h.malzemeAd}
+                </span>
+
+                {/* Eski → değişim → yeni: stoğun o an ne olduğu değil, nasıl
+                    o hâle geldiği okunuyor. */}
+                <span className="hrk-defter">
+                  <b>{miktarGoster(h.onceki, h.birim)}</b>
+                  <ArrowRight size={14} />
+                  <em className={arti ? "arti" : "eksi"}>
+                    {arti ? "+" : "−"}
+                    {miktarGoster(Math.abs(h.miktar), h.birim)}
+                  </em>
+                  <ArrowRight size={14} />
+                  <b className="sonuc">{miktarGoster(h.sonraki, h.birim)}</b>
+                </span>
+
+                <span className="sfis-kalem-fiyat">
+                  {h.birimMaliyet != null &&
+                    `${paraGoster(h.birimMaliyet * (tabanaCevir(1, h.birim) || 1))} / ${olcuKisa(h.birim)}`}
+                </span>
+
+                {duzenlenir && (
+                  <span className="sfis-kalem-islem">
+                    <button onClick={() => onDuzenle(h)} title="Düzenle" aria-label="Düzenle">
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      className="tehlike"
+                      onClick={() => onSil(h)}
+                      title="Sil"
+                      aria-label="Sil"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <footer className="sfis-alt">
+          <span><Layers size={15} /> {fis.kalemler.length} kalem</span>
+          {fis.tip === "giris" && fis.tutar != null && (
+            <span className="sfis-toplam">
+              Toplam <b>{paraGoster(fis.tutar)}</b>
+            </span>
+          )}
+        </footer>
+      </div>
+    </div>
   );
 }
 

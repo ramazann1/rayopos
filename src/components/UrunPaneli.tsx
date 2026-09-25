@@ -35,7 +35,8 @@ import RecetePenceresi, {
 import Ipucu from "./Ipucu";
 import type { ReceteTaslagi } from "./RecetePenceresi";
 import type { ReceteSatiri } from "../recete";
-import { malzemeleriGetir } from "../stok";
+import { hazirUrunMalzemesi, malzemeleriGetir, miktarSayi } from "../stok";
+import { yetkiVar } from "../oturum";
 import type { Malzeme } from "../stok";
 
 // Para alanları taslakta metin, kaydederken sayı. Boş bırakılan alan 0 değil
@@ -287,6 +288,59 @@ export default function UrunPaneli({
     setTurAcik((l) => [...l, i]);
   };
 
+  /**
+   * Hazır ürünün stoğu. Kola gibi olduğu gibi satılan ürünün reçetesi yok,
+   * bu yüzden stoğu da yoktu: satışta düşmüyor, fire girilemiyor, kârlılıkta
+   * maliyetsiz kalıyordu. Anahtar aynı adla "adet" ölçülü bir malzeme ve
+   * "1 adet" reçete kuruyor; yeni bir kavram değil, mevcut düzenin kısayolu.
+   * Birden çok porsiyonda her porsiyon kendi malzemesini alıyor — büyük kola
+   * ile küçük kola ayrı sayılır.
+   */
+  const hazirAdi = (p: PorsiyonTaslak) =>
+    porsiyonlar.filter((x) => x.birimId).length > 1 ? `${ad.trim()} · ${p.ad}` : ad.trim();
+
+  const hazirMi = (p: PorsiyonTaslak) => {
+    if (p.recete.length !== 1) return false;
+    const m = malzemeler.find((x) => x.id === p.recete[0].malzemeId);
+    // Ad da eşleşmeli: "1 adet ekmek" reçeteli bir tost hazır ürün değil.
+    return (
+      m?.birim === "adet" &&
+      miktarSayi(p.recete[0].miktar) === 1 &&
+      m.ad.toLocaleLowerCase("tr") === hazirAdi(p).toLocaleLowerCase("tr")
+    );
+  };
+
+  const takipliler = porsiyonlar.filter((p) => p.birimId);
+  const stokTakibi = takipliler.length > 0 && takipliler.every(hazirMi);
+
+  const stokTakibiDegis = async (ac: boolean) => {
+    if (!ac) {
+      // Malzeme silinmiyor: geçmiş girişleri ve satışları defterde duruyor.
+      setPorsiyonlar((liste) => liste.map((p) => (hazirMi(p) ? { ...p, recete: [] } : p)));
+      return;
+    }
+    if (!ad.trim()) {
+      onUyari("Önce ürünün adını yazın; stok kaydı bu adla açılıyor.");
+      return;
+    }
+    try {
+      const yeniler: Malzeme[] = [];
+      const kurulan = await Promise.all(
+        porsiyonlar.map(async (p) => {
+          // Kendi reçetesi olan porsiyona dokunulmuyor.
+          if (!p.birimId || p.recete.length) return p;
+          const m = await hazirUrunMalzemesi(hazirAdi(p));
+          yeniler.push(m);
+          return { ...p, recete: [{ malzemeId: m.id, miktar: "1", tip: "normal" as const }] };
+        })
+      );
+      setMalzemeler((liste) => [...liste, ...yeniler.filter((m) => !liste.some((x) => x.id === m.id))]);
+      setPorsiyonlar(kurulan);
+    } catch (e) {
+      onUyari((e as Error).message);
+    }
+  };
+
   const secimDegis = (liste: number[], ayarla: (l: number[]) => void, deger: number) => {
     ayarla(liste.includes(deger) ? liste.filter((x) => x !== deger) : [...liste, deger]);
   };
@@ -373,6 +427,14 @@ export default function UrunPaneli({
                 acik={menuAlan.tukendi}
                 degistir={(v) => setMenuAlan((m) => ({ ...m, tukendi: v }))}
               />
+              {yetkiVar("stok.yonet") && (
+                <Anahtar
+                  etiket="Stok takibi"
+                  bilgi="Kola, su gibi olduğu gibi satılan ürünler için. Aynı adla bir malzeme açılır; satışta stoktan düşer."
+                  acik={stokTakibi}
+                  degistir={stokTakibiDegis}
+                />
+              )}
             </div>
 
             <div>

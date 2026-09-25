@@ -4,18 +4,24 @@ import {
   Boxes,
   Check,
   ChevronDown,
+  ChevronRight,
   CircleAlert,
+  History,
   Layers,
   Package,
   PackageX,
   Pencil,
   Plus,
+  ReceiptText,
   Search,
   Trash2,
   TriangleAlert,
+  Wallet,
   X,
 } from "lucide-react";
+import { paraGoster } from "../para";
 import StokBasligi from "../components/StokBasligi";
+import MalzemeGecmisi from "../components/MalzemeGecmisi";
 import Anahtar from "../components/Anahtar";
 import AramaKutusu from "../components/AramaKutusu";
 import Bilgi from "../components/Bilgi";
@@ -50,6 +56,14 @@ import {
   type OlcuKodu,
 } from "../stok";
 
+// Maliyet depoda en küçük birim başına duruyor (0,032 TL/gram); ekranda
+// malzemenin kendi ölçüsüyle okunuyor (₺32,00 / kg).
+const olcuFiyati = (tabanFiyat: number, birim: OlcuKodu) =>
+  `${paraGoster(tabanFiyat * tabanaCevir(1, birim))} / ${olcuKisa(birim)}`;
+
+const stokDegerHesapla = (m: Malzeme) =>
+  m.ortalamaMaliyet == null || m.miktar <= 0 ? null : m.miktar * m.ortalamaMaliyet;
+
 export default function Malzemeler() {
   const [gruplar, setGruplar] = useState<MalzemeGrubu[]>([]);
   const [liste, setListe] = useState<Malzeme[]>([]);
@@ -60,6 +74,7 @@ export default function Malzemeler() {
   const [grupPenceresi, setGrupPenceresi] = useState(false);
   const [kritikPenceresi, setKritikPenceresi] = useState(false);
   const [silinecek, setSilinecek] = useState<Malzeme | null>(null);
+  const [gecmis, setGecmis] = useState<Malzeme | null>(null);
   const [bildirim, setBildirim] = useState("");
   const [hata, setHata] = useState("");
 
@@ -83,6 +98,9 @@ export default function Malzemeler() {
 
   const kritikler = liste.filter(kritikMi);
   const eksiler = liste.filter((m) => m.miktar < 0);
+  // Eksi stok toplama katılmıyor: sayılmamış bir açık, depodaki malı
+  // olduğundan az gösterir.
+  const stokDegeri = liste.reduce((t, m) => t + (stokDegerHesapla(m) ?? 0), 0);
 
   const gorunen = useMemo(() => {
     let sonuc = liste;
@@ -140,7 +158,7 @@ export default function Malzemeler() {
           </section>
         ) : (
           <section className="ayar-bolum">
-            <div className="stok-ozet">
+            <div className={yonetebilir ? "stok-ozet dortlu" : "stok-ozet"}>
               <div className="stok-ozet-kart">
                 <span className="stok-ozet-im"><Boxes size={20} /></span>
                 <em>{liste.length}</em>
@@ -156,6 +174,13 @@ export default function Malzemeler() {
                 <em>{eksiler.length}</em>
                 <small>Eksiye düşen</small>
               </div>
+              {yonetebilir && (
+                <div className="stok-ozet-kart">
+                  <span className="stok-ozet-im"><Wallet size={20} /></span>
+                  <em>{paraGoster(stokDegeri)}</em>
+                  <small>Stok değeri</small>
+                </div>
+              )}
             </div>
 
             {/* Süzgeç ile eylem aynı şeritte, aynı kılıkta durunca göz
@@ -241,7 +266,8 @@ export default function Malzemeler() {
                     <div
                       key={m.id}
                       className={
-                        "stok-satir" + (eksi ? " eksi" : kritik ? " kritik" : "") +
+                        "stok-satir" + (yonetebilir ? " maliyetli" : "") +
+                        (eksi ? " eksi" : kritik ? " kritik" : "") +
                         (m.aktif ? "" : " pasif")
                       }
                       style={grup?.renk ? { ["--satir-renk" as any]: grup.renk } : undefined}
@@ -268,6 +294,23 @@ export default function Malzemeler() {
                         </small>
                       </span>
 
+                      {yonetebilir && (
+                        <span className="stok-maliyet">
+                          {m.ortalamaMaliyet == null ? (
+                            "Fiyat yok"
+                          ) : (
+                            <>
+                              {olcuFiyati(m.ortalamaMaliyet, m.birim)}
+                              <small>
+                                {stokDegerHesapla(m) == null
+                                  ? "Stok değeri yok"
+                                  : `Stok değeri ${paraGoster(stokDegerHesapla(m)!)}`}
+                              </small>
+                            </>
+                          )}
+                        </span>
+                      )}
+
                       <span className="stok-durum">
                         {eksi ? (
                           <b className="stok-rozet tehlike"><PackageX size={13} /> Eksi stok</b>
@@ -276,20 +319,27 @@ export default function Malzemeler() {
                         ) : null}
                       </span>
 
-                      {yonetebilir && (
-                        <span className="stok-islem">
-                          <button onClick={() => setPanel(m)} title="Düzenle">
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            className="tehlike"
-                            onClick={() => setSilinecek(m)}
-                            title="Sil"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </span>
-                      )}
+                      {/* Geçmişe bakmak bir şey değiştirmiyor: stoğu yalnız
+                          görebilen kişi de "süt neden eksik" sorusunu sorabilsin. */}
+                      <span className="stok-islem">
+                        <button onClick={() => setGecmis(m)} title="Geçmiş">
+                          <History size={15} />
+                        </button>
+                        {yonetebilir && (
+                          <>
+                            <button onClick={() => setPanel(m)} title="Düzenle">
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              className="tehlike"
+                              onClick={() => setSilinecek(m)}
+                              title="Sil"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
+                      </span>
                     </div>
                   );
                 })}
@@ -307,8 +357,11 @@ export default function Malzemeler() {
           onKaydet={kaydet}
           onSil={panel ? () => setSilinecek(panel) : undefined}
           onGruplar={() => setGrupPenceresi(true)}
+          onGecmis={panel ? () => setGecmis(panel) : undefined}
         />
       )}
+
+      {gecmis && <MalzemeGecmisi malzeme={gecmis} onKapat={() => setGecmis(null)} />}
 
       {grupPenceresi && (
         <GrupPenceresi
@@ -465,6 +518,7 @@ function MalzemePaneli({
   onKaydet,
   onSil,
   onGruplar,
+  onGecmis,
 }: {
   malzeme: Malzeme | null;
   gruplar: MalzemeGrubu[];
@@ -472,6 +526,7 @@ function MalzemePaneli({
   onKaydet: (alanlar: MalzemeAlanlari) => void;
   onSil?: () => void;
   onGruplar: () => void;
+  onGecmis?: () => void;
 }) {
   const [ad, setAd] = useState(malzeme?.ad ?? "");
   const [kod, setKod] = useState(malzeme?.kod ?? "");
@@ -577,10 +632,32 @@ function MalzemePaneli({
                 <Boxes size={15} /> Mevcut stok
                 <b>{miktarGoster(malzeme.miktar, malzeme.birim)}</b>
               </span>
+              <span>
+                <Wallet size={15} /> Ortalama maliyet
+                <b>
+                  {malzeme.ortalamaMaliyet == null
+                    ? "Fiyat yok"
+                    : olcuFiyati(malzeme.ortalamaMaliyet, malzeme.birim)}
+                </b>
+              </span>
+              <span>
+                <ReceiptText size={15} /> Son alış fiyatı
+                <b>
+                  {malzeme.sonAlisFiyati == null
+                    ? "Fiyat yok"
+                    : olcuFiyati(malzeme.sonAlisFiyati, malzeme.birim)}
+                </b>
+              </span>
               <p>
                 Miktar buradan değiştirilemez; stok girişi, sayım ve fire
                 ekranlarından yapılan her hareket deftere yazılır.
               </p>
+              {onGecmis && (
+                <button type="button" className="stok-panel-gecmis" onClick={onGecmis}>
+                  <History size={15} /> Geçmişi gör
+                  <ChevronRight size={15} />
+                </button>
+              )}
             </div>
           )}
 

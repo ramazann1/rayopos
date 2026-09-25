@@ -17,6 +17,7 @@ import {
   MapPin,
   Package,
   Plus,
+  Percent,
   Receipt,
   ShieldCheck,
   Star,
@@ -24,6 +25,7 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
+  TriangleAlert,
   Wallet,
   X,
 } from "lucide-react";
@@ -33,6 +35,7 @@ import AnalizFiltre from "../components/AnalizFiltre";
 import { CizgiGrafik, Degisim, Halka } from "../components/Grafikler";
 import AramaKutusu from "../components/AramaKutusu";
 import Bilgi from "../components/Bilgi";
+import Ipucu from "../components/Ipucu";
 import AdisyonDetay from "../components/AdisyonDetay";
 import { yolaGirebilir } from "../rotaYetkileri";
 import { yetkiVar } from "../oturum";
@@ -244,6 +247,8 @@ export default function Analiz() {
           />
         ) : bolum === "urunler" ? (
           <Urunler ozet={urunler} />
+        ) : bolum === "karlilik" ? (
+          <Karlilik ozet={urunler} />
         ) : bolum === "mutfak" ? (
           <Mutfak ozet={mutfak} />
         ) : bolum === "personel" ? (
@@ -1662,6 +1667,313 @@ function UrunSatir({
       {ikramVar && <td className="sag">{satir.ikram ? paraGoster(satir.ikram) : ""}</td>}
       {iptalVar && <td className="sag">{satir.iptal ? paraGoster(satir.iptal) : ""}</td>}
     </tr>
+  );
+}
+
+type KarAlani = "ad" | "miktar" | "ciro" | "birimMaliyet" | "birimKar" | "kar" | "oran";
+
+/** Kâr, maliyeti bilinen satışlardan çıkıyor; bilinmeyen kısım hesaba girmiyor. */
+type KarSatiri = UrunSatiri & {
+  birimMaliyet: number;
+  birimKar: number;
+  kar: number;
+  oran: number;
+};
+
+const oranMetni = (oran: number) => `%${Math.round(oran)}`;
+
+/**
+ * Kârlılık — "ne kazandırıyor" sorusu. Ürünler sekmesi ne satıldığını,
+ * burası satılanın malzemeye ne kadar mal olduğunu anlatıyor. Alış maliyeti
+ * gösterdiği için ayrı sekme: kapısı stok yönetme yetkisine de bakıyor.
+ *
+ * Sayfa üç parça: dönemin tek cümlelik hükmü, uçlardaki ürünler, dökümün
+ * kendisi. Maliyeti bilinmeyen satışlar en altta, kapalı duruyor.
+ */
+function Karlilik({ ozet }: { ozet: UrunOzeti }) {
+  const [sira, setSira] = useState<{ alan: KarAlani; artan: boolean }>({
+    alan: "kar",
+    artan: false,
+  });
+  const [arama, setArama] = useState("");
+  const [bilinmeyenAcik, setBilinmeyenAcik] = useState(false);
+
+  const satirlar = useMemo<KarSatiri[]>(
+    () =>
+      ozet.satirlar
+        .filter((s) => s.maliyetliMiktar > 0)
+        .map((s) => {
+          const kar = s.maliyetliCiro - s.maliyet;
+          return {
+            ...s,
+            birimMaliyet: s.maliyet / s.maliyetliMiktar,
+            birimKar: kar / s.maliyetliMiktar,
+            kar,
+            oran: s.maliyetliCiro > 0 ? (kar / s.maliyetliCiro) * 100 : 0,
+          };
+        }),
+    [ozet.satirlar]
+  );
+
+  // Hiç ya da kısmen maliyetsiz satılanlar: reçetesi girilmemiş, fiyatı eksik
+  // malzemesi olan ya da reçetesi sonradan girilmiş ürünler.
+  const bilinmeyenler = ozet.satirlar.filter(
+    (s) => s.miktar > 0 && s.maliyetliMiktar < s.miktar
+  );
+
+  const gorunen = useMemo(() => {
+    const ara = arama.trim().toLocaleLowerCase("tr");
+    const yon = sira.artan ? 1 : -1;
+    return satirlar
+      .filter((s) => !ara || s.ad.toLocaleLowerCase("tr").includes(ara))
+      .sort((a, b) =>
+        sira.alan === "ad"
+          ? a.ad.localeCompare(b.ad, "tr") * yon
+          : (Number(a[sira.alan]) - Number(b[sira.alan])) * yon
+      );
+  }, [satirlar, sira, arama]);
+
+  const sirala = (alan: KarAlani) =>
+    setSira((s) => (s.alan === alan ? { alan, artan: !s.artan } : { alan, artan: alan === "ad" }));
+
+  const { kutu, boy } = useKutuBoyu(gorunen.length);
+
+  if (satirlar.length === 0) {
+    return (
+      <section className="ayar-bolum">
+        <div className="ayar-bos">
+          <Wallet size={30} />
+          <p>
+            Bu dönemde maliyeti bilinen satış yok. Kârlılık, reçetesi girilmiş
+            ürünlerin satışından hesaplanır.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const brutKar = ozet.maliyetliCiro - ozet.maliyet;
+  const oran = ozet.maliyetliCiro > 0 ? (brutKar / ozet.maliyetliCiro) * 100 : 0;
+  const enCok = [...satirlar].sort((a, b) => b.kar - a.kar).slice(0, 5);
+  const enAz = [...satirlar].sort((a, b) => a.oran - b.oran).slice(0, 5);
+
+  return (
+    <div className="analiz-ozet">
+      <section className="ozet-serit">
+        <div className="serit-satir">
+          <div className="serit-sayi">
+            <span className="serit-etiket">
+              <Receipt size={15} /> Satış
+            </span>
+            <strong>{paraGoster(ozet.maliyetliCiro)}</strong>
+            <em>maliyeti bilinen ürünlerden</em>
+          </div>
+          <div className="serit-sayi">
+            <span className="serit-etiket">
+              <Package size={15} /> Malzeme maliyeti
+            </span>
+            <strong>{paraGoster(ozet.maliyet)}</strong>
+            <em>satılanların reçetesinden</em>
+          </div>
+          <div className="serit-sayi">
+            <span className="serit-etiket">
+              <Wallet size={15} /> Brüt kâr
+            </span>
+            <strong className={brutKar < 0 ? "zarar" : undefined}>{paraGoster(brutKar)}</strong>
+            <em>satış eksi malzeme</em>
+          </div>
+          <div className="serit-sayi">
+            <span className="serit-etiket">
+              <Percent size={15} /> Kâr oranı
+            </span>
+            <strong className={oran < 0 ? "zarar" : undefined}>{oranMetni(oran)}</strong>
+            <em>satışın kâra kalan payı</em>
+          </div>
+        </div>
+        {ozet.ikramMaliyeti > 0 && (
+          <p className="kar-cumle">
+            <Gift size={15} />
+            <span>
+              İkram edilen ürünlerin malzemesi <b>{paraGoster(ozet.ikramMaliyeti)}</b>;
+              bu tutar kâra değil, ikram kaybına yazılıyor.
+            </span>
+          </p>
+        )}
+      </section>
+
+      <div className="kar-uclar">
+        <KarUcu
+          baslik="En çok kazandıranlar"
+          ikon={<TrendingUp size={17} />}
+          liste={enCok}
+          deger={(s) => paraGoster(s.kar)}
+        />
+        <KarUcu
+          baslik="En düşük kâr oranı"
+          ikon={<TrendingDown size={17} />}
+          liste={enAz}
+          deger={(s) => oranMetni(s.oran)}
+        />
+      </div>
+
+      <section className="ayar-bolum">
+        <div className="analiz-liste-ust">
+          <h2>
+            <Wallet size={17} /> {gorunen.length} ürün
+            <Ipucu baslik="Birim rakamlar">
+              Birim maliyet bir porsiyonun malzemeye kaça mal olduğu, birim kâr
+              tanesinden kalan. Fiyat kararı bu iki rakamla verilir.
+            </Ipucu>
+          </h2>
+          <AramaKutusu deger={arama} degistir={setArama} yer="Ürün ara" />
+        </div>
+
+        <div className="tablo-kaydir tablo-kaydir-dikey" ref={kutu} style={{ maxHeight: boy || undefined }}>
+          <table className="analiz-tablo urun-tablo">
+            <thead>
+              <tr>
+                <SiraBaslik alan="ad" ad="Ürün" sira={sira} sirala={sirala} />
+                <SiraBaslik alan="miktar" ad="Adet" sag sira={sira} sirala={sirala} />
+                <SiraBaslik alan="ciro" ad="Ciro" sag sira={sira} sirala={sirala} />
+                <SiraBaslik alan="birimMaliyet" ad="Birim maliyet" sag sira={sira} sirala={sirala} />
+                <SiraBaslik alan="birimKar" ad="Birim kâr" sag sira={sira} sirala={sirala} />
+                <SiraBaslik alan="kar" ad="Kâr" sag sira={sira} sirala={sirala} />
+                <SiraBaslik alan="oran" ad="Kâr oranı" sag sira={sira} sirala={sirala} />
+              </tr>
+            </thead>
+            <tbody>
+              {gorunen.length === 0 ? (
+                <tr className="tablo-bos-satir">
+                  <td colSpan={7}>Aramayla eşleşen ürün yok.</td>
+                </tr>
+              ) : (
+                gorunen.map((s) => (
+                  <tr key={s.anahtar}>
+                    <td className="hucre-urun">
+                      <span className="kar-urun">
+                        {s.ad}
+                        {s.maliyetEksik && (
+                          <i
+                            className="maliyet-uyari"
+                            title="Reçetedeki bir malzemenin fiyatı girilmemiş; maliyet eksik."
+                          >
+                            <TriangleAlert size={14} />
+                          </i>
+                        )}
+                      </span>
+                    </td>
+                    <td className="sag">{sayiGoster(s.maliyetliMiktar)}</td>
+                    <td className="sag">{paraGoster(s.maliyetliCiro)}</td>
+                    <td className="sag">{paraGoster(s.birimMaliyet)}</td>
+                    <td className={s.birimKar < 0 ? "sag zarar" : "sag"}>{paraGoster(s.birimKar)}</td>
+                    <td className={s.kar < 0 ? "sag hucre-tutar zarar" : "sag hucre-tutar"}>
+                      {paraGoster(s.kar)}
+                    </td>
+                    <td className={s.oran < 0 ? "sag kar-oran zarar" : "sag kar-oran"}>
+                      {oranMetni(s.oran)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>TOPLAM</td>
+                <td className="sag">{sayiGoster(gorunen.reduce((t, s) => t + s.maliyetliMiktar, 0))}</td>
+                <td className="sag">{paraGoster(gorunen.reduce((t, s) => t + s.maliyetliCiro, 0))}</td>
+                <td />
+                <td />
+                <td className="sag hucre-tutar">{paraGoster(gorunen.reduce((t, s) => t + s.kar, 0))}</td>
+                <td className="sag kar-oran">
+                  {(() => {
+                    const ciro = gorunen.reduce((t, s) => t + s.maliyetliCiro, 0);
+                    const kar = gorunen.reduce((t, s) => t + s.kar, 0);
+                    return ciro > 0 ? oranMetni((kar / ciro) * 100) : "";
+                  })()}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      {bilinmeyenler.length > 0 && (
+        <section className="ayar-bolum">
+          <div className="analiz-liste-ust">
+            <h2>
+              <TriangleAlert size={17} /> Maliyeti bilinmeyen {bilinmeyenler.length} ürün
+              <Ipucu baslik="Neden hesapta yok">
+                Reçetesi girilmemiş ya da reçete girilmeden önce satılmış ürünler;
+                Menü Stüdyosu'ndan reçete girildiğinde sonraki satışları hesaba katılır.
+              </Ipucu>
+            </h2>
+            <button
+              type="button"
+              className="detay-dugme"
+              onClick={() => setBilinmeyenAcik((a) => !a)}
+            >
+              {bilinmeyenAcik ? "Gizle" : "Göster"}
+              <ChevronRight size={15} className={bilinmeyenAcik ? "dokum-ok acik" : "dokum-ok"} />
+            </button>
+          </div>
+
+          {bilinmeyenAcik && (
+            <ul className="satilmayan-liste">
+              {bilinmeyenler.map((s) => (
+                <li key={s.anahtar}>
+                  <span className="kategori-ad">
+                    <i style={{ background: s.kategoriRenk || "#d9cbb8" }} />
+                    {s.ad}
+                  </span>
+                  <em>
+                    {s.maliyetliMiktar > 0
+                      ? `${sayiGoster(s.miktar - s.maliyetliMiktar)} / ${sayiGoster(s.miktar)} adet maliyetsiz`
+                      : `${sayiGoster(s.miktar)} adet · ${paraGoster(s.ciro)}`}
+                  </em>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+/** Uçtaki beş ürün — rakam ve ad, başka süs yok. */
+function KarUcu({
+  baslik,
+  ikon,
+  liste,
+  deger,
+}: {
+  baslik: string;
+  ikon: React.ReactNode;
+  liste: KarSatiri[];
+  deger: (s: KarSatiri) => string;
+}) {
+  return (
+    <section className="ayar-bolum kar-uc">
+      <div className="ayar-bolum-ust">
+        <h2>
+          {ikon} {baslik}
+        </h2>
+      </div>
+      <ol className="kar-uc-liste">
+        {liste.map((s, i) => (
+          <li key={s.anahtar}>
+            <span className="kar-uc-sira">{i + 1}</span>
+            <span className="kar-uc-ad">
+              {s.ad}
+              <small>
+                {sayiGoster(s.maliyetliMiktar)} adet · tanesi {paraGoster(s.birimKar)} kâr
+              </small>
+            </span>
+            <b className={s.kar < 0 || s.oran < 0 ? "zarar" : undefined}>{deger(s)}</b>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

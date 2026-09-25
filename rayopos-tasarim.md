@@ -1,8 +1,30 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (24 Eyl 2026 güncellendi — reçete ve maliyet seansı)
+## 0. SIRADAKİ İŞ (25 Eyl 2026 güncellendi — stok düşümü ve kârlılık seansı)
 
+> **KARAR (25 Eyl 2026, Ramazan): önce stok modülü tamamen bitirilecek.**
+> 6. madde bitene kadar başka işe geçilmez; 1-3 zaten dışarıdan bekliyor.
+> Stok içi sıra: maliyeti ekranda göster → otomatik düşüm → maliyet/kârlılık
+> raporu → küçük işler → reçetenin kalan iki işi.
+> **KARAR (25 Eyl 2026, Ramazan): satış düşümü Hareketler ekranında görünmez.**
+> Kayıt defterde durur (zincir yeniden kurulurken satışlar kaybolmasın diye
+> şart), ekran `tip <> 'satis'` süzer. Hareketler **fiş fiş** listelenir:
+> bir belge bir satır, tıklayınca kalemleri açılır.
+> **KARAR (25 Eyl 2026, Ramazan): hazır ürünün stoğu tek anahtarla.** Kola,
+> su gibi olduğu gibi satılan ürünlerin reçetesi yok, bu yüzden stoğu hiç
+> tutulmuyordu (düşüm, fire, kârlılık, eksi stok hepsi kör). Menü
+> Stüdyosu'nda porsiyon kutusuna "stoğunu takip et": aynı adla malzeme +
+> "1 adet" reçete arka planda kurulur. Yeni kavram yok, mevcut malzeme +
+> reçete düzeni kısalıyor. **Eksi stok anahtarından önce yapılır.**
+> **KARAR (25 Eyl 2026, Ramazan): stok SİPARİŞTE düşer, kapanışta değil.**
+> Aynı gün önce "kapanışta düş" denmişti; eksi stok kontrolü "açık masalarda
+> bekleyen ihtiyaç" hesabı gerektirince Ramazan "çok karmaşık" dedi ve
+> değiştirdi. Kalem kaydedilince düşer; adet değişince, iptal edilince,
+> silinince ya da adisyon iptal edilince fark kadar düzelir. İkram düşülmüş
+> kalır. Kapanış stoğa dokunmaz. Maliyet de sipariş anında dondurulur.
+> Hesap aynı "düşmesi gereken − düşülen = fark" yöntemiyle yapılıyor.
+>
 > **Sıra (21 Eyl 2026 seans sonu):**
 > 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
 >    (21 Eyl 2026 Adisyo turu + Supabase fiyat ölçümü). Önceki iki madde
@@ -100,16 +122,19 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **STOK MODÜLÜ — sırada MALİYETİ EKRANDA GÖSTERMEK, sonra OTOMATİK DÜŞÜM.**
->    Veri modeli, Malzemeler, Hareketler, Sayım ve **Reçete** ekranları yazıldı
->    (24 Eyl 2026, aşağıda). Kapsam ve kararlar 2. maddede.
->    **Sıradaki adım — maliyet görünür olsun:** malzemenin ortalama maliyeti ve
->    son alış fiyatı hiçbir ekranda yazmıyor, bugün yalnız Supabase'den
->    okunabiliyor. Adisyo bunu *Stok Durum Raporu*'nda `Birim Tutar(₺)` ve
->    `Toplam Tutar(₺)` sütunlarıyla veriyor (24 Eyl turu); bizde Malzemeler
->    listesindeki satıra girecek.
->    **Ardından:** adisyon kapanınca reçeteden otomatik düşüm → maliyet/kârlılık
->    raporu.
+> 6. **STOK MODÜLÜ — kalan: küçük işler, sonra reçetenin iki işi.**
+>    Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
+>    ürün stok takibi ve eksi stok engeli 25 Eyl'de bitti (aşağıda).
+>    **İLK İŞ (yeni seansın başı):** `sql/2026-09-25-sipariste-dusum.sql`
+>    dosyasının SON hâli (yetmeyen malzemeleri alt alta sayan uyarı) Supabase'de
+>    çalıştırıldı mı sor; çalıştırıldıysa eksi stok anahtarını kapatıp S 9'a
+>    9 latte ile uyarıyı tarayıcıda göster, anahtarı geri AÇ.
+>    **Sonra küçük işler:** fire/çıkış raporu (sebep kırılımıyla, ortalama
+>    maliyet üzerinden TL) · **geçmiş sayımlar listesi** (`sayimlariGetir`
+>    yazıldı ama ekranı yok; onaylı sayım ay sonu maliyet hesabının kapanış
+>    rakamı) · **mobil alt sekme çubuğundaki dolu mercan kapsül** (bütün
+>    mobil ekranların ortak dili, ayrı karar) · **Kârlılık mobilde?** —
+>    telefonda tam Analiz yok, yalnız Satış özeti; Ramazan'a sorulacak.
 >    **Reçeteden kalan iki iş:**
 >    - **Reçete tipi üçlüsü ekranda yok** (Normal / Çıkarılabilir / Opsiyonel).
 >      Veritabanı sütunu duruyor, arayüzden kaldırıldı (Ramazan, 24 Eyl):
@@ -120,18 +145,44 @@
 >      mantar sosu"). Tablo buna hazır (`sahip_malzeme_id` sütunu baştan
 >      kondu) ama ekranı yok; bir de **Üretim ekranı** gerekiyor ("bugün 5 kg
 >      sos yaptım" → krema/mantar düşer, sos stoğu artar).
->    **Sırada duran küçük işler:** malzeme kartından "bu malzemenin hareketleri"
->    kısayolu · İşletme Ayarları'na *eksi stoğa izin ver* anahtarı (koda
->    bağlandı, ekran düğmesi yok, varsayılan açık) · fire/çıkış raporu (sebep
->    kırılımıyla, ortalama maliyet üzerinden TL) · **geçmiş sayımlar listesi**
->    (`sayimlariGetir` yazıldı ama ekranı yok; onaylı sayım ay sonu maliyet
->    hesabının kapanış rakamı) · **mobil alt sekme çubuğundaki dolu mercan
->    kapsül** (bütün mobil ekranların ortak dili, ayrı karar).
 > 7. **Kendi takvim bileşenimiz.** Tarih kutusuna basınca açılan takvim
 >    Chrome'un kendi arayüzü; CSS oraya erişemiyor, Ramazan görüntüsünü
 >    beğenmedi (23 Eyl 2026). Kendi takvimimiz yazılırsa Giderler, Analiz
 >    süzgeci ve stok hareketleri birlikte kullanacak — ortak bileşen işi,
 >    tek ekranlık değil. Stok modülü bitince ele alınacak.
+>
+> **Yapılanlar (25 Eyl 2026 — stok düşümü, kârlılık, eksi stok):**
+> - **Malzemeler:** satırda ortalama maliyet (ölçü başına) + stok değeri,
+>   özet kartlarında toplam stok değeri, kartta son alış fiyatı. Yalnız
+>   `stok.yonet` görür.
+> - **Otomatik düşüm SİPARİŞTE** (`sql/2026-09-25-otomatik-dusum.sql` →
+>   `-kalem-maliyeti.sql` → `-eksi-stok-engeli.sql` → `-sipariste-dusum.sql`,
+>   bu sırayla; sonuncusu öncekilerin fonksiyonlarını değiştirir). Kalem
+>   tetikleyicisi İSTEK başına çalışıyor (tek Kaydet = tek belge). Maliyet
+>   `kalem_maliyetleri` tablosunda sipariş anında donuyor (canlı yayında
+>   değil — kalem güncellemesi mesaj üretmesin). Çevrimdışı kuyruktan gelen
+>   kalem `stok_denetimsiz` ile eksi stok denetiminden muaf.
+> - **HATA DÜZELTİLDİ:** sipariş ekranı kaleme `porsiyon_id` yazmıyordu,
+>   reçete hiç eşleşmiyordu (`menu.ts porsiyonKimligi`, masaüstü + mobil).
+>   Bu tarihten önceki kalemler porsiyonsuz, maliyetsiz kalıyor.
+> - **HATA DÜZELTİLDİ:** kalem yazımı reddedilince boş adisyon + boş tur
+>   kalıyordu (masa "dolu ₺0"). Artık geri siliniyor (`adisyonKaydet`).
+> - **Hareketler:** fiş fiş (bir belge bir satır, başlık = tür), fiş penceresi,
+>   tarih süzgeci (Analiz dönemleri + "Tüm zamanlar"), satışlar gizli. Sınıflar
+>   `sfis-` önekli — `fis-satir` fiş tasarımı ekranıyla çakışıyordu.
+> - **Malzeme geçmişi penceresi** (`components/MalzemeGecmisi.tsx`): satışlar
+>   gün başına tek satır, türe göre toplam çipleri. Ortak parçalar
+>   `components/StokDonemi.tsx`.
+> - **Analiz → Kârlılık** ayrı sekme (rapor + `stok.yonet` birlikte): şerit,
+>   en çok / en düşük oranlı 5 ürün, birim maliyet/kâr tablosu, maliyeti
+>   bilinmeyenler kapalı liste. Ürünler sekmesi eski hâlinde.
+> - **Hazır ürün stok takibi:** ürün panelinde "Stok takibi" anahtarı (bilgi
+>   "i" işaretinde; `Anahtar` bileşenine `bilgi` eklendi).
+> - **Eksi stoğa izin ver** anahtarı Ayarlar → Satış'ta, varsayılan açık.
+>   Uyarı: "*ÜRÜN* için stok yetersiz" + yetmeyen malzemeler alt alta
+>   (`OnayModal` ilk satır cümle, alttakiler liste).
+> - Menü Stüdyosu'nda kaydet/sil bildirimleri eklendi.
+> - **Ders:** `tsc --noEmit -p .` hiçbir dosyayı denetlemiyor; `tsc -b` kullan.
 >
 > **Yapılanlar (24 Eyl 2026 — reçete ve maliyet):**
 > - **Reçete** (`sql/2026-09-23-recete.sql`, `src/recete.ts`,

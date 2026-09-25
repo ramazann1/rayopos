@@ -31,6 +31,17 @@ export const tipBilgisi = (kod: string) =>
   HAREKET_TIPLERI.find((t) => t.kod === kod) ?? HAREKET_TIPLERI[0];
 
 /**
+ * Deftere elle girilmeyen tipler: satışı adisyon kapanışı, sayımı sayım
+ * onayı yazıyor. Elle düzeltilmiyorlar — satış düşümü adisyonun her
+ * kapanışında yeniden hesaplanıyor, elle yapılan değişiklik orada kaybolurdu.
+ */
+const OTOMATIK_TIPLER: Record<string, string> = { satis: "Satış", sayim: "Sayım" };
+
+export const tipAdi = (kod: string) => OTOMATIK_TIPLER[kod] ?? tipBilgisi(kod).ad;
+
+export const elleDuzenlenir = (kod: string) => !(kod in OTOMATIK_TIPLER);
+
+/**
  * Sebepler. Fire kayıptır, çıkış bilinçli tüketimdir — listeler bu yüzden
  * ayrı. "Personel" fire değil çıkıştır: personele giden mal kayıp sayılırsa
  * fire raporu şişer ve yanlış yerde önlem alınır.
@@ -136,14 +147,24 @@ export async function belgeKaydet(belge: YeniBelge) {
   }
 }
 
-export async function hareketleriGetir(sinir = 200): Promise<Hareket[]> {
-  const { data } = await supabase
+export async function hareketleriGetir(
+  aralik?: { bas: Date; bit: Date },
+  sinir = 500
+): Promise<Hareket[]> {
+  let sorgu = supabase
     .from("stok_hareketleri")
     .select(
       "id, belge_id, tip, malzeme_id, malzeme_ad, miktar, onceki, sonraki, birim_maliyet, zaman, malzemeler(birim), stok_belgeleri(sebep, aciklama, kisi_ad)"
     )
-    .order("zaman", { ascending: false })
-    .limit(sinir);
+    // Satış düşümü defterde duruyor ama bu ekranda gösterilmiyor: günde yüz
+    // elli adisyon alış ve fire fişlerini listenin dibine iterdi.
+    .neq("tip", "satis");
+
+  if (aralik) {
+    sorgu = sorgu.gte("zaman", aralik.bas.toISOString()).lt("zaman", aralik.bit.toISOString());
+  }
+
+  const { data } = await sorgu.order("zaman", { ascending: false }).limit(sinir);
 
   return ((data as any[]) ?? []).map((h) => ({
     id: h.id,
@@ -161,6 +182,91 @@ export async function hareketleriGetir(sinir = 200): Promise<Hareket[]> {
     kisi: h.stok_belgeleri?.kisi_ad ?? "",
     aciklama: h.stok_belgeleri?.aciklama ?? "",
   }));
+}
+
+/** Malzeme geçmişindeki tek satır; satışlar gün gün toplanmış hâlde. */
+export type GecmisSatiri = {
+  anahtar: string;
+  tip: string;
+  zaman: string;
+  miktar: number;
+  /** Tek hareketin önceki/sonraki miktarı; satış gün toplamında yok. */
+  onceki: number | null;
+  sonraki: number | null;
+  kisi: string;
+  sebep: string | null;
+  /** Satış gününde kaç adisyon kapandı. */
+  adisyon: number;
+};
+
+/**
+ * Tek malzemenin geçmişi — "stok neden tutmuyor" sorusunun cevabı. Satış
+ * burada görünüyor, çünkü eksiğin çoğu oradan; ama her adisyon ayrı satır
+ * olsaydı bir günde yüz satır olurdu. Satışlar o günün tek satırında
+ * toplanıyor, elle girilen hareketler olduğu gibi duruyor.
+ */
+export async function malzemeGecmisi(
+  malzemeId: number,
+  aralik?: { bas: Date; bit: Date }
+): Promise<GecmisSatiri[]> {
+  let sorgu = supabase
+    .from("stok_hareketleri")
+    .select("id, tip, miktar, onceki, sonraki, zaman, stok_belgeleri(sebep, kisi_ad, adisyon_id)")
+    .eq("malzeme_id", malzemeId);
+
+  if (aralik) {
+    sorgu = sorgu.gte("zaman", aralik.bas.toISOString()).lt("zaman", aralik.bit.toISOString());
+  }
+
+  const { data } = await sorgu.order("zaman", { ascending: false }).limit(2000);
+
+  const satirlar: GecmisSatiri[] = [];
+  const gunler = new Map<string, GecmisSatiri & { adisyonlar: Set<number> }>();
+
+  for (const h of (data as any[]) ?? []) {
+    const belge = h.stok_belgeleri ?? {};
+    if (h.tip !== "satis") {
+      satirlar.push({
+        anahtar: `h${h.id}`,
+        tip: h.tip,
+        zaman: h.zaman,
+        miktar: h.miktar,
+        onceki: h.onceki,
+        sonraki: h.sonraki,
+        kisi: belge.kisi_ad ?? "",
+        sebep: belge.sebep ?? null,
+        adisyon: 0,
+      });
+      continue;
+    }
+
+    const t = new Date(h.zaman);
+    const gun = `${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`;
+    let g = gunler.get(gun);
+    if (!g) {
+      g = {
+        anahtar: `s${gun}`,
+        tip: "satis",
+        zaman: h.zaman,
+        miktar: 0,
+        onceki: null,
+        sonraki: null,
+        kisi: "",
+        sebep: null,
+        adisyon: 0,
+        adisyonlar: new Set(),
+      };
+      gunler.set(gun, g);
+      satirlar.push(g);
+    }
+    g.miktar += h.miktar;
+    if (belge.adisyon_id) g.adisyonlar.add(belge.adisyon_id);
+    g.adisyon = g.adisyonlar.size;
+  }
+
+  // Yeniden açılıp iptal edilen adisyonlar bir günün satışını sıfırlayabiliyor;
+  // değişimsiz satır bir şey anlatmıyor.
+  return satirlar.filter((s) => s.miktar !== 0);
 }
 
 /**

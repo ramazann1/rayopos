@@ -72,6 +72,10 @@ export type SepetKalemi = {
   turSaat?: string; // turun kaydedildiği an; sepette tur başlığında görünüyor
   turGarson?: string; // turu yazan kişi; tur başlığında saatin yanında
   turGarsonId?: number; // personel raporunda ciro bu kişiye yazılıyor
+  /** Kapanışta dondurulan reçete maliyeti (adet dahil); reçetesizse boş. */
+  maliyet?: number;
+  /** Reçetedeki bir malzemenin fiyatı bilinmiyordu; maliyet eksik. */
+  maliyetEksik?: boolean;
 };
 export type Tahsilat = {
   /** Kayıtlı tahsilatın kimliği; yeni alınan ödemede boş. */

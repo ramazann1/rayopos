@@ -242,7 +242,7 @@ export async function kuyruguGonder() {
 
   try {
     while (kuyruk.length) {
-      const kayit = kuyruk[0];
+      const kayit = { ...kuyruk[0], veri: { ...kuyruk[0].veri, stokDenetimsiz: true } };
       const paraVar = kayit.veri.tahsilatlar.some((t) => !t.id);
       try {
         if (kayit.tip === "masa") {

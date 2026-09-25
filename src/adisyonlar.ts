@@ -37,6 +37,12 @@ export type AdisyonVerisi = {
   id?: number;
   no?: number;
   sepet: SepetKalemi[];
+  /**
+   * Kayıt çevrimdışı kuyruktan geliyor: ürün müşteriye çoktan gitti. Eksi
+   * stok kapalı olsa bile reddedilmiyor — geri alınamayan satışı reddetmek
+   * yalnız kaydı kaybettirirdi.
+   */
+  stokDenetimsiz?: boolean;
   indirim: number;
   /** Hesap geneli indirim ön tanımlıysa kaynağı; serbest indirimde boş. */
   indirimTanim?: IndirimKaynagi;
@@ -816,7 +822,15 @@ export async function adisyonKaydet(
       .select("id, acilis, indirim")
       .single();
     satirDenetle({ ...acma, data: acma.data ? [acma.data] : null }, "Adisyon açılamadı.");
-    adisyon = acma.data as { id: number; acilis: string; indirim: number };
+    const yeni = acma.data as { id: number; acilis: string; indirim: number };
+    // Bu kayıtta açılan hesap, kalemleri yazılamazsa geri siliniyor: yoksa
+    // masa salonda "dolu, ₺0" görünüp kalıyordu.
+    try {
+      return await kalemleriYaz(yeni.id, veri, kapat);
+    } catch (hata) {
+      await supabase.from("adisyonlar").delete().eq("id", yeni.id);
+      throw hata;
+    }
   } else {
     const guncelleme = await supabase
       .from("adisyonlar")
@@ -1155,9 +1169,13 @@ async function kalemleriYaz(
           indirim_tanim_id: k.indirimTanimId ?? null,
           indirim_ad: k.indirimAd ?? null,
           odenmez_id: k.odenmezId ?? null,
+          ...(veri.stokDenetimsiz ? { stok_denetimsiz: true } : {}),
         }))
       )
       .select("id");
+    // Kalemler yazılamadıysa (stok yetersiz, yetki) boş tur geride kalmasın:
+    // sonraki kayıtta sipariş numarası atlıyor, mutfakta boş tur görünüyordu.
+    if (kalemHatasi) await supabase.from("turlar").delete().eq("id", turId);
     satirDenetle({ error: kalemHatasi, data: eklenen }, "Sipariş kaydedilemedi.");
 
     ((eklenen as any[]) ?? []).forEach((satir, i) => {

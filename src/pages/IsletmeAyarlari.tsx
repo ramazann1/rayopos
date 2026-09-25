@@ -1397,6 +1397,22 @@ export default function IsletmeAyarlari() {
             </AyarSatiri>
 
             <AyarSatiri
+              ad="Eksi stoğa izin ver"
+              ara={ara}
+              ipucu="Stok, sipariş kaydedildiği an reçeteden düşer. Açıkken stok bitse de satış durmaz; malzeme eksiye düşer ve listede kırmızı görünür. Kapalıyken reçetesini karşılayacak stok kalmayan ürün siparişe yazılamaz."
+            >
+              <AyarAnahtari
+                acik={genel.eksiStokIzin}
+                degistir={(v) =>
+                  genelDegistir(
+                    { eksiStokIzin: v },
+                    v ? "Stok bitse de satış sürecek" : "Stok bitince satış duracak"
+                  )
+                }
+              />
+            </AyarSatiri>
+
+            <AyarSatiri
               ad="Para üstü"
               ara={ara}
               ipucu="Açıkken Hızlı Öde'de müşterinin verdiği tutar için ayrı bir alan çıkar ve para üstü hesaplanır. Kapalıyken o alan hiç görünmez, yalnızca hesap tutarı tahsil edilir."
