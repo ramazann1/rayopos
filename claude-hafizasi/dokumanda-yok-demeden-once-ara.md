@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: f588f1fa-f2ab-40cc-92ab-d3b913f6defc
-  modified: 2026-07-31T02:30:49.202Z
+  modified: 2026-09-25T21:35:10.593Z
 ---
 
 Adisyo incelemesi gibi işlerde "bu bizde yok" demeden önce `rayopos-tasarim.md`,
@@ -20,3 +20,10 @@ Doğrulamadan sunulan liste yanlış iş önceliği doğurur.
 **How to apply:** Eksik listesi çıkarırken önce anahtar kelimelerle grep at,
 sonra bulguları üçe ayırarak sun: zaten var / eksik yazılmış / gerçekten yeni.
 Dokümandaki yanlış bilgiyi ayrıca belirt ve düzelt.
+
+**Tek dar desen yetmiyor (26 Eyl 2026):** "tarih seçici|tarih filtre" diye
+aradım, bulamayınca "Adisyo'nun süzgeci hakkında not yok" dedim; oysa yol
+haritası 11.1 "Filtreler penceresi" başlığıyla aynı şeyi anlatıyordu. Kavramın
+Adisyo'daki adını ("Filtreler", "Filtrele"), örnek değerleri ("08:45") ve
+ilgili kavramı ("kasa günü") da ara; `pos-yol-haritasi.md`'de rakip ekranları
+bölüm başlıklarıyla duruyor, başlıklara bak.

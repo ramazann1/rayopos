@@ -1,8 +1,12 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (25 Eyl 2026 güncellendi — eksi stok doğrulaması ve hatalar seansı)
+## 0. SIRADAKİ İŞ (26 Eyl 2026 güncellendi — fire raporu ve geçmiş sayımlar seansı)
 
+> **YENİ SEANSIN BAŞI (26 Eyl 2026, Ramazan): ORTAK TARİH SÜZGECİ.** Stok
+> modülünün önüne alındı — birkaç ekran buna ihtiyaç duyuyor. Aşağıda
+> listenin **0. maddesi**; 1-3 dışarıdan bekliyor, 6 (stok) bundan sonra.
+>
 > **KARAR (25 Eyl 2026, Ramazan): önce stok modülü tamamen bitirilecek.**
 > 6. madde bitene kadar başka işe geçilmez; 1-3 zaten dışarıdan bekliyor.
 > Stok içi sıra: maliyeti ekranda göster → otomatik düşüm → maliyet/kârlılık
@@ -25,7 +29,28 @@
 > kalır. Kapanış stoğa dokunmaz. Maliyet de sipariş anında dondurulur.
 > Hesap aynı "düşmesi gereken − düşülen = fark" yöntemiyle yapılıyor.
 >
-> **Sıra (21 Eyl 2026 seans sonu):**
+> **Sıra (21 Eyl 2026 seans sonu, 26 Eyl'de 0. madde eklendi):**
+> 0. **Ortak tarih süzgeci + kendi takvimimiz** (eski 7. madde bununla
+>    birleşti). Bugün iki ayrı süzgeç var: Analiz'in şeridi (`AnalizFiltre`)
+>    ve stok ekranlarının penceresi (`components/StokDonemi.tsx`
+>    `DonemPenceresi`). İkisinde de saat girilmiyor, tarih kutusu Chrome'un
+>    kendi takvimi (CSS erişemiyor, Ramazan beğenmedi 23 Eyl).
+>    **Adisyo canlı turu 26 Eyl** (yol haritası 11.1'deki notu doğruladı):
+>    her raporda aynı sağdan açılan panel — Tarih (hazır liste) · Başlangıç/
+>    Bitiş Tarihi · **Başlangıç/Bitiş Saati** · Filtrele; rapora özel süzgeç
+>    altına ekleniyor (Gün Sonu'nda Sipariş Tipi). Saatler kasa gününden
+>    (08:45 → 08:40, başlangıç ve bitiş AYRI ayar), elle değişiyor; saat
+>    kutusu 15 dk adımlı liste + elle yazma. Hazır liste yalnız Bugün · Dün ·
+>    Bu Hafta ve **"Bu Hafta" = son 8 gün** (takvim haftası değil). Takvim
+>    tek aylık, seçili gün dolu, bugün çerçeveli, hafta pazar başlıyor.
+>    Seçili aralık başlıkta saatle: "Özet (25.09.2026 08:45 - 26.09.2026 08:40)".
+>    **Yapılacak (önerildi, Ramazan onayladı):** tek bileşen — bizim hazır
+>    dönemler kalır (Bugün, Dün, Bu hafta [takvim haftası], Geçen hafta,
+>    Bu ay, Son 30 gün, Özel aralık); özel aralıkta **saat de seçilir**,
+>    kasa günü saati varsayılan; seçili aralık saatiyle başlığın yanında
+>    yazar (Sayım'da ilk örneği var: `StokSayim.tsx aralikMetni`); kendi
+>    takvimimiz; Analiz, Stok Hareketleri, Sayım, Giderler aynı bileşeni
+>    kullanır. **Kodlamadan önce taslak göster.**
 > 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
 >    (21 Eyl 2026 Adisyo turu + Supabase fiyat ölçümü). Önceki iki madde
 >    "yedek + otomatik arşivleme" idi; ölçüm ikisini de değiştirdi.
@@ -124,14 +149,15 @@
 >    tek seferde gönderiliyor.)*
 > 6. **STOK MODÜLÜ — kalan: küçük işler, sonra reçetenin iki işi.**
 >    Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
->    ürün stok takibi ve eksi stok engeli 25 Eyl'de bitti (aşağıda).
->    **Sıradaki iş (yeni seansın başı): fire/çıkış raporu** (sebep kırılımıyla,
->    ortalama maliyet üzerinden TL).
->    **Sonra küçük işler:** **geçmiş sayımlar listesi** (`sayimlariGetir`
->    yazıldı ama ekranı yok; onaylı sayım ay sonu maliyet hesabının kapanış
->    rakamı) · **mobil alt sekme çubuğundaki dolu mercan kapsül** (bütün
->    mobil ekranların ortak dili, ayrı karar) · **Kârlılık mobilde?** —
->    telefonda tam Analiz yok, yalnız Satış özeti; Ramazan'a sorulacak.
+>    ürün stok takibi, eksi stok engeli (25 Eyl), fire/çıkış raporu ve
+>    geçmiş sayımlar (26 Eyl) bitti (aşağıda).
+>    **Küçük işler:** **mobil alt sekme çubuğundaki dolu mercan kapsül**
+>    (bütün mobil ekranların ortak dili, ayrı karar) · **Kârlılık mobilde?** —
+>    telefonda tam Analiz yok, yalnız Satış özeti; Ramazan'a sorulacak (fire
+>    dökümü Kârlılık'ın içinde, onunla birlikte gider) · **geçmiş sayımlar
+>    telefonda doğrulanmadı** (aynı bileşen, masaüstünden `/mobil/sayim`
+>    ana sayfaya yönlendiriyor) · **geçmiş sayım satırında "Tutar
+>    bilinmiyor"** çıkıyorsa o tarihte malzemenin fiyatlı girişi yok demek.
 >    **Reçeteden kalan iki iş:**
 >    - **Reçete tipi üçlüsü ekranda yok** (Normal / Çıkarılabilir / Opsiyonel).
 >      Veritabanı sütunu duruyor, arayüzden kaldırıldı (Ramazan, 24 Eyl):
@@ -142,11 +168,31 @@
 >      mantar sosu"). Tablo buna hazır (`sahip_malzeme_id` sütunu baştan
 >      kondu) ama ekranı yok; bir de **Üretim ekranı** gerekiyor ("bugün 5 kg
 >      sos yaptım" → krema/mantar düşer, sos stoğu artar).
-> 7. **Kendi takvim bileşenimiz.** Tarih kutusuna basınca açılan takvim
->    Chrome'un kendi arayüzü; CSS oraya erişemiyor, Ramazan görüntüsünü
->    beğenmedi (23 Eyl 2026). Kendi takvimimiz yazılırsa Giderler, Analiz
->    süzgeci ve stok hareketleri birlikte kullanacak — ortak bileşen işi,
->    tek ekranlık değil. Stok modülü bitince ele alınacak.
+>
+> **Yapılanlar (26 Eyl 2026 — fire/çıkış raporu, geçmiş sayımlar):**
+> - **Fire ve çıkış maliyeti** (`sql/2026-09-25-fire-maliyeti.sql`, canlıda
+>   çalıştırıldı): yürüyen ortalama hesabı defteri yürürken fire/çıkış
+>   satırına O ANKİ ortalamayı yazıyor; tetikleyici artık giriş + fire +
+>   çıkışta çalışıyor (satışta değil). Eski kayıtlar dolduruldu.
+> - **KARAR (Ramazan): fire raporu ayrı sekme DEĞİL, Kârlılık'ın içinde.**
+>   Kârlılık şeridinin altında tek satır: "Aynı dönemde ₺X fire verildi;
+>   düşülünce kâr ₺Y" (satış yoksa yalnız fire). **"Fire ve çıkış dökümü"**
+>   düğmesi bulanık arka planlı pencere açıyor: fire / çıkış / firenin ciroya
+>   oranı, sebep kartları (ikon + oran çubuğu), malzeme tablosu. Fire
+>   kırmızı, çıkış arduvaz — mercan yok. Pencerede **yan kaydırma çubuğu
+>   yok** (Ramazan): üst kutular sıkı, yalnız malzeme satırları kayıyor,
+>   başlık ve TOPLAM yapışık. Açıkken sayfa kaydırması kilitli
+>   (`overflow: hidden` + `scrollbar-gutter: stable`).
+> - **Geçmiş sayımlar** (Stok › Sayım, "Sayımı başlat" kartının altında ayrı
+>   kart): tarih (yıllı), kapsam, kişi, net fark / "Fark yok" / "İptal
+>   edildi". Satıra basınca salt okunur rapor penceresi (`RaporTablosu`
+>   ortak). **Tutar sayım hareketinden okunuyor** (onay anının maliyeti
+>   orada donmuş) — SQL gerekmedi. Liste kutunun içinde kayıyor
+>   (`useKutuBoyu` artık `{ pay, asgari }` alıyor). **Sınır yok**, tarih
+>   süzgeci var, **varsayılan Son 30 gün**; seçili aralık saatiyle
+>   solda yazıyor — saatler işletmenin **kasa günü başlangıcından**.
+> - **Ders:** "dokümanda yok" demeden önce aradım ama desenim dardı —
+>   Adisyo tarih süzgeci yol haritası 11.1'de zaten yazılıydı.
 >
 > **Yapılanlar (25 Eyl 2026, ikinci seans — eksi stok doğrulaması ve hatalar):**
 > - **Eksi stok uyarısı doğrulandı** (S 9, 9 latte). Uyarı eksi stoğu 0

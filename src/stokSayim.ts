@@ -20,6 +20,8 @@ export type Sayim = {
   kisi: string;
   baslangic: string;
   bitis: string | null;
+  /** Onaylanınca yazılan stok belgesi; fark yoksa boş. */
+  belgeId: number | null;
 };
 
 /** Sayarken görünen satır — sistemdeki miktar bilerek yok. */
@@ -58,13 +60,14 @@ const sayima = (s: any): Sayim => ({
   kisi: s.kisi_ad ?? "",
   baslangic: s.baslangic,
   bitis: s.bitis,
+  belgeId: s.belge_id ?? null,
 });
 
 /** Yarım kalan sayım. Aynı anda yalnız bir tane olabiliyor. */
 export async function acikSayim(): Promise<Sayim | null> {
   const { data } = await supabase
     .from("stok_sayimlari")
-    .select("id, kapsam, grup_idler, durum, kisi_ad, baslangic, bitis")
+    .select("id, kapsam, grup_idler, durum, kisi_ad, baslangic, bitis, belge_id")
     .eq("durum", "acik")
     .order("baslangic", { ascending: false })
     .limit(1)
@@ -72,13 +75,92 @@ export async function acikSayim(): Promise<Sayim | null> {
   return data ? sayima(data) : null;
 }
 
-export async function sayimlariGetir(sinir = 30): Promise<Sayim[]> {
-  const { data } = await supabase
+export async function sayimlariGetir(aralik?: { bas: Date; bit: Date }): Promise<Sayim[]> {
+  let sorgu = supabase
     .from("stok_sayimlari")
-    .select("id, kapsam, grup_idler, durum, kisi_ad, baslangic, bitis")
-    .order("baslangic", { ascending: false })
-    .limit(sinir);
+    .select("id, kapsam, grup_idler, durum, kisi_ad, baslangic, bitis, belge_id");
+  if (aralik) {
+    sorgu = sorgu.gte("baslangic", aralik.bas.toISOString()).lt("baslangic", aralik.bit.toISOString());
+  }
+  const { data } = await sorgu.order("baslangic", { ascending: false });
   return ((data as any[]) ?? []).map(sayima);
+}
+
+export type GecmisSayim = Sayim & {
+  /** Stoğa fark yazılan malzeme sayısı. */
+  farkli: number;
+  /** Net fark, kuruş. Farkların hiçbirinin maliyeti bilinmiyorsa boş. */
+  kurus: number | null;
+};
+
+/**
+ * Kapanmış sayımlar. Tutar defterdeki sayım hareketlerinden okunuyor:
+ * hareket onay anının maliyetini taşıyor, malzemenin bugünkü maliyeti
+ * sonradan değişse de eski sayımın tutarı kaymıyor.
+ */
+export async function gecmisSayimlar(aralik?: { bas: Date; bit: Date }): Promise<GecmisSayim[]> {
+  const sayimlar = (await sayimlariGetir(aralik)).filter((s) => s.durum !== "acik");
+  const belgeler = sayimlar.map((s) => s.belgeId).filter((b): b is number => b != null);
+
+  const toplamlar = new Map<number, { farkli: number; kurus: number | null }>();
+  if (belgeler.length > 0) {
+    const { data } = await supabase
+      .from("stok_hareketleri")
+      .select("belge_id, miktar, birim_maliyet")
+      .in("belge_id", belgeler);
+    for (const h of (data as any[]) ?? []) {
+      const t = toplamlar.get(h.belge_id) ?? { farkli: 0, kurus: null };
+      t.farkli += 1;
+      if (h.birim_maliyet != null) t.kurus = (t.kurus ?? 0) + hareketKurusu(h);
+      toplamlar.set(h.belge_id, t);
+    }
+  }
+
+  return sayimlar.map((s) => ({
+    ...s,
+    ...((s.belgeId != null && toplamlar.get(s.belgeId)) || { farkli: 0, kurus: null }),
+  }));
+}
+
+const hareketKurusu = (h: { miktar: number; birim_maliyet: unknown }) =>
+  h.birim_maliyet == null ? 0 : Math.round(h.miktar * Number(h.birim_maliyet) * 100);
+
+/**
+ * Kapanmış sayımın raporu. Miktarlar kalemden (o gün ekranda ne görüldüyse),
+ * tutar stoğa yazılan hareketten.
+ */
+export async function gecmisRapor(sayim: Sayim): Promise<RaporSatiri[]> {
+  const [{ data: kalemler }, { data: hareketler }] = await Promise.all([
+    supabase
+      .from("stok_sayim_kalemleri")
+      .select("malzeme_id, malzeme_ad, sayilan, sistem, malzemeler(birim)")
+      .eq("sayim_id", sayim.id)
+      .order("malzeme_ad"),
+    sayim.belgeId == null
+      ? Promise.resolve({ data: [] })
+      : supabase
+          .from("stok_hareketleri")
+          .select("malzeme_id, miktar, birim_maliyet")
+          .eq("belge_id", sayim.belgeId),
+  ]);
+
+  const tutarlar = new Map<number, number>();
+  for (const h of (hareketler as any[]) ?? []) tutarlar.set(h.malzeme_id, hareketKurusu(h));
+
+  return ((kalemler as any[]) ?? []).map((k) => {
+    const sistem = k.sistem ?? 0;
+    const fark = k.sayilan == null ? 0 : k.sayilan - sistem;
+    return {
+      malzemeId: k.malzeme_id,
+      malzemeAd: k.malzeme_ad,
+      birim: k.malzemeler?.birim ?? "kg",
+      sistem,
+      sayilan: k.sayilan,
+      fark,
+      tutar: tutarlar.get(k.malzeme_id) ?? 0,
+      sapma: k.sayilan == null || sistem === 0 ? null : Math.abs(fark / sistem),
+    };
+  });
 }
 
 /**

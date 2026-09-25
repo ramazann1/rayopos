@@ -184,6 +184,43 @@ export async function hareketleriGetir(
   }));
 }
 
+/** Fire/çıkış raporunun ham satırı. Tutar kuruş; maliyeti bilinmiyorsa null. */
+export type KayipSatiri = {
+  tip: "fire" | "cikis";
+  sebep: string | null;
+  malzemeId: number;
+  malzemeAd: string;
+  birim: string;
+  /** İşaretsiz, en küçük birimde. */
+  miktar: number;
+  kurus: number | null;
+};
+
+export async function kayiplariGetir(aralik: { bas: Date; bit: Date }): Promise<KayipSatiri[]> {
+  const { data } = await supabase
+    .from("stok_hareketleri")
+    .select("tip, malzeme_id, malzeme_ad, miktar, birim_maliyet, malzemeler(birim), stok_belgeleri(sebep)")
+    .in("tip", ["fire", "cikis"])
+    .gte("zaman", aralik.bas.toISOString())
+    .lt("zaman", aralik.bit.toISOString())
+    .limit(5000);
+
+  return ((data as any[]) ?? []).map((h) => {
+    const miktar = Math.abs(h.miktar);
+    return {
+      tip: h.tip,
+      sebep: h.stok_belgeleri?.sebep ?? null,
+      malzemeId: h.malzeme_id,
+      malzemeAd: h.malzeme_ad,
+      birim: h.malzemeler?.birim ?? "kg",
+      miktar,
+      // Birim maliyet altı ondalıklı; kuruş satır satır yuvarlanıyor, toplam
+      // tam sayılarla yapılıyor.
+      kurus: h.birim_maliyet == null ? null : Math.round(miktar * Number(h.birim_maliyet) * 100),
+    };
+  });
+}
+
 /** Malzeme geçmişindeki tek satır; satışlar gün gün toplanmış hâlde. */
 export type GecmisSatiri = {
   anahtar: string;

@@ -9,9 +9,10 @@ const ASGARI = 520;
  * hep görünür kalıyor, ona ulaşmak için sayfayı aşağı kaydırmak gerekmiyor.
  *
  * `tetik` liste uzunluğu gibi kutunun yerini değiştirebilecek bir değer;
- * değişince yeniden ölçülüyor.
+ * değişince yeniden ölçülüyor. `pay` kutunun altında kalması gereken boşluk,
+ * `asgari` kutunun inebileceği en kısa boy.
  */
-export function useKutuBoyu(tetik: unknown = null) {
+export function useKutuBoyu(tetik: unknown = null, { pay = 20, asgari = ASGARI } = {}) {
   const kutu = useRef<HTMLDivElement>(null);
   const [boy, setBoy] = useState(0);
 
@@ -20,12 +21,12 @@ export function useKutuBoyu(tetik: unknown = null) {
       const k = kutu.current;
       if (!k) return;
       const ustten = k.getBoundingClientRect().top + window.scrollY;
-      setBoy(Math.max(ASGARI, window.innerHeight - ustten - 20));
+      setBoy(Math.max(asgari, window.innerHeight - ustten - pay));
     };
     olc();
     window.addEventListener("resize", olc);
     return () => window.removeEventListener("resize", olc);
-  }, [tetik]);
+  }, [tetik, pay, asgari]);
 
   return { kutu, boy };
 }

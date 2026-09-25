@@ -4,7 +4,17 @@ import {
   ArrowDown,
   ArrowUp,
   BarChart3,
+  CalendarX2,
   ChefHat,
+  CircleHelp,
+  Droplets,
+  FlaskConical,
+  GlassWater,
+  PackageMinus,
+  PartyPopper,
+  Trash2,
+  Undo2,
+  UtensilsCrossed,
   ChevronRight,
   ChevronsUpDown,
   ClipboardList,
@@ -85,6 +95,8 @@ import { SAKIN, useCanli } from "../canli";
 import { odemeAdi, type Masraf } from "../masraflar";
 import { kisaAd } from "../personel";
 import { useKutuBoyu } from "../kutuBoyu";
+import { kayiplariGetir, sebepAdi, type KayipSatiri } from "../stokHareket";
+import { miktarGoster } from "../stok";
 
 export default function Analiz() {
   const { bolum = "ozet" } = useParams();
@@ -248,7 +260,7 @@ export default function Analiz() {
         ) : bolum === "urunler" ? (
           <Urunler ozet={urunler} />
         ) : bolum === "karlilik" ? (
-          <Karlilik ozet={urunler} />
+          <Karlilik ozet={urunler} filtre={filtre} ciro={ozet.ciro} />
         ) : bolum === "mutfak" ? (
           <Mutfak ozet={mutfak} />
         ) : bolum === "personel" ? (
@@ -1690,7 +1702,21 @@ const oranMetni = (oran: number) => `%${Math.round(oran)}`;
  * Sayfa üç parça: dönemin tek cümlelik hükmü, uçlardaki ürünler, dökümün
  * kendisi. Maliyeti bilinmeyen satışlar en altta, kapalı duruyor.
  */
-function Karlilik({ ozet }: { ozet: UrunOzeti }) {
+function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; ciro: number }) {
+  const [kayiplar, setKayiplar] = useState<KayipSatiri[]>([]);
+  const [dokumAcik, setDokumAcik] = useState(false);
+
+  // Fire kârdan yiyor ama satıştan değil defterden geliyor; kendi sorgusu var.
+  useEffect(() => {
+    let gecerli = true;
+    kayiplariGetir(donemAraligi(filtre)).then((s) => gecerli && setKayiplar(s));
+    return () => {
+      gecerli = false;
+    };
+  }, [filtre]);
+
+  const fireKurus = kayiplar.reduce((t, k) => t + (k.tip === "fire" ? k.kurus ?? 0 : 0), 0);
+
   const [sira, setSira] = useState<{ alan: KarAlani; artan: boolean }>({
     alan: "kar",
     artan: false,
@@ -1738,21 +1764,51 @@ function Karlilik({ ozet }: { ozet: UrunOzeti }) {
 
   const { kutu, boy } = useKutuBoyu(gorunen.length);
 
+  const brutKar = ozet.maliyetliCiro - ozet.maliyet;
+  const fireSonrasi = brutKar - fireKurus / 100;
+
+  const fireSatiri = kayiplar.length > 0 && (
+    <p className="kar-cumle kar-fire">
+      <Trash2 size={15} />
+      <span>
+        Aynı dönemde <b className="fr-fire-rakam">{paraGoster(fireKurus / 100)}</b> fire
+        verildi
+        {satirlar.length > 0 ? (
+          <>
+            ; düşülünce kâr{" "}
+            <b className={fireSonrasi < 0 ? "fr-fire-rakam" : undefined}>{paraGoster(fireSonrasi)}</b>.
+          </>
+        ) : (
+          "."
+        )}
+      </span>
+      <button type="button" className="detay-dugme" onClick={() => setDokumAcik(true)}>
+        Fire ve çıkış dökümü
+        <ChevronRight size={15} />
+      </button>
+    </p>
+  );
+
   if (satirlar.length === 0) {
     return (
-      <section className="ayar-bolum">
-        <div className="ayar-bos">
-          <Wallet size={30} />
-          <p>
-            Bu dönemde maliyeti bilinen satış yok. Kârlılık, reçetesi girilmiş
-            ürünlerin satışından hesaplanır.
-          </p>
-        </div>
-      </section>
+      <div className="analiz-ozet">
+        <section className="ayar-bolum">
+          <div className="ayar-bos">
+            <Wallet size={30} />
+            <p>
+              Bu dönemde maliyeti bilinen satış yok. Kârlılık, reçetesi girilmiş
+              ürünlerin satışından hesaplanır.
+            </p>
+          </div>
+          {fireSatiri}
+        </section>
+        {dokumAcik && (
+        <FireCikis satirlar={kayiplar} ciro={ciro} onKapat={() => setDokumAcik(false)} />
+      )}
+      </div>
     );
   }
 
-  const brutKar = ozet.maliyetliCiro - ozet.maliyet;
   const oran = ozet.maliyetliCiro > 0 ? (brutKar / ozet.maliyetliCiro) * 100 : 0;
   const enCok = [...satirlar].sort((a, b) => b.kar - a.kar).slice(0, 5);
   const enAz = [...satirlar].sort((a, b) => a.oran - b.oran).slice(0, 5);
@@ -1799,7 +1855,12 @@ function Karlilik({ ozet }: { ozet: UrunOzeti }) {
             </span>
           </p>
         )}
+        {fireSatiri}
       </section>
+
+      {dokumAcik && (
+        <FireCikis satirlar={kayiplar} ciro={ciro} onKapat={() => setDokumAcik(false)} />
+      )}
 
       <div className="kar-uclar">
         <KarUcu
@@ -1937,6 +1998,281 @@ function Karlilik({ ozet }: { ozet: UrunOzeti }) {
         </section>
       )}
     </div>
+  );
+}
+
+const SEBEP_IKONLARI: Record<string, React.ReactNode> = {
+  dokuldu: <Droplets size={16} />,
+  bozuldu: <CalendarX2 size={16} />,
+  kirildi: <GlassWater size={16} />,
+  personel: <UtensilsCrossed size={16} />,
+  iade: <Undo2 size={16} />,
+  numune: <FlaskConical size={16} />,
+  etkinlik: <PartyPopper size={16} />,
+};
+
+type SebepToplami = { kod: string; ad: string; kurus: number; adet: number };
+
+type KayipMalzemesi = {
+  id: number;
+  ad: string;
+  birim: string;
+  fireMiktar: number;
+  fireKurus: number;
+  cikisMiktar: number;
+  cikisKurus: number;
+};
+
+/**
+ * Fire ve çıkış — "elden ne gitti". Fire kayıp, çıkış bilinçli tüketim;
+ * ikisi hiçbir yerde tek rakamda toplanmıyor. Personel yemeği fireye
+ * karışırsa rapor şişer, önlem yanlış yerde alınır.
+ *
+ * Tutar hareket anındaki ortalama maliyetten: sonradan pahalanan alış
+ * geçmiş fireyi büyütmüyor.
+ */
+function FireCikis({
+  satirlar,
+  ciro,
+  onKapat,
+}: {
+  satirlar: KayipSatiri[];
+  ciro: number;
+  onKapat: () => void;
+}) {
+  const [arama, setArama] = useState("");
+
+  useEffect(() => {
+    const tus = (e: KeyboardEvent) => e.key === "Escape" && onKapat();
+    window.addEventListener("keydown", tus);
+    // Pencere kısa olunca kaydırma kabı sayılmıyor, tekerlek arkadaki sayfaya
+    // geçiyordu. Açık kaldığı sürece sayfa yerinde duruyor.
+    const kok = document.documentElement;
+    const onceki = kok.style.overflow;
+    const oncekiBosluk = kok.style.scrollbarGutter;
+    kok.style.overflow = "hidden";
+    // Çubuk kaybolunca sayfa yana zıplamasın, yeri boş kalsın.
+    kok.style.scrollbarGutter = "stable";
+    return () => {
+      window.removeEventListener("keydown", tus);
+      kok.style.overflow = onceki;
+      kok.style.scrollbarGutter = oncekiBosluk;
+    };
+  }, [onKapat]);
+
+  const hesap = useMemo(() => {
+    const liste = satirlar;
+    const sebepler = (tip: "fire" | "cikis") => {
+      const harita = new Map<string, SebepToplami>();
+      for (const s of liste) {
+        if (s.tip !== tip) continue;
+        const kod = s.sebep ?? "";
+        let t = harita.get(kod);
+        if (!t) {
+          t = { kod, ad: sebepAdi(tip, s.sebep) || "Sebep yazılmamış", kurus: 0, adet: 0 };
+          harita.set(kod, t);
+        }
+        t.kurus += s.kurus ?? 0;
+        t.adet += 1;
+      }
+      return [...harita.values()].sort((a, b) => b.kurus - a.kurus);
+    };
+
+    const malzemeler = new Map<number, KayipMalzemesi>();
+    for (const s of liste) {
+      let m = malzemeler.get(s.malzemeId);
+      if (!m) {
+        m = { id: s.malzemeId, ad: s.malzemeAd, birim: s.birim, fireMiktar: 0, fireKurus: 0, cikisMiktar: 0, cikisKurus: 0 };
+        malzemeler.set(s.malzemeId, m);
+      }
+      if (s.tip === "fire") {
+        m.fireMiktar += s.miktar;
+        m.fireKurus += s.kurus ?? 0;
+      } else {
+        m.cikisMiktar += s.miktar;
+        m.cikisKurus += s.kurus ?? 0;
+      }
+    }
+
+    const fire = sebepler("fire");
+    const cikis = sebepler("cikis");
+    return {
+      fire,
+      cikis,
+      fireKurus: fire.reduce((t, s) => t + s.kurus, 0),
+      cikisKurus: cikis.reduce((t, s) => t + s.kurus, 0),
+      fireAdet: fire.reduce((t, s) => t + s.adet, 0),
+      cikisAdet: cikis.reduce((t, s) => t + s.adet, 0),
+      malzemeler: [...malzemeler.values()].sort(
+        (a, b) => b.fireKurus + b.cikisKurus - (a.fireKurus + a.cikisKurus)
+      ),
+      fiyatsiz: liste.filter((s) => s.kurus == null).length,
+    };
+  }, [satirlar]);
+
+  const gorunen = useMemo(() => {
+    const ara = arama.trim().toLocaleLowerCase("tr");
+    return hesap.malzemeler.filter((m) => !ara || m.ad.toLocaleLowerCase("tr").includes(ara));
+  }, [hesap.malzemeler, arama]);
+
+
+  const cirodaPay = ciro > 0 ? (hesap.fireKurus / 100 / ciro) * 100 : null;
+
+  return (
+    <div className="fr-fon" onMouseDown={(e) => e.target === e.currentTarget && onKapat()}>
+      <div className="fr-modal" role="dialog" aria-label="Fire ve çıkış dökümü">
+        <header className="fr-modal-ust">
+          <h2>
+            <Trash2 size={19} /> Fire ve çıkış dökümü
+          </h2>
+          <button type="button" className="fr-kapat" onClick={onKapat} aria-label="Kapat">
+            <X size={19} />
+          </button>
+        </header>
+        <div className="fr-modal-govde">
+          <section className="ozet-serit">
+            <div className="serit-satir">
+              <div className="serit-sayi">
+                <span className="serit-etiket">
+                  <Trash2 size={15} /> Fire
+                </span>
+                <strong className="fr-fire-rakam">{paraGoster(hesap.fireKurus / 100)}</strong>
+                <em>{hesap.fireAdet} kayıt · kayıp</em>
+              </div>
+              <div className="serit-sayi">
+                <span className="serit-etiket">
+                  <PackageMinus size={15} /> Çıkış
+                </span>
+                <strong>{paraGoster(hesap.cikisKurus / 100)}</strong>
+                <em>{hesap.cikisAdet} kayıt · bilinçli tüketim</em>
+              </div>
+              <div className="serit-sayi">
+                <span className="serit-etiket">
+                  <Percent size={15} /> Firenin ciroya oranı
+                </span>
+                <strong>{cirodaPay == null ? "—" : `%${cirodaPay.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}`}</strong>
+                <em>her 100 liralık satışta</em>
+              </div>
+            </div>
+            {hesap.fiyatsiz > 0 && (
+              <p className="kar-cumle">
+                <TriangleAlert size={15} />
+                <span>
+                  <b>{hesap.fiyatsiz} kayıt</b> tutara katılmadı: malzemenin henüz fiyatlı
+                  bir girişi yok.
+                </span>
+              </p>
+            )}
+          </section>
+
+          <div className="kar-uclar">
+            <SebepKarti baslik="Fire sebepleri" ikon={<Trash2 size={17} />} tip="fire" liste={hesap.fire} toplam={hesap.fireKurus} />
+            <SebepKarti baslik="Çıkış sebepleri" ikon={<PackageMinus size={17} />} tip="cikis" liste={hesap.cikis} toplam={hesap.cikisKurus} />
+          </div>
+
+          <section className="ayar-bolum fr-tablo-bolum">
+            <div className="analiz-liste-ust">
+              <h2>
+                <Package size={17} /> {gorunen.length} malzeme
+                <Ipucu baslik="Sıra">En çok para götüren malzeme en üstte; fire ve çıkış toplamına göre.</Ipucu>
+              </h2>
+              <AramaKutusu deger={arama} degistir={setArama} yer="Malzeme ara" />
+            </div>
+
+            <div className="tablo-kaydir tablo-kaydir-dikey">
+              <table className="analiz-tablo fr-tablo">
+                <thead>
+                  <tr>
+                    <th>Malzeme</th>
+                    <th className="sag">Fire miktarı</th>
+                    <th className="sag">Fire tutarı</th>
+                    <th className="sag">Çıkış miktarı</th>
+                    <th className="sag">Çıkış tutarı</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gorunen.length === 0 ? (
+                    <tr className="tablo-bos-satir">
+                      <td colSpan={5}>Aramayla eşleşen malzeme yok.</td>
+                    </tr>
+                  ) : (
+                    gorunen.map((m) => (
+                      <tr key={m.id}>
+                        <td className="hucre-urun">{m.ad}</td>
+                        <td className="sag">{m.fireMiktar ? miktarGoster(m.fireMiktar, m.birim) : "—"}</td>
+                        <td className="sag hucre-tutar fr-fire-rakam">{m.fireMiktar ? paraGoster(m.fireKurus / 100) : "—"}</td>
+                        <td className="sag">{m.cikisMiktar ? miktarGoster(m.cikisMiktar, m.birim) : "—"}</td>
+                        <td className="sag hucre-tutar">{m.cikisMiktar ? paraGoster(m.cikisKurus / 100) : "—"}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>TOPLAM</td>
+                    <td />
+                    <td className="sag hucre-tutar">{paraGoster(gorunen.reduce((t, m) => t + m.fireKurus, 0) / 100)}</td>
+                    <td />
+                    <td className="sag hucre-tutar">{paraGoster(gorunen.reduce((t, m) => t + m.cikisKurus, 0) / 100)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Sebep dökümü: ikon, ad, oran çubuğu ve tutar. */
+function SebepKarti({
+  baslik,
+  ikon,
+  tip,
+  liste,
+  toplam,
+}: {
+  baslik: string;
+  ikon: React.ReactNode;
+  tip: "fire" | "cikis";
+  liste: SebepToplami[];
+  toplam: number;
+}) {
+  return (
+    <section className={`ayar-bolum kar-uc fr-kart fr-${tip}`}>
+      <div className="ayar-bolum-ust">
+        <h2>
+          {ikon} {baslik}
+        </h2>
+      </div>
+      {liste.length === 0 ? (
+        <p className="fr-bos">Bu dönemde kayıt yok.</p>
+      ) : (
+        <ul className="fr-liste">
+          {liste.map((s) => {
+            const pay = toplam > 0 ? (s.kurus / toplam) * 100 : 0;
+            return (
+              <li key={s.kod}>
+                <span className="fr-ikon">{SEBEP_IKONLARI[s.kod] ?? <CircleHelp size={16} />}</span>
+                <span className="fr-govde">
+                  <span className="fr-ust">
+                    <span className="fr-ad">
+                      {s.ad} <small>{s.adet} kayıt</small>
+                    </span>
+                    <b>{paraGoster(s.kurus / 100)}</b>
+                  </span>
+                  <span className="fr-cubuk">
+                    <i style={{ width: `${pay}%` }} />
+                  </span>
+                </span>
+                <span className="fr-pay">%{Math.round(pay)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 

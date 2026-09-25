@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
+  Ban,
+  CalendarDays,
   Check,
+  ChevronRight,
+  ClipboardCheck,
   ClipboardList,
   FolderOpen,
+  History,
   ListChecks,
   Play,
   TriangleAlert,
@@ -17,6 +22,13 @@ import Ipucu from "../components/Ipucu";
 import OnayModal from "../components/OnayModal";
 import { eslesiyor } from "../arama";
 import { yetkiVar } from "../oturum";
+import { useKutuBoyu } from "../kutuBoyu";
+import {
+  DonemPenceresi,
+  donemAdi,
+  donemAraligiKur,
+  type StokDonemi as Donem,
+} from "../components/StokDonemi";
 import { paraGoster } from "../para";
 import {
   gruplariGetir,
@@ -33,12 +45,15 @@ import {
 import {
   SAPMA_SINIRI,
   acikSayim,
+  gecmisRapor,
+  gecmisSayimlar,
   raporGetir,
   satirYaz,
   sayimAc,
   sayimIptal,
   sayimOnayla,
   sayimSatirlari,
+  type GecmisSayim,
   type RaporSatiri,
   type SayimKapsami,
   type Sayim,
@@ -53,6 +68,16 @@ const zamanMetni = (t: string) =>
   new Date(t).toLocaleString("tr-TR", {
     day: "2-digit",
     month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+/** Geçmiş listede yıl da görünüyor; sayımlar yıllar boyu birikiyor. */
+const gecmisZamani = (t: string) =>
+  new Date(t).toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -85,16 +110,30 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
   const [iptalEdilecek, setIptalEdilecek] = useState(false);
   const [bildirim, setBildirim] = useState("");
   const [hata, setHata] = useState("");
+  const [gecmis, setGecmis] = useState<GecmisSayim[]>([]);
+  const [donem, setDonem] = useState<Donem>({ kod: "son30", bas: "", bit: "" });
+  const [donemPenceresi, setDonemPenceresi] = useState(false);
+  const [acilanGecmis, setAcilanGecmis] = useState<{
+    sayim: GecmisSayim;
+    rapor: RaporSatiri[] | null;
+  } | null>(null);
 
   const sayabilir = yetkiVar("stok.sayim");
+  // Grup seçimi açılınca liste aşağı iniyor; kutu yeniden ölçülmeli.
+  const { kutu, boy } = useKutuBoyu(`${gecmis.length}-${kapsam}-${secilenGruplar.length}-${!!sayim}`, {
+    pay: 48,
+    asgari: 220,
+  });
 
   const tazele = async () => {
-    const [s, g, m] = await Promise.all([
+    const [s, g, m, gs] = await Promise.all([
       acikSayim(),
       gruplariGetir(),
       malzemeleriGetir(),
+      gecmisSayimlar(donemAraligiKur(donem)),
     ]);
     setSayim(s);
+    setGecmis(gs);
     setGruplar(g.filter((x) => x.aktif));
     const aktifler = m.filter((x) => x.aktif);
     setSayilar({
@@ -107,6 +146,15 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
   useEffect(() => {
     tazele().then(() => setYukleniyor(false));
   }, []);
+
+  const ilkAcilis = useRef(true);
+  useEffect(() => {
+    if (ilkAcilis.current) {
+      ilkAcilis.current = false;
+      return;
+    }
+    gecmisSayimlar(donemAraligiKur(donem)).then(setGecmis);
+  }, [donem]);
 
   const gorunen = useMemo(
     () => satirlar.filter((s) => eslesiyor(`${s.malzemeAd} ${s.grupAd}`, ara)),
@@ -170,6 +218,36 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
     }
   };
 
+  const gecmisiAc = async (s: GecmisSayim) => {
+    setAcilanGecmis({ sayim: s, rapor: null });
+    const r = await gecmisRapor(s);
+    setAcilanGecmis((eski) => (eski?.sayim.id === s.id ? { sayim: s, rapor: r } : eski));
+  };
+
+  // Bitiş sınırı ertesi günün başı; ekranda son gün yazılsın diye bir an geri.
+  const aralik = donemAraligiKur(donem);
+  // Saat de yazılıyor: gün başlangıcı işletmeye göre değişebiliyor.
+  const anYaz = (t: Date) =>
+    t.toLocaleString("tr-TR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  const aralikMetni = aralik
+    ? `${anYaz(aralik.bas)} – ${anYaz(new Date(aralik.bit.getTime() - 1))}`
+    : "";
+
+  const kapsamMetni = (s: Sayim) => {
+    if (s.kapsam === "tumu") return "Tüm malzemeler";
+    if (s.kapsam === "kritik") return "Kritikler";
+    const adlar = s.grupIdler
+      .map((id) => gruplar.find((g) => g.id === id)?.ad)
+      .filter(Boolean);
+    return adlar.length > 0 ? adlar.join(", ") : "Seçili gruplar";
+  };
+
   const farkli = (rapor ?? []).filter((r) => r.fark !== 0);
   const sayilmayan = (rapor ?? []).filter((r) => r.sayilan == null);
   const netTutar = farkli.reduce((t, r) => t + r.tutar, 0);
@@ -209,83 +287,152 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
           </section>
         ) : !sayim ? (
           /* 1. adım — kapsam */
-          <section className="ayar-bolum">
-            <div className="ayar-bolum-ust">
-              <h2>
-                <ClipboardList size={17} /> Sayım
-                <Ipucu>Fark raporda çıkar, stok onaydan sonra değişir.</Ipucu>
-              </h2>
-            </div>
-
-            <div className="sayim-kapsam">
-              <button
-                className={kapsam === "tumu" ? "sayim-kart secili" : "sayim-kart"}
-                onClick={() => setKapsam("tumu")}
-              >
-                <ListChecks size={17} />
-                <b>Tüm malzemeler</b>
-                <small>{sayilar.tumu} malzeme</small>
-              </button>
-              <button
-                className={kapsam === "grup" ? "sayim-kart secili" : "sayim-kart"}
-                onClick={() => setKapsam("grup")}
-              >
-                <FolderOpen size={17} />
-                <b>Grup seç</b>
-                <small>
-                  {secilenGruplar.length > 0
-                    ? `${secilenGruplar.length} grup seçili`
-                    : "Bar, mutfak, temizlik…"}
-                </small>
-              </button>
-              <button
-                className={kapsam === "kritik" ? "sayim-kart secili" : "sayim-kart"}
-                onClick={() => setKapsam("kritik")}
-              >
-                <TriangleAlert size={17} />
-                <b>Yalnız kritikler</b>
-                <small>{sayilar.kritik} malzeme</small>
-              </button>
-            </div>
-
-            {kapsam === "grup" && (
-              <div className="sayim-gruplar">
-                {gruplar.length === 0 ? (
-                  <p className="sayim-not">Henüz malzeme grubu yok.</p>
-                ) : (
-                  gruplar.map((g) => {
-                    const secili = secilenGruplar.includes(g.id);
-                    return (
-                      <button
-                        key={g.id}
-                        className={secili ? "sayim-grup secili" : "sayim-grup"}
-                        onClick={() =>
-                          setSecilenGruplar((eski) =>
-                            secili ? eski.filter((x) => x !== g.id) : [...eski, g.id]
-                          )
-                        }
-                      >
-                        <span
-                          className="stok-grup-nokta"
-                          style={{ background: g.renk ?? "var(--cizgi-koyu)" }}
-                        />
-                        {g.ad}
-                        {secili && <Check size={14} />}
-                      </button>
-                    );
-                  })
-                )}
+          <>
+            <section className="ayar-bolum">
+              <div className="ayar-bolum-ust">
+                <h2>
+                  <ClipboardList size={17} /> Sayım
+                  <Ipucu>Fark raporda çıkar, stok onaydan sonra değişir.</Ipucu>
+                </h2>
               </div>
-            )}
 
-            <button
-              className="ayar-ekle sayim-basla"
-              disabled={kapsam === "grup" && secilenGruplar.length === 0}
-              onClick={basla}
-            >
-              <Play size={15} /> Sayımı başlat
-            </button>
-          </section>
+              <div className="sayim-kapsam">
+                <button
+                  className={kapsam === "tumu" ? "sayim-kart secili" : "sayim-kart"}
+                  onClick={() => setKapsam("tumu")}
+                >
+                  <ListChecks size={17} />
+                  <b>Tüm malzemeler</b>
+                  <small>{sayilar.tumu} malzeme</small>
+                </button>
+                <button
+                  className={kapsam === "grup" ? "sayim-kart secili" : "sayim-kart"}
+                  onClick={() => setKapsam("grup")}
+                >
+                  <FolderOpen size={17} />
+                  <b>Grup seç</b>
+                  <small>
+                    {secilenGruplar.length > 0
+                      ? `${secilenGruplar.length} grup seçili`
+                      : "Bar, mutfak, temizlik…"}
+                  </small>
+                </button>
+                <button
+                  className={kapsam === "kritik" ? "sayim-kart secili" : "sayim-kart"}
+                  onClick={() => setKapsam("kritik")}
+                >
+                  <TriangleAlert size={17} />
+                  <b>Yalnız kritikler</b>
+                  <small>{sayilar.kritik} malzeme</small>
+                </button>
+              </div>
+
+              {kapsam === "grup" && (
+                <div className="sayim-gruplar">
+                  {gruplar.length === 0 ? (
+                    <p className="sayim-not">Henüz malzeme grubu yok.</p>
+                  ) : (
+                    gruplar.map((g) => {
+                      const secili = secilenGruplar.includes(g.id);
+                      return (
+                        <button
+                          key={g.id}
+                          className={secili ? "sayim-grup secili" : "sayim-grup"}
+                          onClick={() =>
+                            setSecilenGruplar((eski) =>
+                              secili ? eski.filter((x) => x !== g.id) : [...eski, g.id]
+                            )
+                          }
+                        >
+                          <span
+                            className="stok-grup-nokta"
+                            style={{ background: g.renk ?? "var(--cizgi-koyu)" }}
+                          />
+                          {g.ad}
+                          {secili && <Check size={14} />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              <button
+                className="ayar-ekle sayim-basla"
+                disabled={kapsam === "grup" && secilenGruplar.length === 0}
+                onClick={basla}
+              >
+                <Play size={15} /> Sayımı başlat
+              </button>
+            </section>
+
+            {(gecmis.length > 0 || donem.kod !== "tumu") && (
+              <section className="ayar-bolum sayim-gecmis-kutu">
+                <div className="ayar-bolum-ust">
+                  <h2>
+                    <History size={17} /> Geçmiş sayımlar
+                    <Ipucu>Onaylı sayımın rakamları ay sonu maliyet hesabının kapanışıdır.</Ipucu>
+                  </h2>
+                  {aralikMetni && <span className="sayim-gecmis-aralik">{aralikMetni}</span>}
+                  <button
+                    className={donem.kod === "tumu" ? "stok-yan-tus" : "stok-yan-tus dolu"}
+                    title="Tarihe göre süz"
+                    onClick={() => setDonemPenceresi(true)}
+                  >
+                    <CalendarDays size={16} /> {donemAdi(donem)}
+                  </button>
+                </div>
+
+                {gecmis.length === 0 && (
+                  <p className="sayim-not">Bu tarihlerde yapılmış sayım yok.</p>
+                )}
+
+                <div
+                  className="sayim-gecmis"
+                  ref={kutu}
+                  style={mobil ? undefined : { maxHeight: boy || undefined }}
+                >
+                  {gecmis.map((s) => (
+                    <button
+                      key={s.id}
+                      className={s.durum === "iptal" ? "sayim-gecmis-satir iptal" : "sayim-gecmis-satir"}
+                      onClick={() => gecmisiAc(s)}
+                    >
+                      <span className="sayim-gecmis-im">
+                        {s.durum === "iptal" ? <Ban size={16} /> : <ClipboardCheck size={16} />}
+                      </span>
+                      <span className="sayim-gecmis-ad">
+                        <b>{gecmisZamani(s.baslangic)}</b>
+                        <small>
+                          {kapsamMetni(s)}
+                          {s.kisi && ` · ${s.kisi}`}
+                        </small>
+                      </span>
+                      <span className="sayim-gecmis-sonuc">
+                        {s.durum === "iptal" ? (
+                          <em>İptal edildi</em>
+                        ) : s.farkli === 0 ? (
+                          <em>Fark yok</em>
+                        ) : (
+                          <>
+                            {s.kurus == null ? (
+                              <em>Tutar bilinmiyor</em>
+                            ) : (
+                              <b className={s.kurus < 0 ? "eksi" : s.kurus > 0 ? "arti" : ""}>
+                                {paraGoster(s.kurus / 100)}
+                              </b>
+                            )}
+                            <small>{s.farkli} malzemede fark</small>
+                          </>
+                        )}
+                      </span>
+                      <ChevronRight size={16} className="sayim-gecmis-ok" />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         ) : rapor ? (
           /* 3. adım — rapor */
           <section className="ayar-bolum">
@@ -334,50 +481,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
               </button>
             )}
 
-            <div className="sayim-rapor">
-              <div className="sayim-rapor-bas">
-                <span>Malzeme</span>
-                <span>Sistem</span>
-                <span>Sayılan</span>
-                <span>Fark</span>
-                <span>Tutar</span>
-              </div>
-              {rapor.map((r) => {
-                const sapti = r.sapma != null && r.sapma > SAPMA_SINIRI;
-                return (
-                  <div
-                    key={r.malzemeId}
-                    className={sapti ? "sayim-rapor-satir sapan" : "sayim-rapor-satir"}
-                  >
-                    {/* Sütun etiketleri hücrenin üstünde duruyor: telefonda
-                        başlık satırı gizleniyor, rakam etiketsiz kalmasın. */}
-                    <span className="sayim-rapor-ad">{r.malzemeAd}</span>
-                    <span data-etiket="Sistem">{miktarGoster(r.sistem, r.birim)}</span>
-                    <span data-etiket="Sayılan">
-                      {r.sayilan == null ? (
-                        <em className="sayim-bos">Sayılmadı</em>
-                      ) : (
-                        miktarGoster(r.sayilan, r.birim)
-                      )}
-                    </span>
-                    <span
-                      data-etiket="Fark"
-                      className={r.fark < 0 ? "eksi" : r.fark > 0 ? "arti" : ""}
-                    >
-                      {r.sayilan == null
-                        ? "—"
-                        : `${r.fark > 0 ? "+" : r.fark < 0 ? "−" : ""}${miktarGoster(Math.abs(r.fark), r.birim)}`}
-                    </span>
-                    <span
-                      data-etiket="Tutar"
-                      className={r.tutar < 0 ? "eksi" : r.tutar > 0 ? "arti" : ""}
-                    >
-                      {r.fark === 0 ? "—" : paraGoster(r.tutar / 100)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <RaporTablosu rapor={rapor} />
 
             <div className="sayim-alt">
               <button className="stok-yan-tus" onClick={() => setIptalEdilecek(true)}>
@@ -563,8 +667,112 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
         />
       )}
 
+      {donemPenceresi && (
+        <DonemPenceresi
+          donem={donem}
+          onSec={(d) => {
+            setDonem(d);
+            setDonemPenceresi(false);
+          }}
+          onKapat={() => setDonemPenceresi(false)}
+        />
+      )}
+
+      {acilanGecmis && (
+        <div className="up-fon" onClick={() => setAcilanGecmis(null)}>
+          <div
+            className="up-modal stok-modal sayim-gecmis-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="up-ust">
+              <span className="stok-modal-im"><History size={17} /></span>
+              <h3>
+                {gecmisZamani(acilanGecmis.sayim.baslangic)} sayımı
+                <small>
+                  {kapsamMetni(acilanGecmis.sayim)}
+                  {acilanGecmis.sayim.kisi && ` · ${acilanGecmis.sayim.kisi}`}
+                </small>
+              </h3>
+              <button
+                className="up-kapat"
+                aria-label="Kapat"
+                onClick={() => setAcilanGecmis(null)}
+              >
+                <X size={19} />
+              </button>
+            </header>
+
+            <div className="stok-modal-govde">
+              {acilanGecmis.sayim.durum === "iptal" && (
+                <p className="sayim-gecmis-not">
+                  <Ban size={15} /> Bu sayım iptal edildi; rakamlar stoğa işlenmedi.
+                </p>
+              )}
+              {acilanGecmis.rapor ? (
+                <RaporTablosu rapor={acilanGecmis.rapor} />
+              ) : (
+                <div className="yukleniyor"><div className="cember" /></div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {bildirim && <Bildirim mesaj={bildirim} onKapat={() => setBildirim("")} />}
       {hata && <Bildirim mesaj={hata} tur="hata" onKapat={() => setHata("")} />}
     </>
+  );
+}
+
+/**
+ * Rapor tablosu — açık sayımın onay ekranı ve geçmiş sayımın penceresi
+ * aynı tabloyu gösteriyor.
+ */
+function RaporTablosu({ rapor }: { rapor: RaporSatiri[] }) {
+  return (
+    <div className="sayim-rapor">
+      <div className="sayim-rapor-bas">
+        <span>Malzeme</span>
+        <span>Sistem</span>
+        <span>Sayılan</span>
+        <span>Fark</span>
+        <span>Tutar</span>
+      </div>
+      {rapor.map((r) => {
+        const sapti = r.sapma != null && r.sapma > SAPMA_SINIRI;
+        return (
+          <div
+            key={r.malzemeId}
+            className={sapti ? "sayim-rapor-satir sapan" : "sayim-rapor-satir"}
+          >
+            {/* Sütun etiketleri hücrenin üstünde duruyor: telefonda
+                başlık satırı gizleniyor, rakam etiketsiz kalmasın. */}
+            <span className="sayim-rapor-ad">{r.malzemeAd}</span>
+            <span data-etiket="Sistem">{miktarGoster(r.sistem, r.birim)}</span>
+            <span data-etiket="Sayılan">
+              {r.sayilan == null ? (
+                <em className="sayim-bos">Sayılmadı</em>
+              ) : (
+                miktarGoster(r.sayilan, r.birim)
+              )}
+            </span>
+            <span
+              data-etiket="Fark"
+              className={r.fark < 0 ? "eksi" : r.fark > 0 ? "arti" : ""}
+            >
+              {r.sayilan == null
+                ? "—"
+                : `${r.fark > 0 ? "+" : r.fark < 0 ? "−" : ""}${miktarGoster(Math.abs(r.fark), r.birim)}`}
+            </span>
+            <span
+              data-etiket="Tutar"
+              className={r.tutar < 0 ? "eksi" : r.tutar > 0 ? "arti" : ""}
+            >
+              {r.fark === 0 || r.tutar === 0 ? "—" : paraGoster(r.tutar / 100)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }

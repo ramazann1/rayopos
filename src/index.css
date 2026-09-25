@@ -10776,6 +10776,295 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Fire ve çıkış. Renk türü söylüyor, mercanı değil: fire kırmızı (kayıp),
+   çıkış sakin arduvaz (bilinçli tüketim) — stok hareketlerindeki dille aynı. */
+.fr-fire  { --fr-renk: #d62828; --fr-zemin: rgba(224, 49, 49, 0.1); }
+.fr-cikis { --fr-renk: #4a6a8a; --fr-zemin: rgba(74, 106, 138, 0.12); }
+
+.serit-sayi strong.fr-fire-rakam,
+.fr-tablo td.fr-fire-rakam {
+  color: #c92a2a;
+}
+
+.fr-fon {
+  position: fixed;
+  inset: 0;
+  z-index: 64;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px;
+  background: rgba(16, 24, 36, 0.42);
+  backdrop-filter: blur(5px);
+  animation: up-fon-gir var(--gecis-yavas);
+}
+
+.fr-modal {
+  display: flex;
+  flex-direction: column;
+  width: 980px;
+  max-width: 100%;
+  max-height: 100%;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-bk);
+  background: var(--zemin);
+  box-shadow: var(--g3);
+  overflow: hidden;
+  animation: up-gir var(--gecis-yavas);
+}
+
+.fr-modal-ust {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 16px 24px;
+  border-bottom: 1px solid var(--cizgi);
+  background: var(--kart);
+}
+
+.fr-modal-ust h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.fr-modal-ust h2 svg {
+  color: #d62828;
+}
+
+.fr-kapat {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-tam);
+  background: var(--kart);
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.fr-kapat:hover {
+  background: var(--kart-ust);
+}
+
+/* Pencerede kaydırma çubuğu yok: yer tabloya kalsın diye kutular sayfadaki
+   hallerinden sıkı. */
+.fr-modal .serit-satir {
+  padding: 10px 18px;
+}
+
+.fr-modal .serit-sayi {
+  gap: 2px;
+}
+
+.fr-modal .serit-sayi strong {
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+
+.fr-modal .serit-sayi em {
+  font-size: 13px;
+}
+
+.fr-modal .ayar-bolum {
+  padding: 10px 16px;
+}
+
+.fr-modal .analiz-liste-ust {
+  margin-bottom: 4px;
+}
+
+.fr-modal .ayar-bolum-ust {
+  margin-bottom: 0;
+}
+
+.fr-modal .ayar-bolum-ust h2 {
+  font-size: 15px;
+}
+
+.fr-modal .fr-liste li {
+  padding: 5px 0;
+  border-bottom: 0;
+}
+
+.fr-modal .fr-ikon {
+  width: 26px;
+  height: 26px;
+}
+
+.fr-modal .fr-ikon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.fr-modal .fr-govde {
+  gap: 4px;
+}
+
+.fr-modal .fr-cubuk {
+  height: 4px;
+}
+
+.fr-modal .fr-modal-ust {
+  padding: 10px 16px 10px 20px;
+}
+
+.fr-modal .fr-kapat {
+  width: 32px;
+  height: 32px;
+}
+
+.fr-modal-govde {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Rakamlar ve sebepler yerinde durur, yalnız malzeme satırları kayar: tablo
+   pencerede kalan boşluğu dolduruyor, başlığı ve TOPLAM'ı yapışık. */
+@media (min-width: 821px) {
+  .fr-modal-govde {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .fr-modal-govde > * {
+    flex-shrink: 0;
+  }
+
+  .fr-modal-govde > .fr-tablo-bolum {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 1;
+    min-height: 0;
+  }
+
+  .fr-tablo-bolum .tablo-kaydir {
+    min-height: 0;
+    max-height: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .fr-fon {
+    padding: 10px;
+  }
+
+  .fr-modal-govde {
+    padding: 12px;
+  }
+
+  .fr-modal .kar-uclar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fr-kart h2 svg {
+  color: var(--fr-renk);
+}
+
+.fr-liste {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fr-liste li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.fr-liste li:last-child {
+  border-bottom: 0;
+}
+
+.fr-ikon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-tam);
+  background: var(--fr-zemin);
+  color: var(--fr-renk);
+}
+
+.fr-govde {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.fr-ust {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fr-ad {
+  font-size: 14.5px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.fr-ad small {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--soluk);
+}
+
+.fr-ust b {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fr-cubuk {
+  display: block;
+  height: 6px;
+  border-radius: var(--r-tam);
+  background: var(--kart-ust);
+  overflow: hidden;
+}
+
+.fr-cubuk i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fr-renk);
+}
+
+.fr-pay {
+  text-align: right;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fr-bos {
+  margin: 0;
+  padding: 14px 0 4px;
+  font-size: 14px;
+  color: var(--soluk);
+}
+
 @media (max-width: 820px) {
   .kar-uclar {
     grid-template-columns: 1fr;
@@ -10811,6 +11100,24 @@ body {
 .kar-cumle b {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.kar-cumle b.fr-fire-rakam,
+.kar-fire svg {
+  color: #c92a2a;
+}
+
+.kar-fire {
+  align-items: center;
+}
+
+.kar-fire span {
+  flex: 1;
+}
+
+.kar-fire .detay-dugme svg {
+  margin-top: 0;
+  color: inherit;
 }
 
 @media (max-width: 820px) {
@@ -21822,6 +22129,140 @@ body:has(.up-fon, .menu-perde) {
 
 .sayim-rapor-satir .arti { color: #12b886; }
 .sayim-rapor-satir .eksi { color: #e03131; }
+
+/* Geçmiş sayımlar: tarih, kapsam, sonuç. Onaylı yeşil işaretli, iptal sönük
+   değil gri çerçeveli — okunur kalıyor, yalnız stoğa işlenmediği belli. */
+.sayim-gecmis-kutu {
+  margin-top: 16px;
+}
+
+.sayim-gecmis-aralik {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--metin);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sayim-gecmis {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sayim-gecmis-satir {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 6px;
+  border: 0;
+  border-top: 1px solid var(--cizgi);
+  background: none;
+  color: var(--metin);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.sayim-gecmis-satir:first-child {
+  border-top: 0;
+}
+
+.sayim-gecmis-satir:hover {
+  background: var(--kart-ust);
+}
+
+.sayim-gecmis-im {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-tam);
+  background: rgba(18, 184, 134, 0.12);
+  color: #0c8a64;
+}
+
+.sayim-gecmis-satir.iptal .sayim-gecmis-im {
+  background: var(--kart-ust);
+  color: var(--soluk);
+}
+
+.sayim-gecmis-ad,
+.sayim-gecmis-sonuc {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sayim-gecmis-ad b {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.sayim-gecmis-ad small,
+.sayim-gecmis-sonuc small {
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+.sayim-gecmis-sonuc {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.sayim-gecmis-sonuc b {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sayim-gecmis-sonuc em {
+  font-style: normal;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--soluk);
+}
+
+.sayim-gecmis-sonuc .arti { color: #0c8a64; }
+.sayim-gecmis-sonuc .eksi { color: #e03131; }
+
+.sayim-gecmis-ok {
+  color: var(--soluk);
+}
+
+.stok-modal.sayim-gecmis-modal {
+  max-width: 760px;
+}
+
+.sayim-gecmis-modal .stok-modal-im {
+  background: var(--kart-ust);
+  color: var(--metin);
+}
+
+.sayim-gecmis-modal h3 small {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--soluk);
+}
+
+.sayim-gecmis-not {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--kart-ust);
+  font-size: 14px;
+}
 
 .sayim-bos {
   font-style: normal;

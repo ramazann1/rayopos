@@ -78,7 +78,6 @@ export function yolaGirebilir(yol: string) {
   // üstüne stok yönetme yetkisi de isteniyor, malzemenin kaça alındığını
   // ciroyu gören herkes görmesin.
   if (yol.startsWith("/analiz/karlilik") && !yetkiVar("stok.yonet")) return false;
-
   const kod = yolYetkisi(yol);
   return !kod || yetkiVar(kod);
 }
