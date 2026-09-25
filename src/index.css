@@ -237,13 +237,18 @@ body {
   gap: 6px;
   margin-top: 4px;
   min-width: 0;
+  /* Beş haneli tutarlar üç sütuna sığmayınca üst üste biniyordu; rakamlar
+     kartın genişliğine göre küçülüyor, 12px'in altına inmiyor. */
+  container-type: inline-size;
 }
 
 .masa-rakam {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  min-width: 0;
+  /* Sütun, başlığı ("Ödenen") sığmayacak kadar daralmıyor; uzun tutar
+     başlığın altında kesiliyor, başlık yanındakinin üstüne binmiyor. */
+  min-width: 52px;
 }
 
 .masa-rakam em {
@@ -254,11 +259,14 @@ body {
   white-space: nowrap;
 }
 
+/* Küçülme de yetmeyecek kadar uzun tutar yan sütunun üstüne taşmıyor,
+   kendi sütununda "…" ile kesiliyor. */
 .masa-rakam strong {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 15px;
+  font-size: clamp(12px, 4.9cqi, 15px);
   font-weight: 700;
   color: var(--kart-yazi);
   font-variant-numeric: tabular-nums;
@@ -266,8 +274,14 @@ body {
   line-height: 1.2;
 }
 
+.masa-rakam strong svg {
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+
 .masa-rakam.kalan strong {
   font-size: 16px;
+  font-size: clamp(12px, 5.2cqi, 16px);
 }
 
 /* Süre her dolu masada saat işaretli rozet olarak duruyor; masadan masaya
@@ -7366,11 +7380,11 @@ body {
 }
 
 .plan-masa .masa-rakam strong {
-  font-size: 14px;
+  font-size: clamp(12px, 4.9cqi, 14px);
 }
 
 .plan-masa .masa-rakam.kalan strong {
-  font-size: 15px;
+  font-size: clamp(12px, 5.2cqi, 15px);
 }
 
 /* ---- Personel ---- */

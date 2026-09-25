@@ -834,13 +834,15 @@ export default function Siparis() {
                 <span className="kalem-duzenle" title="Kalem işlemleri">
                   <SlidersHorizontal size={16} />
                 </span>
-                <button
-                  className="cikar"
-                  title="Bir adet azalt"
-                  onClick={(e) => { e.stopPropagation(); sepettenCikar(k.id); }}
-                >
-                  <Minus size={15} />
-                </button>
+                {k.turSira == null && (
+                  <button
+                    className="cikar"
+                    title="Bir adet azalt"
+                    onClick={(e) => { e.stopPropagation(); sepettenCikar(k.id); }}
+                  >
+                    <Minus size={15} />
+                  </button>
+                )}
               </div>
               </Fragment>
               );
@@ -1120,7 +1122,7 @@ export default function Siparis() {
             // Çıkış kilidi kaydedilmemiş kalem için soru soruyor; karar zaten
             // verilmiş, ikinci pencere gereksiz.
             kilitKaldir();
-            navigate("/salon");
+            navigate("/");
           }}
         />
       )}

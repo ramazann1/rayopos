@@ -141,6 +141,9 @@ export default function KalemPaneli({
   const yeniKalem = !kalem.id || kalem.id < 0;
   const cikarabilir = yeniKalem || yetkiVar("siparis.urun_cikar");
   const miktarDegistirebilir = yeniKalem || yetkiVar("siparis.miktar");
+  // Kaydedilmiş kalemin adedini düşürmek de çıkarma sayılıyor: 16 latteyi
+  // 1'e indirmek on beşini iptal etmekle aynı sonucu veriyor.
+  const altSinir = cikarabilir ? 1 : kalem.adet;
 
   // Panelde tek açıklama satırı duruyor, o da duruma göre değişiyor: üst üste
   // dizilmiş bilgi kutuları paneli ders kitabına çeviriyordu.
@@ -225,7 +228,7 @@ export default function KalemPaneli({
                     </button>
                     <input
                       type="number"
-                      min={1}
+                      min={altSinir}
                       max={kalem.adet}
                       value={kipAdet}
                       onChange={(e) =>
@@ -308,16 +311,16 @@ export default function KalemPaneli({
                   <div className="kp-adet">
                     <button
                       aria-label="Azalt"
-                      disabled={adet <= 1}
-                      onClick={() => setAdet((a) => Math.max(1, a - 1))}
+                      disabled={adet <= altSinir}
+                      onClick={() => setAdet((a) => Math.max(altSinir, a - 1))}
                     >
                       <Minus size={17} />
                     </button>
                     <input
                       type="number"
-                      min={1}
+                      min={altSinir}
                       value={adet}
-                      onChange={(e) => setAdet(Math.max(1, Number(e.target.value) || 1))}
+                      onChange={(e) => setAdet(Math.max(altSinir, Number(e.target.value) || altSinir))}
                     />
                     <button aria-label="Artır" onClick={() => setAdet((a) => a + 1)}>
                       <Plus size={17} />

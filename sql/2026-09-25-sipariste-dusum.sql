@@ -157,7 +157,7 @@ begin
 
       v_eksikler := coalesce(v_eksikler, '') || E'\n' ||
         '*' || v_satir.ad || '*: ' ||
-        stok_miktar_metni(greatest(v_satir.stok, 0), v_satir.birim) || ' var, ' ||
+        stok_miktar_metni(v_satir.stok, v_satir.birim) || ' var, ' ||
         stok_miktar_metni(-v_satir.fark, v_satir.birim) || ' gerekiyor';
       continue;
     end if;

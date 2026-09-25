@@ -795,6 +795,7 @@ export async function adisyonKaydet(
   veri: AdisyonVerisi,
   kapat = false
 ): Promise<AdisyonVerisi> {
+  await stokuOnceSor(veri);
   let adisyon = await acikAdisyonBul(masaId);
 
   // Boş adisyon: hiç kalem yoksa masayı işgal etmesin.
@@ -849,6 +850,25 @@ export async function adisyonKaydet(
 }
 
 /**
+ * Eksi stok kapalıyken yeni kalemlerin stoğu kayıttan önce soruluyor. Asıl
+ * denetim kalem yazılırken veritabanında; ama oraya varılana kadar hesap
+ * güncelleniyor, tur açılıyor ve uyarı ancak beşinci istekte geliyordu.
+ * Soru cevapsız kalırsa (bağlantı yok) kayıt eskisi gibi yoluna devam ediyor.
+ */
+async function stokuOnceSor(veri: AdisyonVerisi) {
+  if (veri.stokDenetimsiz || ayarlar().eksiStokIzin) return;
+  const yeniler = veri.sepet.filter(
+    (k) => (!k.id || k.id < 0) && k.porsiyonId && k.durum !== "iptal"
+  );
+  if (!yeniler.length) return;
+
+  const { data, error } = await supabase.rpc("stok_on_denetim", {
+    p_kalemler: yeniler.map((k) => ({ porsiyon_id: k.porsiyonId, adet: k.adet, ad: k.ad })),
+  });
+  if (!error && data) throw new Error(data as string);
+}
+
+/**
  * Masasız adisyonun (gel al / paket) kaydı. Masalı akıştan tek farkı adisyon
  * satırının hazır olması; sepet, tur ve tahsilat işleyişi aynı.
  */
@@ -857,6 +877,7 @@ export async function masasizKaydet(
   veri: AdisyonVerisi,
   kapat = false
 ): Promise<AdisyonVerisi> {
+  await stokuOnceSor(veri);
   const sonuc = await supabase
     .from("adisyonlar")
     .update({
