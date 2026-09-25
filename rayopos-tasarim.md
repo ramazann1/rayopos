@@ -1,7 +1,7 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (25 Eyl 2026 güncellendi — stok düşümü ve kârlılık seansı)
+## 0. SIRADAKİ İŞ (25 Eyl 2026 güncellendi — eksi stok doğrulaması ve hatalar seansı)
 
 > **KARAR (25 Eyl 2026, Ramazan): önce stok modülü tamamen bitirilecek.**
 > 6. madde bitene kadar başka işe geçilmez; 1-3 zaten dışarıdan bekliyor.
@@ -125,12 +125,9 @@
 > 6. **STOK MODÜLÜ — kalan: küçük işler, sonra reçetenin iki işi.**
 >    Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
 >    ürün stok takibi ve eksi stok engeli 25 Eyl'de bitti (aşağıda).
->    **İLK İŞ (yeni seansın başı):** `sql/2026-09-25-sipariste-dusum.sql`
->    dosyasının SON hâli (yetmeyen malzemeleri alt alta sayan uyarı) Supabase'de
->    çalıştırıldı mı sor; çalıştırıldıysa eksi stok anahtarını kapatıp S 9'a
->    9 latte ile uyarıyı tarayıcıda göster, anahtarı geri AÇ.
->    **Sonra küçük işler:** fire/çıkış raporu (sebep kırılımıyla, ortalama
->    maliyet üzerinden TL) · **geçmiş sayımlar listesi** (`sayimlariGetir`
+>    **Sıradaki iş (yeni seansın başı): fire/çıkış raporu** (sebep kırılımıyla,
+>    ortalama maliyet üzerinden TL).
+>    **Sonra küçük işler:** **geçmiş sayımlar listesi** (`sayimlariGetir`
 >    yazıldı ama ekranı yok; onaylı sayım ay sonu maliyet hesabının kapanış
 >    rakamı) · **mobil alt sekme çubuğundaki dolu mercan kapsül** (bütün
 >    mobil ekranların ortak dili, ayrı karar) · **Kârlılık mobilde?** —
@@ -150,6 +147,27 @@
 >    beğenmedi (23 Eyl 2026). Kendi takvimimiz yazılırsa Giderler, Analiz
 >    süzgeci ve stok hareketleri birlikte kullanacak — ortak bileşen işi,
 >    tek ekranlık değil. Stok modülü bitince ele alınacak.
+>
+> **Yapılanlar (25 Eyl 2026, ikinci seans — eksi stok doğrulaması ve hatalar):**
+> - **Eksi stok uyarısı doğrulandı** (S 9, 9 latte). Uyarı eksi stoğu 0
+>   gösteriyordu (`greatest(stok,0)`); artık gerçek rakam
+>   (`sql/2026-09-25-eksi-stok-metni.sql`).
+> - **Stok ön denetimi** (`sql/2026-09-25-stok-on-denetim.sql`,
+>   `adisyonlar.ts stokuOnceSor`): eksi stok kapalıyken yeni kalemler
+>   kayıttan ÖNCE `stok_on_denetim` ile soruluyor. Ölçüldü: uyarı 0,7-2 sn
+>   → **0,13-0,26 sn**, 6 istek → 1. Tetikleyicideki asıl kilit yerinde;
+>   bağlantı yoksa soru atlanıyor. *Ölçüm tuzağı:* Chrome arka plan
+>   sekmesinde zamanlayıcıyı 1 sn'ye kısıyor — MutationObserver ile ölç.
+> - **KARAR (Ramazan): kaydedilmiş kalemin adedini düşürmek "Üründen
+>   çıkarma" yetkisi ister** (16 latteyi 1'e indirmek = 15 iptal). Artırmak
+>   miktar yetkisiyle. Masaüstü eksi düğmesi yalnız kaydedilmemiş kalemde
+>   (mobil zaten öyleydi); KalemPaneli'nde alt sınır; veritabanında
+>   `sql/2026-09-25-adet-dusurme-yetkisi.sql`.
+> - **Masa kartı rakamları üst üste biniyordu:** kart genişliğine göre
+>   küçülüyor (cqi, en az 12px), yetmezse "…" ile kesiliyor; sütun 52px'ten
+>   daralmıyor ki başlık taşmasın.
+> - **Devralma sonrası beyaz sayfa:** masaüstü `/salon`'a gidiyordu (öyle
+>   bir adres yok) → `/`.
 >
 > **Yapılanlar (25 Eyl 2026 — stok düşümü, kârlılık, eksi stok):**
 > - **Malzemeler:** satırda ortalama maliyet (ölçü başına) + stok değeri,

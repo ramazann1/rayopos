@@ -20,3 +20,5 @@ desen: "önce açık adisyon kimlikleri, sonra `turlar?adisyon_id=in.(...)`" —
 gömülü tabloya süzgeç koymak (`adisyon.durum=eq.acik`) tek başına ~1 sn
 tutuyor. Aynı tuzak başka ekranlarda da olabilir.
 Ayrıca [[rayopos-tarayici-testi-chrome-ile]].
+
+Ölçüm tuzağı (25 Eyl 2026): Chrome arka plan sekmesinde setTimeout 1 sn'ye kısılıyor; bekleme döngüsüyle ölçülen süre sahte 1000 ms çıkar. Ekrandaki değişikliği MutationObserver ile yakala.
