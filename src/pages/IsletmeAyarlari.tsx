@@ -21,6 +21,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import SaatKutusu from "../components/SaatKutusu";
 import AyarBasligi from "../components/AyarBasligi";
 import AyarSatiri from "../components/AyarSatiri";
 import AramaKutusu from "../components/AramaKutusu";
@@ -759,6 +760,13 @@ export default function IsletmeAyarlari() {
   // Genel parametreler tek tek kaydediliyor; her satır kendi başına anlamlı,
   // altta "Kaydet" bekleyen bir şerit olmasın.
   const [genel, setGenel] = useState(ayarlar());
+  // Kasa günü yazılırken kaydedilmiyor: yarım yazılmış saat raporların
+  // aralığını anında değiştiriyordu. Yanındaki tikle, onay sorularak kaydediliyor.
+  const [kasaTaslak, setKasaTaslak] = useState<{ bas: string; bit: string } | null>(null);
+  const [kasaOnay, setKasaOnay] = useState(false);
+  const [kasaDegisiyor, setKasaDegisiyor] = useState(false);
+  // Vazgeçince yarım yazılmış kutular da sıfırlansın diye yeniden kuruluyor.
+  const [kasaSurum, setKasaSurum] = useState(0);
   const [kodKopyalandi, setKodKopyalandi] = useState(false);
   const [ara, setAra] = useState("");
   const [indirimler, setIndirimler] = useState<IndirimTanimi[]>([]);
@@ -1156,17 +1164,30 @@ export default function IsletmeAyarlari() {
               ipucu="Takvim günü yerine işletmenin kendi günü. Gece yarısını geçtikten sonra yapılan satışlar, bitiş saatine kadar hâlâ aynı günün hesabına yazılır. Gün sonu ve raporlar bu aralığı kullanır."
             >
               <div className="ayar-saatler">
-                <input
-                  type="time"
-                  value={genel.kasaGunuBaslangic}
-                  onChange={(e) => genelDegistir({ kasaGunuBaslangic: e.target.value }, "Kasa günü güncellendi")}
+                <SaatKutusu
+                  key={`b${kasaSurum}`}
+                  yazarken={() => setKasaDegisiyor(true)}
+                  deger={kasaTaslak?.bas ?? genel.kasaGunuBaslangic}
+                  degis={(s) => setKasaTaslak({ bas: s, bit: kasaTaslak?.bit ?? genel.kasaGunuBitis })}
                 />
                 <em>—</em>
-                <input
-                  type="time"
-                  value={genel.kasaGunuBitis}
-                  onChange={(e) => genelDegistir({ kasaGunuBitis: e.target.value }, "Kasa günü güncellendi")}
+                <SaatKutusu
+                  key={`s${kasaSurum}`}
+                  yazarken={() => setKasaDegisiyor(true)}
+                  deger={kasaTaslak?.bit ?? genel.kasaGunuBitis}
+                  degis={(s) => setKasaTaslak({ bas: kasaTaslak?.bas ?? genel.kasaGunuBaslangic, bit: s })}
                 />
+                {kasaDegisiyor && (
+                  <button
+                    className="ayar-saat-kaydet"
+                    title="Kaydet"
+                    aria-label="Kaydet"
+                    disabled={!kasaTaslak}
+                    onClick={() => setKasaOnay(true)}
+                  >
+                    <Check size={17} />
+                  </button>
+                )}
               </div>
             </AyarSatiri>
 
@@ -1191,14 +1212,11 @@ export default function IsletmeAyarlari() {
                 ipucu="Bu saat geçtiği hâlde kasa hâlâ açıksa kapatma hatırlatması çıkar. Boş bırakılırsa hatırlatma yapılmaz. Gecenin ilerleyen saatinde kapanan işletmede kapanış saatini kasa gününün bitişine yakın seçin."
               >
                 <div className="ayar-saatler">
-                  <input
-                    type="time"
-                    value={genel.kasaKapanisUyari}
-                    onChange={(e) =>
-                      genelDegistir(
-                        { kasaKapanisUyari: e.target.value },
-                        e.target.value ? "Kapanış saati güncellendi" : "Kapanış hatırlatması kapatıldı"
-                      )
+                  <SaatKutusu
+                    bosOlabilir
+                    deger={genel.kasaKapanisUyari}
+                    degis={(s) =>
+                      genelDegistir({ kasaKapanisUyari: s }, s ? "Kapanış saati güncellendi" : "Kapanış hatırlatması kapatıldı")
                     }
                   />
                 </div>
@@ -1626,6 +1644,25 @@ export default function IsletmeAyarlari() {
             setBolgePaneli(undefined);
             await tazele(hedefId);
             setBildirim("Bölge kaydedildi");
+          }}
+        />
+      )}
+
+      {kasaOnay && kasaTaslak && (
+        <OnayModal
+          mesaj={`Kasa günü ${kasaTaslak.bas} – ${kasaTaslak.bit} olarak değiştirilsin mi? Gün sonu ve raporlar bu aralığa göre hesaplanır.`}
+          onOnay={async () => {
+            setKasaOnay(false);
+            setKasaDegisiyor(false);
+            const { bas, bit } = kasaTaslak;
+            setKasaTaslak(null);
+            await genelDegistir({ kasaGunuBaslangic: bas, kasaGunuBitis: bit }, "Kasa günü güncellendi");
+          }}
+          onKapat={() => {
+            setKasaOnay(false);
+            setKasaTaslak(null);
+            setKasaDegisiyor(false);
+            setKasaSurum((s) => s + 1);
           }}
         />
       )}

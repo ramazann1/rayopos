@@ -1,11 +1,26 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (26 Eyl 2026 güncellendi — fire raporu ve geçmiş sayımlar seansı)
+## 0. SIRADAKİ İŞ (26 Eyl 2026 güncellendi — ortak tarih süzgeci seansı)
 
-> **YENİ SEANSIN BAŞI (26 Eyl 2026, Ramazan): ORTAK TARİH SÜZGECİ.** Stok
-> modülünün önüne alındı — birkaç ekran buna ihtiyaç duyuyor. Aşağıda
-> listenin **0. maddesi**; 1-3 dışarıdan bekliyor, 6 (stok) bundan sonra.
+> **YENİ SEANSIN BAŞI: 6. madde (stok modülü) kaldığı yerden.** 1-3
+> dışarıdan bekliyor.
+>
+> **BİTTİ (26 Eyl 2026): ortak tarih süzgeci** (`components/TarihSuzgeci.tsx`).
+> Analiz, Stok Hareketleri, Sayım, malzeme geçmişi ve Giderler aynı pencereyi
+> açıyor: kendi takvimimiz (pazartesi başlar, ay adına basınca ay/yıl seçimi),
+> özel aralıkta saat, seçili aralık başlığın yanında saatiyle. "Tüm zamanlar"
+> yalnız stok ve giderde. Kararlar (Ramazan):
+> - Hazır dönemler kasa günü **bitiş** saatinde biter (08:00 → 07:55), ertesi
+>   açılışta değil; yazılan aralık = sorgulanan aralık.
+> - Mercan az: yalnız seçili dönem ve aralığın iki ucu, ince çerçeve.
+> - Tarih/saat kutuları elle yazılır, nokta ve iki nokta kendiliğinden gelir,
+>   olmayan gün/ay/saat hiç yazılamaz. Tarayıcının saat seçicisi
+>   (`type="time"`) kaldırıldı, yerine `components/SaatKutusu.tsx`.
+> - Kasa günü ayarı yazarken kaydedilmez: değişiklik başlayınca yanında tik
+>   çıkar, tike basınca onay sorulur.
+> - Kalan küçük iş: giriş formlarındaki `type="date"` kutuları (gider, stok
+>   hareketi) hâlâ Chrome takvimi — 6. madde içinde fırsat bulunca.
 >
 > **KARAR (25 Eyl 2026, Ramazan): önce stok modülü tamamen bitirilecek.**
 > 6. madde bitene kadar başka işe geçilmez; 1-3 zaten dışarıdan bekliyor.
@@ -29,28 +44,7 @@
 > kalır. Kapanış stoğa dokunmaz. Maliyet de sipariş anında dondurulur.
 > Hesap aynı "düşmesi gereken − düşülen = fark" yöntemiyle yapılıyor.
 >
-> **Sıra (21 Eyl 2026 seans sonu, 26 Eyl'de 0. madde eklendi):**
-> 0. **Ortak tarih süzgeci + kendi takvimimiz** (eski 7. madde bununla
->    birleşti). Bugün iki ayrı süzgeç var: Analiz'in şeridi (`AnalizFiltre`)
->    ve stok ekranlarının penceresi (`components/StokDonemi.tsx`
->    `DonemPenceresi`). İkisinde de saat girilmiyor, tarih kutusu Chrome'un
->    kendi takvimi (CSS erişemiyor, Ramazan beğenmedi 23 Eyl).
->    **Adisyo canlı turu 26 Eyl** (yol haritası 11.1'deki notu doğruladı):
->    her raporda aynı sağdan açılan panel — Tarih (hazır liste) · Başlangıç/
->    Bitiş Tarihi · **Başlangıç/Bitiş Saati** · Filtrele; rapora özel süzgeç
->    altına ekleniyor (Gün Sonu'nda Sipariş Tipi). Saatler kasa gününden
->    (08:45 → 08:40, başlangıç ve bitiş AYRI ayar), elle değişiyor; saat
->    kutusu 15 dk adımlı liste + elle yazma. Hazır liste yalnız Bugün · Dün ·
->    Bu Hafta ve **"Bu Hafta" = son 8 gün** (takvim haftası değil). Takvim
->    tek aylık, seçili gün dolu, bugün çerçeveli, hafta pazar başlıyor.
->    Seçili aralık başlıkta saatle: "Özet (25.09.2026 08:45 - 26.09.2026 08:40)".
->    **Yapılacak (önerildi, Ramazan onayladı):** tek bileşen — bizim hazır
->    dönemler kalır (Bugün, Dün, Bu hafta [takvim haftası], Geçen hafta,
->    Bu ay, Son 30 gün, Özel aralık); özel aralıkta **saat de seçilir**,
->    kasa günü saati varsayılan; seçili aralık saatiyle başlığın yanında
->    yazar (Sayım'da ilk örneği var: `StokSayim.tsx aralikMetni`); kendi
->    takvimimiz; Analiz, Stok Hareketleri, Sayım, Giderler aynı bileşeni
->    kullanır. **Kodlamadan önce taslak göster.**
+> **Sıra (21 Eyl 2026 seans sonu):**
 > 1. **Altyapı eşikleri — ARŞİVLEME ELENDİ, PRO'YA GEÇİŞ SIRADA**
 >    (21 Eyl 2026 Adisyo turu + Supabase fiyat ölçümü). Önceki iki madde
 >    "yedek + otomatik arşivleme" idi; ölçüm ikisini de değiştirdi.

@@ -27,8 +27,9 @@ import {
   DonemPenceresi,
   donemAdi,
   donemAraligiKur,
-  type StokDonemi as Donem,
-} from "../components/StokDonemi";
+  donemAralikMetni,
+  type Donem,
+} from "../components/TarihSuzgeci";
 import { paraGoster } from "../para";
 import {
   gruplariGetir,
@@ -224,20 +225,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
     setAcilanGecmis((eski) => (eski?.sayim.id === s.id ? { sayim: s, rapor: r } : eski));
   };
 
-  // Bitiş sınırı ertesi günün başı; ekranda son gün yazılsın diye bir an geri.
-  const aralik = donemAraligiKur(donem);
-  // Saat de yazılıyor: gün başlangıcı işletmeye göre değişebiliyor.
-  const anYaz = (t: Date) =>
-    t.toLocaleString("tr-TR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  const aralikMetni = aralik
-    ? `${anYaz(aralik.bas)} – ${anYaz(new Date(aralik.bit.getTime() - 1))}`
-    : "";
+  const aralikMetni = donemAralikMetni(donem);
 
   const kapsamMetni = (s: Sayim) => {
     if (s.kapsam === "tumu") return "Tüm malzemeler";

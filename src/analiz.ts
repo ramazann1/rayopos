@@ -127,7 +127,25 @@ function haftaBasi(t: Date) {
   return gunEkle(t, -gun);
 }
 
+/**
+ * Kasa günü, açılış saatinde başlayıp ayarlardaki kapanış saatinde biter
+ * (08:45 → 08:40). Hazır dönemlerin sonu ertesi açılış değil, son günün
+ * kapanışı — ekranda yazan aralıkla sorgulanan aralık aynı olsun diye.
+ */
+function kasaGunuSonu(sinir: Date) {
+  const [saat, dakika] = ayarlar().kasaGunuBitis.split(":").map(Number);
+  const son = new Date(sinir);
+  son.setHours(saat, dakika, 0, 0);
+  return son > sinir ? gunEkle(son, -1) : son;
+}
+
 export function donemAraligi(f: AnalizFiltre): { bas: Date; bit: Date } {
+  const a = hamAralik(f);
+  const tam = (f.vardiyaId && f.vardiyaBas) || (f.donem === "ozel" && f.ozelBit.includes("T"));
+  return tam ? a : { bas: a.bas, bit: kasaGunuSonu(a.bit) };
+}
+
+function hamAralik(f: AnalizFiltre): { bas: Date; bit: Date } {
   if (f.vardiyaId && f.vardiyaBas) {
     return {
       bas: new Date(f.vardiyaBas),
@@ -155,6 +173,10 @@ export function donemAraligi(f: AnalizFiltre): { bas: Date; bit: Date } {
     case "son30":
       return { bas: gunEkle(bugun, -29), bit: yarin };
     case "ozel": {
+      // Takvimden saatle seçilen aralık olduğu gibi kullanılıyor.
+      if (f.ozelBas.includes("T") && f.ozelBit.includes("T")) {
+        return { bas: new Date(f.ozelBas), bit: new Date(f.ozelBit) };
+      }
       // Özel aralıkta girilen günler de kasa gününe oturuyor: 12 Ağustos
       // seçildiyse 12 Ağustos sabahından 13 Ağustos sabahına kadar.
       const bas = f.ozelBas ? kasaGunuBasi(new Date(`${f.ozelBas}T12:00`)) : bugun;
@@ -191,6 +213,19 @@ export function oncekiAralik(f: AnalizFiltre): { bas: Date; bit: Date } | null {
   return { bas: oncekiBas, bit: new Date(oncekiBas.getTime() + uzunluk) };
 }
 
+/** Saatli aralık: "20.09.2026 08:45 – 26.09.2026 08:40". */
+export function aralikMetni(bas: Date, bit: Date) {
+  const yaz = (t: Date) =>
+    t.toLocaleString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  return `${yaz(bas)} – ${yaz(bit)}`;
+}
+
 /** Başlıkta duran okunur aralık metni: "12 Ağustos" veya "1 – 12 Ağustos". */
 export function donemMetni(f: AnalizFiltre) {
   if (f.vardiyaId && f.vardiyaBas) {
@@ -202,6 +237,7 @@ export function donemMetni(f: AnalizFiltre) {
   if (f.donem !== "ozel") return hazir?.ad ?? "";
 
   const { bas, bit } = donemAraligi(f);
+  if (f.ozelBas.includes("T")) return aralikMetni(bas, bit);
   const son = gunEkle(bit, -1);
   const bicim = (t: Date) =>
     t.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });

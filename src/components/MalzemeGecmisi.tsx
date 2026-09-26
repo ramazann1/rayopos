@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { ArrowRight, CalendarDays, History, Tag, UserRound, X } from "lucide-react";
 import { miktarGoster, type Malzeme } from "../stok";
 import { malzemeGecmisi, sebepAdi, tipAdi, type GecmisSatiri } from "../stokHareket";
+import { StokTipIkonu } from "./StokDonemi";
 import {
   DonemPenceresi,
-  StokTipIkonu,
   donemAdi,
   donemAraligiKur,
-  type StokDonemi,
-} from "./StokDonemi";
+  type Donem as StokDonemi,
+} from "./TarihSuzgeci";
 
 const TIP_SIRASI = ["giris", "satis", "fire", "cikis", "sayim"];
 

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Check, Pencil, Plus, Receipt, Tags, Trash2, X } from "lucide-react";
+import { CalendarDays, Check, Pencil, Plus, Receipt, Tags, Trash2, X } from "lucide-react";
+import SaatKutusu from "../components/SaatKutusu";
 import KasaBasligi from "../components/KasaBasligi";
 import Bilgi from "../components/Bilgi";
 import Bildirim from "../components/Bildirim";
 import OnayModal from "../components/OnayModal";
-import { kasaGunuBasi } from "../analiz";
+import { DonemPenceresi, donemAdi, donemAraligiKur, donemAralikMetni, type Donem } from "../components/TarihSuzgeci";
 import { eslesiyor } from "../arama";
 import { paraGoster, paraSayi, paraYaz } from "../para";
 import { kisaAd } from "../personel";
@@ -41,43 +42,23 @@ const gunMetni = (t: string) =>
 const saatMetni = (t: string) =>
   new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 
-/** Listenin üstündeki dönem seçimi; hepsi kasa gününün başlangıcına göre. */
-const DONEMLER = [
-  { kod: "bugun", ad: "Bugün", gun: 0 },
-  { kod: "hafta", ad: "Son 7 gün", gun: 6 },
-  { kod: "ay", ad: "Son 30 gün", gun: 29 },
-  { kod: "tumu", ad: "Tümü", gun: null },
-] as const;
-
-/**
- * "Bugün" takvim günü değil kasa günü: gece 01:00'de girilen gider işletme için
- * hâlâ dünün gideri. Analiz ekranı da aynı aralığı kullanıyor — ikisi farklı
- * saydığı için aynı gider bir ekranda görünüp diğerinde kaybolabiliyordu.
- */
-function donemBaslangici(gun: number | null) {
-  if (gun === null) return undefined;
-  const t = kasaGunuBasi(new Date());
-  t.setDate(t.getDate() - gun);
-  return t.toISOString();
-}
-
 export default function Giderler() {
   const [tipler, setTipler] = useState<MasrafTipi[]>([]);
   const [liste, setListe] = useState<Masraf[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
-  const [donem, setDonem] = useState<string>("ay");
+  const [donem, setDonem] = useState<Donem>({ kod: "son30", bas: "", bit: "" });
+  const [donemPenceresi, setDonemPenceresi] = useState(false);
   const [ara, setAra] = useState("");
   const [panel, setPanel] = useState<Masraf | null | undefined>(undefined);
   const [tipPenceresi, setTipPenceresi] = useState(false);
   const [silinecek, setSilinecek] = useState<Masraf | null>(null);
   const [bildirim, setBildirim] = useState("");
 
-  const gun = DONEMLER.find((d) => d.kod === donem)?.gun ?? null;
-
   const tazele = async () => {
+    const aralik = donemAraligiKur(donem);
     const [t, m] = await Promise.all([
       masrafTipleriniGetir(),
-      masraflariGetir(donemBaslangici(gun)),
+      masraflariGetir(aralik?.bas.toISOString(), aralik?.bit.toISOString()),
     ]);
     setTipler(t);
     setListe(m);
@@ -160,17 +141,16 @@ export default function Giderler() {
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
               <h2><Receipt size={17} /> Giderler</h2>
-              <div className="cip-secim gider-donem">
-                {DONEMLER.map((d) => (
-                  <button
-                    key={d.kod}
-                    className={donem === d.kod ? "aktif" : ""}
-                    onClick={() => setDonem(d.kod)}
-                  >
-                    {d.ad}
-                  </button>
-                ))}
-              </div>
+              {donem.kod !== "tumu" && (
+                <span className="ts-aralik">{donemAralikMetni(donem)}</span>
+              )}
+              <button
+                className={donem.kod === "tumu" ? "stok-yan-tus" : "stok-yan-tus dolu"}
+                title="Tarihe göre süz"
+                onClick={() => setDonemPenceresi(true)}
+              >
+                <CalendarDays size={16} /> {donemAdi(donem)}
+              </button>
               <button className="gider-tur-dugme" onClick={() => setTipPenceresi(true)}>
                 <Tags size={15} /> Gider türleri
               </button>
@@ -255,6 +235,16 @@ export default function Giderler() {
       )}
 
       {bildirim && <Bildirim mesaj={bildirim} onKapat={() => setBildirim("")} />}
+      {donemPenceresi && (
+        <DonemPenceresi
+          donem={donem}
+          onSec={(d) => {
+            setDonem(d);
+            setDonemPenceresi(false);
+          }}
+          onKapat={() => setDonemPenceresi(false)}
+        />
+      )}
     </>
   );
 }
@@ -334,7 +324,7 @@ function GiderPaneli({
             </div>
             <div className="alan">
               <label>Saat</label>
-              <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} />
+              <SaatKutusu deger={saat} degis={setSaat} />
             </div>
           </div>
 

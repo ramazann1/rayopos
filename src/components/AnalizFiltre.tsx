@@ -6,9 +6,12 @@ import { BOLGE_ANAHTAR, bolgeleriGetir } from "../masalar";
 import { ODEME_TIPI_ANAHTAR, odemeTipleriniGetir, type OdemeTipi } from "../odemeTipleri";
 import { kisaAd, personeliGetir } from "../personel";
 import { useTanim } from "../tanimAbonelik";
+import { DonemPenceresi } from "./TarihSuzgeci";
 import {
   BOS_FILTRE,
   DONEMLER,
+  aralikMetni,
+  donemAraligi,
   donemMetni,
   filtreSayisi,
   type AnalizFiltre as Filtre,
@@ -36,6 +39,7 @@ export default function AnalizFiltre({
   degistir: (f: Filtre) => void;
 }) {
   const [panelAcik, setPanelAcik] = useState(false);
+  const [donemAcik, setDonemAcik] = useState(false);
   const bolgeler = useTanim<Bolge[]>(BOLGE_ANAHTAR, bolgeleriGetir, []);
   const [kisiler, setKisiler] = useState<{ id: number; ad: string }[]>([]);
   const odemeTipleri = useTanim<OdemeTipi[]>(ODEME_TIPI_ANAHTAR, odemeTipleriniGetir, []);
@@ -95,23 +99,15 @@ export default function AnalizFiltre({
     });
   }
   const sayi = filtreSayisi(filtre);
+  const { bas, bit } = donemAraligi(filtre);
 
   return (
     <div className="analiz-filtre">
       <div className="analiz-filtre-ust">
-        <div className="analiz-donem">
-          {DONEMLER.map((d) => (
-            <button
-              key={d.kod}
-              className={filtre.donem === d.kod && !filtre.vardiyaId ? "aktif" : ""}
-              onClick={() =>
-                yaz({ donem: d.kod, vardiyaId: null, vardiyaBas: "", vardiyaBit: "" })
-              }
-            >
-              {d.ad}
-            </button>
-          ))}
-        </div>
+        <button className="stok-yan-tus" onClick={() => setDonemAcik(true)}>
+          <CalendarDays size={16} />
+          {filtre.vardiyaId ? "Vardiya" : DONEMLER.find((d) => d.kod === filtre.donem)?.ad}
+        </button>
 
         {/* Arama buraya değil, her sekmenin kendi listesinin başına ait: aranan
             şey sekmeden sekmeye değişiyor (adisyon no, ürün adı, personel). */}
@@ -127,25 +123,10 @@ export default function AnalizFiltre({
         </div>
       </div>
 
-      {filtre.donem === "ozel" && !filtre.vardiyaId && (
-        <div className="analiz-ozel-aralik">
-          <CalendarDays size={16} />
-          <input
-            type="date"
-            value={filtre.ozelBas}
-            onChange={(e) => yaz({ ozelBas: e.target.value })}
-          />
-          <span>–</span>
-          <input
-            type="date"
-            value={filtre.ozelBit}
-            onChange={(e) => yaz({ ozelBit: e.target.value })}
-          />
-        </div>
-      )}
-
       <div className="analiz-cipler">
-        <span className="analiz-donem-metni">{donemMetni(filtre)}</span>
+        <span className="analiz-donem-metni">
+          {filtre.vardiyaId ? donemMetni(filtre) : aralikMetni(bas, bit)}
+        </span>
         {cipler.map((c) => (
           <button key={c.ad} className="analiz-cip" onClick={c.sil}>
             {c.ad}
@@ -168,6 +149,25 @@ export default function AnalizFiltre({
           </button>
         )}
       </div>
+
+      {donemAcik && (
+        <DonemPenceresi
+          tumu={false}
+          donem={{ kod: filtre.vardiyaId ? "bugun" : filtre.donem, bas: filtre.ozelBas, bit: filtre.ozelBit }}
+          onSec={(d) => {
+            yaz({
+              donem: d.kod === "tumu" ? "bugun" : d.kod,
+              ozelBas: d.bas,
+              ozelBit: d.bit,
+              vardiyaId: null,
+              vardiyaBas: "",
+              vardiyaBit: "",
+            });
+            setDonemAcik(false);
+          }}
+          onKapat={() => setDonemAcik(false)}
+        />
+      )}
 
       {panelAcik && (
         <div className="panel-fon" onClick={() => setPanelAcik(false)}>

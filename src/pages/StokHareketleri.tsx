@@ -17,6 +17,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import SaatKutusu from "../components/SaatKutusu";
 import StokBasligi from "../components/StokBasligi";
 import AramaKutusu from "../components/AramaKutusu";
 import Bildirim from "../components/Bildirim";
@@ -27,13 +28,14 @@ import { useKutuBoyu } from "../kutuBoyu";
 import { yetkiVar } from "../oturum";
 import { ayarlar } from "../isletmeAyarlari";
 import { paraGoster, paraSayi, paraYaz } from "../para";
+import { StokTipIkonu as TipIkonu } from "../components/StokDonemi";
 import {
   DonemPenceresi,
-  StokTipIkonu as TipIkonu,
   donemAdi,
   donemAraligiKur,
-  type StokDonemi as Donem,
-} from "../components/StokDonemi";
+  donemAralikMetni,
+  type Donem,
+} from "../components/TarihSuzgeci";
 import {
   malzemeleriGetir,
   miktarGoster,
@@ -213,6 +215,9 @@ export default function StokHareketleri() {
                 </Ipucu>
               </h2>
               <AramaKutusu deger={ara} degistir={setAra} yer="Hareket ara" />
+              {donem.kod !== "tumu" && (
+                <span className="ts-aralik">{donemAralikMetni(donem)}</span>
+              )}
               <button
                 className={donem.kod === "tumu" ? "stok-yan-tus" : "stok-yan-tus dolu"}
                 title="Tarihe göre süz"
@@ -606,12 +611,7 @@ function HareketPenceresi({
                   value={tarih}
                   onChange={(e) => setTarih(e.target.value)}
                 />
-                <input
-                  type="time"
-                  aria-label="Saat"
-                  value={saat}
-                  onChange={(e) => setSaat(e.target.value)}
-                />
+                <SaatKutusu aria-label="Saat" deger={saat} degis={setSaat} />
               </div>
             </div>
 
@@ -851,12 +851,7 @@ function DuzenlePenceresi({
                   value={tarih}
                   onChange={(e) => setTarih(e.target.value)}
                 />
-                <input
-                  type="time"
-                  aria-label="Saat"
-                  value={saat}
-                  onChange={(e) => setSaat(e.target.value)}
-                />
+                <SaatKutusu aria-label="Saat" deger={saat} degis={setSaat} />
               </div>
             </div>
 
