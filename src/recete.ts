@@ -11,9 +11,9 @@ import { tabanaCevir } from "./stok";
 export type ReceteTipi = "normal" | "cikarilabilir" | "opsiyonel";
 
 export const RECETE_TIPLERI: { kod: ReceteTipi; ad: string; aciklama: string }[] = [
-  { kod: "normal", ad: "Normal", aciklama: "Her zaman girer." },
-  { kod: "cikarilabilir", ad: "Çıkarılabilir", aciklama: "Girer, müşteri istemezse çıkarılır." },
-  { kod: "opsiyonel", ad: "Opsiyonel", aciklama: "Girmez, isteyen ekletir." },
+  { kod: "normal", ad: "Sabit", aciklama: "Her zaman girer." },
+  { kod: "cikarilabilir", ad: "Çıkarılabilir", aciklama: "Girer; müşteri istemezse siparişte çıkarılır." },
+  { kod: "opsiyonel", ad: "Ekstra", aciklama: "Girmez; müşteri isterse siparişte eklenir." },
 ];
 
 export type ReceteSatiri = {
@@ -22,6 +22,8 @@ export type ReceteSatiri = {
   /** En küçük birimde tam sayı. */
   miktar: number;
   tip: ReceteTipi;
+  /** Yalnız ekstrada; boşsa ücretsiz. */
+  ekFiyat?: number;
 };
 
 /** Reçeteden çıkan maliyet; `eksik` = içinde fiyatı hiç girilmemiş malzeme var. */
@@ -31,7 +33,7 @@ export type ReceteMaliyeti = { maliyet: number; eksik: boolean };
 export async function receteleriGetir(): Promise<Map<number, ReceteSatiri[]>> {
   const { data } = await supabase
     .from("recete_satirlari")
-    .select("id, porsiyon_id, malzeme_id, miktar, tip")
+    .select("id, porsiyon_id, malzeme_id, miktar, tip, ek_fiyat")
     .not("porsiyon_id", "is", null)
     .order("sira")
     .order("id");
@@ -39,7 +41,13 @@ export async function receteleriGetir(): Promise<Map<number, ReceteSatiri[]>> {
   const harita = new Map<number, ReceteSatiri[]>();
   for (const r of ((data as any[]) ?? [])) {
     const liste = harita.get(r.porsiyon_id) ?? [];
-    liste.push({ id: r.id, malzemeId: r.malzeme_id, miktar: r.miktar, tip: r.tip });
+    liste.push({
+      id: r.id,
+      malzemeId: r.malzeme_id,
+      miktar: r.miktar,
+      tip: r.tip,
+      ekFiyat: r.ek_fiyat != null ? Number(r.ek_fiyat) : undefined,
+    });
     harita.set(r.porsiyon_id, liste);
   }
   return harita;
@@ -86,6 +94,7 @@ export async function receteYaz(porsiyonId: number, satirlar: ReceteSatiri[]) {
       malzeme_id: s.malzemeId,
       miktar: s.miktar,
       tip: s.tip,
+      ek_fiyat: s.tip === "opsiyonel" && s.ekFiyat ? s.ekFiyat : null,
       sira: i,
     }))
   );
@@ -97,6 +106,23 @@ export async function receteYaz(porsiyonId: number, satirlar: ReceteSatiri[]) {
     );
   }
 }
+
+/**
+ * Çıkarılan malzemenin sepette ve mutfakta okunan hâli: "Soğansız". Tek
+ * kelimede ek ünlü uyumuyla geliyor; "kaşar peyniri" gibi tamlamaya ek
+ * yapışmıyor, "Kaşar peyniri olmasın" yazılıyor.
+ */
+export function cikanMetni(ad: string) {
+  const temiz = ad.trim();
+  if (/\s/.test(temiz)) return `${temiz} olmasın`;
+  const unluler = temiz.toLocaleLowerCase("tr").match(/[aıoueiöü]/g);
+  const son = unluler?.[unluler.length - 1] ?? "ı";
+  const ek = { a: "sız", ı: "sız", e: "siz", i: "siz", o: "suz", u: "suz", ö: "süz", ü: "süz" }[son];
+  const buyuk = temiz === temiz.toLocaleUpperCase("tr");
+  return temiz + (buyuk ? ek!.toLocaleUpperCase("tr") : ek);
+}
+
+export const eklenenMetni = (ad: string) => `+ ${ad.trim()}`;
 
 /** Ekranda yazılan miktarı ("200", malzeme ml ise) depodaki tam sayıya çevirir. */
 export const receteMiktari = (deger: number, birim: string) => tabanaCevir(deger, birim);

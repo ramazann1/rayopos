@@ -37,4 +37,5 @@
 - [Onay mesajında yıldız](rayopos-onay-mesajinda-yildiz.md) — kararı belirleyen bilgi *yıldız* arasına alınır, koyu yazılır.
 - [Yeni ekranda önce taslak](rayopos-yeni-ekranda-once-taslak.md) — kodlamadan önce taslağı göster, onay al; elli turluk düzeltmeyi önlüyor.
 - [Hafıza depoya kopyalanır](rayopos-hafiza-depoya-kopyalanir.md) — iki bilgisayar var; seans sonunda claude-hafizasi/ klasörünü tazele.
+- [SQL'i Ramazan çalıştırır](rayopos-sql-ramazan-calistirir.md) — canlı Supabase SQL Editor Claude'a kapalı; dosyayı ver, Success'i bekle.
 - [Tarih/saat kutuları](rayopos-tarih-saat-kutulari.md) — tarayıcı seçicisi yok, maskeli kendi kutumuz; önemli ayar tik + onayla kaydedilir.

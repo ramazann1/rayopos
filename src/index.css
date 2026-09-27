@@ -1096,6 +1096,11 @@ body {
   background: #fff3ef;
   font-weight: 600;
 }
+
+/* "Olmasın"da seçilen malzeme üstü çizili: seçili olmak burada "girmesin" demek. */
+.secim.cikarildi {
+  text-decoration: line-through;
+}
 .kalem-detay {
   display: block;
   color: var(--soluk);
@@ -17230,6 +17235,24 @@ body {
   right: auto;
 }
 
+/* Maliyet sağ sütunda: balon sağa açılınca görünmezken bile pencereyi
+   taşırıp altta yatay kaydırma çubuğu çıkarıyordu. Sola açılıyor. */
+.up-maliyet-alan label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.up-maliyet-alan .ipucu-balon {
+  left: auto;
+  right: -6px;
+}
+
+.up-maliyet-alan .ipucu-balon::after {
+  left: auto;
+  right: 12px;
+}
+
 .up-raf .anahtar-satir.acik {
   border-color: rgba(255, 107, 69, 0.3);
 }
@@ -22708,6 +22731,58 @@ body:has(.up-fon, .menu-perde) {
   white-space: nowrap;
 }
 
+/* Adın altında tip: sütun eklemek pencereyi genişletiyordu, satır iki kat
+   yüksek ama hizalar yerinde kalıyor. */
+.rcp-ad-hucre {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rcp-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rcp-tip-sec {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--r-kk);
+  background: #e5ebf3;
+}
+
+.rcp-tip-sec button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--metin);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rcp-tip-sec button.aktif {
+  background: var(--kart);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(20, 32, 48, 0.12);
+}
+
+.rcp-satir .rcp-ek-fiyat {
+  width: 104px;
+}
+
+.rcp-satir .rcp-ek-fiyat input {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 13px;
+}
+
 /* Miktar kutusu ürün panelindeki alanlarla aynı dilde. `.up-alan` sarmalayıcısı
    burada yok, o yüzden kutu tarayıcının kendi varsayılan çerçevesiyle
    çiziliyordu — köşeli, ince siyah çizgili, sayfaya yabancı. */
@@ -22959,8 +23034,11 @@ body:has(.up-fon, .menu-perde) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 34px;
   }
 
-  .rcp-ad {
+  .rcp-ad-hucre {
     grid-column: 1 / -1;
+  }
+
+  .rcp-ad {
     font-weight: 500;
   }
 

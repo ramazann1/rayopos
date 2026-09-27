@@ -576,7 +576,7 @@ export default function UrunPaneli({
                         <em>₺</em>
                       </div>
                     </div>
-                    <div className="up-alan">
+                    <div className="up-alan up-maliyet-alan">
                       <label htmlFor="up-maliyet">
                         Maliyet
                         {p.recete.length > 0 && (

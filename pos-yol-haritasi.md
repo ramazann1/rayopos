@@ -1288,6 +1288,28 @@ stok sürekli eksiye gidiyor.
 - Reçete açılınca **Maliyet Tutarı kilitleniyor**: "Maliyet reçeteden otomatik
   hesaplanır."
 
+### 12.1.1 Reçete tipi sipariş ekranında (26 Eyl 2026 turu)
+Geçici "DENEME RECETE" ürünüyle bakıldı (kaşar Çıkarılabilir, jambon
+Opsiyonel), sipariş kaydedilmedi, ürün sonra silindi.
+- **Opsiyonel seçilince reçete satırına "Fiyat" kutusu ekleniyor** —
+  opsiyonel malzeme ücretli ekstra demek (jambon +₺20).
+- Sipariş ekranında ayrı bir yer yok: kalemin **liste (≡) düğmesi** tek
+  pencereyi açıyor — "Çoklu Seçim (ürün adı)", alt başlık "Özellik, porsiyon
+  ve reçete seçimini hızlı bir şekilde yapabilirsiniz". Bölümler alt alta:
+  **Porsiyonlar · Çıkarılabilir Reçeteler · Eklenebilir Reçeteler**
+  (özellikler de aynı pencerede). Normal tipli malzeme hiç görünmüyor;
+  hepsi Normal olan üründe düğme "Seçtirilecek özellik veya reçete
+  bulunamadı" uyarısı veriyor.
+- Çıkarılabilir kart seçilince adı **üstü çizili** oluyor; eklenebilir kart
+  sarı çerçeveyle seçili, altında "+₺20,00".
+- Sepet satırında ürün adının altında iki satır: **"Çıkartılanlar: KAŞAR
+  PEYNİRİ"** (kırmızı etiket) · **"Eklenenler: DANA JAMBON"** (yeşil etiket).
+  Fiyat ₺100 → ₺120.
+- Pencere, ürünün "Özellik ve Porsiyon Otomatik Sorulsun" anahtarı kapalıyken
+  ekleyince kendiliğinden açılmıyor, düğmeyle açılıyor.
+- Görülmedi (kayıt gerekirdi): mutfak fişinde nasıl yazdığı, stok düşümüne
+  yansıması.
+
 ### 12.2 Reçeteler iç içe geçiyor
 "KREMALI MANTARLI SOS" hem HAMMADDE kategorisinde, hem kendi reçetesi var
 (KREMA 1 · MANTAR 0,4 · TEREYAĞI 0,01), hem kendi stoğu tutuluyor. Yani yarı

@@ -5,6 +5,7 @@ import Bilgi from "./Bilgi";
 import Ipucu from "./Ipucu";
 import { miktarSayi, miktarYaz, olcuKisa, olcuyeCevir, tabanaCevir } from "../stok";
 import type { Malzeme } from "../stok";
+import { RECETE_TIPLERI } from "../recete";
 import type { ReceteSatiri, ReceteTipi } from "../recete";
 import { paraGoster } from "../para";
 
@@ -24,6 +25,8 @@ export type ReceteTaslagi = {
   malzemeId: number;
   miktar: string;
   tip: ReceteTipi;
+  /** Ekstranın müşteriye fiyatı; boşsa ücretsiz. */
+  ekFiyat?: string;
 };
 
 export const receteTaslagi = (satirlar: ReceteSatiri[], malzemeler: Malzeme[]): ReceteTaslagi[] =>
@@ -33,16 +36,23 @@ export const receteTaslagi = (satirlar: ReceteSatiri[], malzemeler: Malzeme[]): 
       malzemeId: s.malzemeId,
       miktar: m ? String(olcuyeCevir(s.miktar, m.birim)).replace(".", ",") : String(s.miktar),
       tip: s.tip,
+      ekFiyat: s.ekFiyat ? String(s.ekFiyat).replace(".", ",") : "",
     };
   });
 
 export const receteSatirlari = (taslak: ReceteTaslagi[], malzemeler: Malzeme[]): ReceteSatiri[] =>
   taslak
-    .map((t) => {
+    .map((t): ReceteSatiri | null => {
       const m = malzemeler.find((x) => x.id === t.malzemeId);
       const deger = miktarSayi(t.miktar);
       if (!m || !deger || deger <= 0) return null;
-      return { malzemeId: t.malzemeId, miktar: tabanaCevir(deger, m.birim), tip: t.tip };
+      const ekFiyat = t.tip === "opsiyonel" ? miktarSayi(t.ekFiyat ?? "") : 0;
+      return {
+        malzemeId: t.malzemeId,
+        miktar: tabanaCevir(deger, m.birim),
+        tip: t.tip,
+        ekFiyat: ekFiyat && ekFiyat > 0 ? Math.round(ekFiyat * 100) / 100 : undefined,
+      };
     })
     .filter((s): s is ReceteSatiri => s !== null);
 
@@ -55,6 +65,8 @@ export function receteMaliyeti(taslak: ReceteTaslagi[], malzemeler: Malzeme[]) {
   let maliyet = 0;
   let eksik = false;
   for (const t of taslak) {
+    // Ekstra ancak müşteri isterse giriyor; ürünün kendi maliyetine sayılmıyor.
+    if (t.tip === "opsiyonel") continue;
     const m = malzemeler.find((x) => x.id === t.malzemeId);
     const deger = miktarSayi(t.miktar);
     if (!m || m.ortalamaMaliyet == null || !deger) {
@@ -160,7 +172,34 @@ export default function RecetePenceresi({
                   const tutar = satirTutari(t);
                   return (
                     <div className="rcp-satir" key={t.malzemeId}>
-                      <span className="rcp-ad">{m?.ad ?? "Silinmiş malzeme"}</span>
+                      <div className="rcp-ad-hucre">
+                        <span className="rcp-ad">{m?.ad ?? "Silinmiş malzeme"}</span>
+                        <div className="rcp-tip">
+                          <div className="rcp-tip-sec">
+                            {RECETE_TIPLERI.map((tip) => (
+                              <button
+                                key={tip.kod}
+                                className={t.tip === tip.kod ? "aktif" : ""}
+                                title={tip.aciklama}
+                                onClick={() => satirDegis(i, { tip: tip.kod })}
+                              >
+                                {tip.ad}
+                              </button>
+                            ))}
+                          </div>
+                          {t.tip === "opsiyonel" && (
+                            <div className="up-sonek rcp-ek-fiyat">
+                              <input
+                                value={t.ekFiyat ?? ""}
+                                onChange={(e) => satirDegis(i, { ekFiyat: miktarYaz(e.target.value) })}
+                                placeholder="Ücretsiz"
+                                inputMode="decimal"
+                              />
+                              <em>₺</em>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <div className="up-sonek">
                         <input
                           value={t.miktar}

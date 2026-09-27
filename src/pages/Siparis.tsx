@@ -37,7 +37,8 @@ import {
 } from "../adisyonlar";
 import type { AdisyonVerisi } from "../adisyonlar";
 import { masaGetir } from "../masalar";
-import UrunSecim from "../components/UrunSecim";
+import UrunSecim, { secimGerekir } from "../components/UrunSecim";
+import type { ReceteDegisimi } from "../components/UrunSecim";
 import KampanyaSecim from "../components/KampanyaSecim";
 import TahsilatPanel from "../components/TahsilatPanel";
 import HizliOde from "../components/HizliOde";
@@ -428,7 +429,8 @@ export default function Siparis() {
     urun: MenuUrun,
     fiyat: number,
     porsiyon?: string,
-    secimler?: string[]
+    secimler?: string[],
+    degisim?: ReceteDegisimi
   ) => {
     const ad = urun.ad;
     const kdvOran = urunKdv(urun, kdvler)?.oran;
@@ -455,6 +457,7 @@ export default function Siparis() {
           adet: 1,
           porsiyon,
           secimler,
+          ...degisim,
           kdvOran,
         },
       ];
@@ -765,7 +768,7 @@ export default function Siparis() {
                   onClick={() =>
                     u.menuGruplari.length
                       ? setKampanyaUrunu(u)
-                      : u.porsiyonlar.length > 1 || u.porsiyonlar.some((p) => p.grupIdler.length > 0)
+                      : secimGerekir(u)
                         ? setSecimUrunu(u)
                         : sepeteEkle(u, anaFiyat(u, siparisTuru))
                   }
@@ -1069,8 +1072,8 @@ export default function Siparis() {
           urun={secimUrunu}
           gruplar={gruplar}
           onKapat={() => setSecimUrunu(null)}
-          onEkle={(porsiyon, fiyat, secimler) => {
-            sepeteEkle(secimUrunu, fiyat, porsiyon, secimler);
+          onEkle={(porsiyon, fiyat, secimler, degisim) => {
+            sepeteEkle(secimUrunu, fiyat, porsiyon, secimler, degisim);
             setSecimUrunu(null);
           }}
         />

@@ -1,15 +1,28 @@
 import { useState } from "react";
 import { porsiyonFiyat } from "../menu";
+import { cikanMetni, eklenenMetni } from "../recete";
 import type { MenuPorsiyon, MenuSecenekGrubu, MenuUrun, SiparisTuru } from "../types";
+
+export type ReceteDegisimi = { cikan?: number[]; eklenen?: number[] };
 
 type Props = {
   urun: MenuUrun;
   gruplar: MenuSecenekGrubu[];
   /** Fiyat siparişin türüne göre okunuyor: masa, gel al ve paket ayrı olabilir. */
   tur?: SiparisTuru;
-  onEkle: (porsiyon: string | undefined, fiyat: number, secimler: string[]) => void;
+  onEkle: (
+    porsiyon: string | undefined,
+    fiyat: number,
+    secimler: string[],
+    degisim: ReceteDegisimi
+  ) => void;
   onKapat: () => void;
 };
+
+/** Ürünü eklerken pencere açılmalı mı: porsiyon, seçenek ya da değişebilen malzeme var. */
+export const secimGerekir = (u: MenuUrun) =>
+  u.porsiyonlar.length > 1 ||
+  u.porsiyonlar.some((p) => p.grupIdler.length > 0 || (p.degisenler?.length ?? 0) > 0);
 
 export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat }: Props) {
   const [porsiyon, setPorsiyon] = useState<MenuPorsiyon | undefined>(
@@ -32,13 +45,23 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
     hazirSecimler(urun.porsiyonlar.find((p) => p.varsayilan) ?? urun.porsiyonlar[0])
   );
 
+  const [cikan, setCikan] = useState<number[]>([]);
+  const [eklenen, setEklenen] = useState<number[]>([]);
+
   const urunGruplari = grupları(porsiyon);
+  const cikarilabilir = porsiyon?.degisenler?.filter((d) => d.tip === "cikarilabilir") ?? [];
+  const ekstralar = porsiyon?.degisenler?.filter((d) => d.tip === "opsiyonel") ?? [];
 
   // Porsiyon değişince eski seçimler geçersiz; grupları da değişebiliyor.
   const porsiyonSec = (p: MenuPorsiyon) => {
     setPorsiyon(p);
     setSecilenler(hazirSecimler(p));
+    setCikan([]);
+    setEklenen([]);
   };
+
+  const degistir = (liste: number[], id: number) =>
+    liste.includes(id) ? liste.filter((x) => x !== id) : [...liste, id];
 
   const sec = (grup: MenuSecenekGrubu, secenekId: number) => {
     setSecilenler((s) => {
@@ -60,6 +83,14 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
       secimAdlari.push(secenek.ad);
       ekToplam += secenek.ekFiyat;
     }
+  }
+  for (const d of cikarilabilir) {
+    if (cikan.includes(d.malzemeId)) secimAdlari.push(cikanMetni(d.ad));
+  }
+  for (const d of ekstralar) {
+    if (!eklenen.includes(d.malzemeId)) continue;
+    secimAdlari.push(eklenenMetni(d.ad));
+    ekToplam += d.ekFiyat;
   }
 
   const fiyat = (porsiyon ? porsiyonFiyat(porsiyon, tur) : 0) + ekToplam;
@@ -118,6 +149,41 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
           </div>
         ))}
 
+        {cikarilabilir.length > 0 && (
+          <div className="grup">
+            <span className="grup-ad">Olmasın</span>
+            <div className="secim-liste">
+              {cikarilabilir.map((d) => (
+                <button
+                  key={d.malzemeId}
+                  className={cikan.includes(d.malzemeId) ? "secim aktif cikarildi" : "secim"}
+                  onClick={() => setCikan((l) => degistir(l, d.malzemeId))}
+                >
+                  {d.ad}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {ekstralar.length > 0 && (
+          <div className="grup">
+            <span className="grup-ad">Ekstra</span>
+            <div className="secim-liste">
+              {ekstralar.map((d) => (
+                <button
+                  key={d.malzemeId}
+                  className={eklenen.includes(d.malzemeId) ? "secim aktif" : "secim"}
+                  onClick={() => setEklenen((l) => degistir(l, d.malzemeId))}
+                >
+                  {d.ad}
+                  {d.ekFiyat > 0 && ` (+₺${d.ekFiyat})`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {eksikler.length > 0 && (
           <p className="secim-uyari">
             Önce seçilmeli:{" "}
@@ -130,7 +196,12 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
         <button
           className="kaydet"
           disabled={eksikler.length > 0}
-          onClick={() => onEkle(porsiyon?.ad, fiyat, secimAdlari)}
+          onClick={() =>
+            onEkle(porsiyon?.ad, fiyat, secimAdlari, {
+              cikan: cikan.length ? cikan : undefined,
+              eklenen: eklenen.length ? eklenen : undefined,
+            })
+          }
         >
           Ekle
         </button>

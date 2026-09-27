@@ -147,7 +147,7 @@ export function yeniKalemId() {
 }
 
 const KALEM_ALANLARI =
-  "id, urun_id, porsiyon_id, ad, kategori_ad, porsiyon, secimler, adet, fiyat, kdv_oran, durum, not_metni, indirim, indirim_tanim_id, indirim_ad, odenmez_id";
+  "id, urun_id, porsiyon_id, ad, kategori_ad, porsiyon, secimler, cikan_malzemeler, eklenen_malzemeler, adet, fiyat, kdv_oran, durum, not_metni, indirim, indirim_tanim_id, indirim_ad, odenmez_id";
 
 type KalemSatiri = {
   id: number;
@@ -156,6 +156,8 @@ type KalemSatiri = {
   ad: string;
   porsiyon: string | null;
   secimler: string[] | null;
+  cikan_malzemeler?: number[] | null;
+  eklenen_malzemeler?: number[] | null;
   adet: number;
   fiyat: number;
   kdv_oran: number | null;
@@ -178,6 +180,8 @@ function kalemeCevir(s: KalemSatiri): SepetKalemi {
     ad: s.ad,
     porsiyon: s.porsiyon ?? undefined,
     secimler: s.secimler ?? undefined,
+    cikan: s.cikan_malzemeler?.length ? s.cikan_malzemeler : undefined,
+    eklenen: s.eklenen_malzemeler?.length ? s.eklenen_malzemeler : undefined,
     adet: Number(s.adet),
     fiyat: Number(s.fiyat),
     kdvOran: s.kdv_oran ?? undefined,
@@ -863,7 +867,13 @@ async function stokuOnceSor(veri: AdisyonVerisi) {
   if (!yeniler.length) return;
 
   const { data, error } = await supabase.rpc("stok_on_denetim", {
-    p_kalemler: yeniler.map((k) => ({ porsiyon_id: k.porsiyonId, adet: k.adet, ad: k.ad })),
+    p_kalemler: yeniler.map((k) => ({
+      porsiyon_id: k.porsiyonId,
+      adet: k.adet,
+      ad: k.ad,
+      cikan: k.cikan ?? [],
+      eklenen: k.eklenen ?? [],
+    })),
   });
   if (!error && data) throw new Error(data as string);
 }
@@ -1181,6 +1191,8 @@ async function kalemleriYaz(
           ad: k.ad,
           porsiyon: k.porsiyon ?? null,
           secimler: k.secimler ?? [],
+          cikan_malzemeler: k.cikan ?? null,
+          eklenen_malzemeler: k.eklenen ?? null,
           adet: k.adet,
           fiyat: k.fiyat,
           kdv_oran: k.kdvOran ?? null,
@@ -1693,6 +1705,8 @@ export async function kalemTasi(
     kategori_ad: k.kategori_ad ?? null,
     porsiyon: k.porsiyon,
     secimler: k.secimler ?? [],
+    cikan_malzemeler: k.cikan_malzemeler ?? null,
+    eklenen_malzemeler: k.eklenen_malzemeler ?? null,
     adet: tasinan,
     fiyat: k.fiyat,
     kdv_oran: k.kdv_oran,

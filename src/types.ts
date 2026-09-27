@@ -54,6 +54,9 @@ export type SepetKalemi = {
   adet: number;
   porsiyon?: string;
   secimler?: string[];
+  /** Reçeteden çıkarılan ("soğansız") ve ekstra eklenen malzemelerin kimliği; stok bunlara bakıyor. */
+  cikan?: number[];
+  eklenen?: number[];
   kdvOran?: number; // satış anındaki oran; eski adisyonlarda boş, varsayılana düşer
   durum?: "normal" | "ikram" | "iptal";
   indirim?: number; // yalnız bu satıra verilen indirim tutarı
@@ -152,6 +155,16 @@ export type MenuPorsiyon = {
   recete?: ReceteSatiri[];
   // Reçetede fiyatı hiç girilmemiş malzeme var — maliyet eksik, "₺0" değil.
   receteMaliyetiEksik?: boolean;
+  // Garsonun değiştirebildiği reçete satırları (çıkarılabilir ve ekstra);
+  // menüyle birlikte geliyor, ürün penceresi bunlardan açılıyor.
+  degisenler?: DegisenMalzeme[];
+};
+
+export type DegisenMalzeme = {
+  malzemeId: number;
+  ad: string;
+  tip: "cikarilabilir" | "opsiyonel";
+  ekFiyat: number;
 };
 
 export type MenuSecenek = {

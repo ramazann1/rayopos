@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import UrunSecim from "../components/UrunSecim";
+import type { ReceteDegisimi } from "../components/UrunSecim";
 import TahsilatPanel from "../components/TahsilatPanel";
 import KalemPaneli from "../components/KalemPaneli";
 import AdisyonBilgi from "../components/AdisyonBilgi";
@@ -91,7 +92,7 @@ function anaPorsiyon(u: MenuUrun) {
 function tekDokunus(u: MenuUrun, gruplar: MenuSecenekGrubu[]) {
   if (u.porsiyonlar.length > 1) return false;
   const p = anaPorsiyon(u);
-  return !gruplar.some((g) => p?.grupIdler.includes(g.id));
+  return !gruplar.some((g) => p?.grupIdler.includes(g.id)) && !p?.degisenler?.length;
 }
 
 /**
@@ -273,7 +274,13 @@ export default function MobilSiparis() {
 
   // KDV oranı satış anında kaleme yazılıyor: ürünün grubu sonradan değişse bile
   // kesilmiş adisyonun dökümü oynamasın.
-  const ekle = (urun: MenuUrun, fiyat: number, porsiyon?: string, secimler?: string[]) => {
+  const ekle = (
+    urun: MenuUrun,
+    fiyat: number,
+    porsiyon?: string,
+    secimler?: string[],
+    degisim?: ReceteDegisimi
+  ) => {
     const anahtar = [urun.ad, porsiyon, ...(secimler ?? [])].join("|");
     const kdvOran = urunKdv(urun, kdvler)?.oran;
     setSepet((s) => {
@@ -297,6 +304,7 @@ export default function MobilSiparis() {
           adet: 1,
           porsiyon,
           secimler,
+          ...degisim,
           kdvOran,
         },
       ];
@@ -1218,8 +1226,8 @@ export default function MobilSiparis() {
         <UrunSecim
           urun={secimUrunu}
           gruplar={gruplar}
-          onEkle={(porsiyon, fiyat, secimler) => {
-            ekle(secimUrunu, fiyat, porsiyon, secimler.length ? secimler : undefined);
+          onEkle={(porsiyon, fiyat, secimler, degisim) => {
+            ekle(secimUrunu, fiyat, porsiyon, secimler.length ? secimler : undefined, degisim);
             setSecimUrunu(null);
           }}
           onKapat={() => setSecimUrunu(null)}

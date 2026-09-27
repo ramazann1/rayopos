@@ -1,10 +1,29 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (26 Eyl 2026 güncellendi — ortak tarih süzgeci seansı)
+## 0. SIRADAKİ İŞ (27 Eyl 2026 güncellendi — reçete tipi seansı)
 
-> **YENİ SEANSIN BAŞI: 6. madde (stok modülü) kaldığı yerden.** 1-3
-> dışarıdan bekliyor.
+> **YENİ SEANSIN BAŞI: 6. madde — iç içe reçete + Üretim ekranı, önce
+> Adisyo turu.** 1-3 dışarıdan bekliyor.
+>
+> **BİTTİ (27 Eyl 2026): reçete tipi — "soğansız", "+ jambon".**
+> Adisyo turu: yol haritası 12.1.1. Terimler Adisyo'dan farklı (Ramazan):
+> reçete satırında **Sabit · Çıkarılabilir · Ekstra** (veritabanı kodları
+> normal/cikarilabilir/opsiyonel aynı); sipariş penceresinde **Olmasın** ve
+> **Ekstra** bölümleri; sepet/mutfak/fişte **"Soğansız · + Jambon"**
+> (tamlamada "Kaşar peyniri olmasın"; `recete.ts` `cikanMetni`).
+> - `sql/2026-09-27-recete-degisimi.sql` (canlıda çalıştırıldı):
+>   `recete_satirlari.ek_fiyat`, `adisyon_kalemleri.cikan_malzemeler /
+>   eklenen_malzemeler`, `recete_girer()`; düşüm, maliyet ve ön denetim buna
+>   bakıyor. Çıkarılan düşmez, eklenen düşer. Ekstra ürün maliyetine sayılmaz.
+> - Ekstranın fiyatı reçete satırında; boşsa ücretsiz (Ramazan).
+> - Pencere porsiyonda seçenek grubu YA DA değişebilen malzeme varsa açılıyor
+>   (`UrunSecim.secimGerekir`); mobil aynı bileşen.
+> - Masaüstünde Chrome'da uçtan uca denendi (Cordon Bleu'ya geçici reçete,
+>   S7'de sipariş, stok doğru, sonra iptal + reçete silindi). **Telefonda ve
+>   mutfak fişinde bizzat denenmedi.**
+> - Ürün penceresinde reçeteli üründe çıkan yatay kaydırma çubuğu düzeldi
+>   (Maliyet'in "i" balonu sağa taşıyordu; `.up-maliyet-alan`).
 >
 > **BİTTİ (26 Eyl 2026): ortak tarih süzgeci** (`components/TarihSuzgeci.tsx`).
 > Analiz, Stok Hareketleri, Sayım, malzeme geçmişi ve Giderler aynı pencereyi
@@ -141,23 +160,16 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **STOK MODÜLÜ — kalan: küçük işler, sonra reçetenin iki işi.**
+> 6. **STOK MODÜLÜ — kalan tek iş: iç içe reçete + Üretim ekranı.**
 >    Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
->    ürün stok takibi, eksi stok engeli (25 Eyl), fire/çıkış raporu ve
->    geçmiş sayımlar (26 Eyl) bitti (aşağıda).
->    **Küçük işler:** **mobil alt sekme çubuğundaki dolu mercan kapsül**
->    (bütün mobil ekranların ortak dili, ayrı karar) · **Kârlılık mobilde?** —
->    telefonda tam Analiz yok, yalnız Satış özeti; Ramazan'a sorulacak (fire
->    dökümü Kârlılık'ın içinde, onunla birlikte gider) · **geçmiş sayımlar
->    telefonda doğrulanmadı** (aynı bileşen, masaüstünden `/mobil/sayim`
->    ana sayfaya yönlendiriyor) · **geçmiş sayım satırında "Tutar
->    bilinmiyor"** çıkıyorsa o tarihte malzemenin fiyatlı girişi yok demek.
->    **Reçeteden kalan iki iş:**
->    - **Reçete tipi üçlüsü ekranda yok** (Normal / Çıkarılabilir / Opsiyonel).
->      Veritabanı sütunu duruyor, arayüzden kaldırıldı (Ramazan, 24 Eyl):
->      seçenek gruplarına bağlanmadan hiçbir işe yaramıyordu — "soğansız"
->      denince reçetedeki soğanın düşmemesi gerekiyor, o bağ henüz yok.
->      Seçenek grubu ↔ reçete satırı bağı kurulunca geri gelecek.
+>    ürün stok takibi, eksi stok engeli (25 Eyl), fire/çıkış raporu, geçmiş
+>    sayımlar (26 Eyl), reçete tipi (27 Eyl) bitti (aşağıda). Küçük işler
+>    kapandı: mobil alt sekme kapsülü olduğu gibi kalıyor (Ramazan), Kârlılık
+>    telefona gelmiyor ("telefonda ne gerek var"), geçmiş sayımlar telefonda
+>    doğrulandı, "Tutar bilinmiyor" hata değil (23 Eyl sayımları maliyet
+>    dondurulmadan önce).
+>    **Önce Adisyo turu** (yol haritası 12.2'de yalnız KÜLBASTI SOS örneği
+>    var; Adisyo'da üretim/yarı mamul ekranı nasıl, bakılmadı).
 >    - **İç içe reçete** (yarı mamul: kendi reçetesi olan malzeme, "kremalı
 >      mantar sosu"). Tablo buna hazır (`sahip_malzeme_id` sütunu baştan
 >      kondu) ama ekranı yok; bir de **Üretim ekranı** gerekiyor ("bugün 5 kg

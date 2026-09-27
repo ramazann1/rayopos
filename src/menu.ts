@@ -225,7 +225,7 @@ async function menuOku() {
     supabase
       .from("urunler")
       .select(
-        "id, ad, kod, kdv_id, istasyon_id, renk, favori, satista_gorunur, mutfakta_gorunur, aciklama, hazirlanma_dk, kalori, gramaj, alerjenler, etiket, tukendi, urun_medya(id, yol, tur, sira), porsiyonlar(id, birim_id, fiyat, barkod, masa_fiyat, gelal_fiyat, paket_fiyat, varsayilan, sira, porsiyon_secenek_gruplari(grup_id)), urun_kategorileri(kategori_id, sira), menu_gruplari(id, baslik, secilebilir_adet, sira, menu_satirlari(id, urun_id, porsiyon_id, miktar, ek_fiyat, varsayilan, sira))"
+        "id, ad, kod, kdv_id, istasyon_id, renk, favori, satista_gorunur, mutfakta_gorunur, aciklama, hazirlanma_dk, kalori, gramaj, alerjenler, etiket, tukendi, urun_medya(id, yol, tur, sira), porsiyonlar(id, birim_id, fiyat, barkod, masa_fiyat, gelal_fiyat, paket_fiyat, varsayilan, sira, porsiyon_secenek_gruplari(grup_id), recete_satirlari(malzeme_id, tip, ek_fiyat, sira, malzemeler!malzeme_id(ad))), urun_kategorileri(kategori_id, sira), menu_gruplari(id, baslik, secilebilir_adet, sira, menu_satirlari(id, urun_id, porsiyon_id, miktar, ek_fiyat, varsayilan, sira))"
       ),
     supabase
       .from("secenek_gruplari")
@@ -278,6 +278,15 @@ async function menuOku() {
         paketFiyat: say(p.paket_fiyat),
         varsayilan: p.varsayilan,
         grupIdler: (p.porsiyon_secenek_gruplari ?? []).map((x: any) => x.grup_id),
+        degisenler: (p.recete_satirlari ?? [])
+          .filter((r: any) => r.tip !== "normal")
+          .sort((a: any, b: any) => a.sira - b.sira)
+          .map((r: any) => ({
+            malzemeId: r.malzeme_id,
+            ad: r.malzemeler?.ad ?? "",
+            tip: r.tip,
+            ekFiyat: Number(r.ek_fiyat ?? 0),
+          })),
       })),
     menuGruplari: (u.menu_gruplari ?? [])
       .slice()
