@@ -1,11 +1,32 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (28 Eyl 2026 güncellendi — ara reçete ve üretim seansı)
+## 0. SIRADAKİ İŞ (28 Eyl 2026 güncellendi — ortadaki pencere seansı)
 
-> **YENİ SEANSIN BAŞI: 6. madde — stok modülünün iki küçük artığı** (giriş
-> formlarındaki tarih kutuları + üretimin telefonda gözle denenmesi). Sonra
-> 4. madde. 1-3 dışarıdan bekliyor.
+> **YENİ SEANSIN BAŞI: 6. madde — kalan çekmeceleri ortadaki pencereye
+> taşımak** (Ödenmezler, Kasa Geçmişi, Analiz süzgeci, Masasız Sipariş, Gider
+> türü penceresi, Menü Stüdyosu paneli). Tek tek, her biri Ramazan'a
+> gösterilerek. Sonra 4. madde. 1-3 dışarıdan bekliyor.
+>
+> **BİTTİ (28 Eyl 2026): ortadaki pencere dili + tarih kutuları.**
+> - Stok modülünün artıkları kapandı: gider ve stok hareketi formlarındaki
+>   `type="date"` yerine ortak `components/TarihKutusu.tsx` (süzgeçten
+>   ayrıldı). Telefonda "stok yetersiz" penceresi denendi; üretim/fire
+>   telefonda yok (Hareketler ekranı yalnız masaüstünde).
+> - **Sağdan kayan çekmece (`.panel-fon/.ayar-panel`) terk ediliyor.** Yerine
+>   `components/OrtaPencere.tsx` (`pnc-` sınıfları): ortada kart, üstte
+>   mercan ikon + başlık + tek satır açıklama, altta geniş Vazgeç/Kaydet,
+>   Sil yalnız kırmızı çöp ikonu. Genişlik: dar/orta/genis/cok-genis.
+>   Taşınanlar: Gider, Personel, Kişiye özel yetkiler, Yazıcı, İstasyon,
+>   İşletme Ayarları'ndaki 6 pencere (masa, toplu masa, bölge, ödeme tipi,
+>   indirim, kuver/garsoniye).
+> - Ramazan kararları: **kaydırmadan sığdır** (uzun form iki sütuna bölünür —
+>   `.pnc-sutunlar`), ama gerçekten uzun liste (yetkiler) tek sütun kalıp
+>   aşağı kayar; çubuk gizlenmez. **Mercan yalnız Kaydet'te** — seçili çip,
+>   kart, segment ve açık anahtar pencere içinde koyu (`--metin`). Arka plan
+>   bulanıklaşmaz, yalnız koyulaşır.
+> - Açılışta yazı tipi kayması giderildi: `main.tsx` Poppins yüklenmeden
+>   çizmiyor (en fazla 1 sn bekler).
 >
 > **BİTTİ (27-28 Eyl 2026): ara reçete + Üretim — stok modülünün son büyük
 > parçası.** Adisyo turu yol haritası 12.2'de (orada üretim yok, KÜLBASTI SOS
@@ -189,11 +210,15 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **STOK MODÜLÜ — yalnız iki küçük artık kaldı:** (a) giriş formlarındaki
->    `type="date"` kutuları (gider, stok hareketi) hâlâ Chrome takvimi, ortak
->    tarih kutusuna geçecek; (b) ara reçete / üretim / yeni pencereler
->    telefonda gözle denenecek (ürün seçim penceresi telefonda denendi).
->    Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
+> 6. **KALAN ÇEKMECELERİ ORTADAKİ PENCEREYE TAŞIMAK** (28 Eyl kararı):
+>    `Odenmezler.tsx`, `KasaGecmisi.tsx`, `components/AnalizFiltre.tsx`,
+>    `components/MasasizSiparis.tsx`, `Giderler.tsx` içindeki `TurPenceresi`,
+>    `MenuStudyosu.tsx` (satır ~270'teki panel). Hepsi `OrtaPencere` ile;
+>    kural yukarıdaki "BİTTİ" notunda. Masasız Sipariş mobilde de açılıyorsa
+>    telefonda ortada açıldığı denenecek. Bittiğinde `.ayar-panel` CSS'i
+>    kullanılmıyorsa silinir.
+>
+>    *STOK MODÜLÜ tamamen bitti (28 Eyl).* Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
 >    ürün stok takibi, eksi stok engeli (25 Eyl), fire/çıkış raporu, geçmiş
 >    sayımlar (26 Eyl), reçete tipi (27 Eyl), ara reçete + üretim (28 Eyl)
 >    bitti (aşağıda). Küçük işler

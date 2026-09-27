@@ -1,6 +1,26 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, Pencil, Plus, Receipt, Tags, Trash2, X } from "lucide-react";
+import {
+  Banknote,
+  CalendarDays,
+  Check,
+  Clock,
+  CreditCard,
+  FileText,
+  Landmark,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Receipt,
+  StickyNote,
+  Tags,
+  Trash2,
+  Wallet,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import SaatKutusu from "../components/SaatKutusu";
+import TarihKutusu from "../components/TarihKutusu";
+import OrtaPencere from "../components/OrtaPencere";
 import KasaBasligi from "../components/KasaBasligi";
 import Bilgi from "../components/Bilgi";
 import Bildirim from "../components/Bildirim";
@@ -35,6 +55,14 @@ const yerelTarih = (t: Date) =>
 
 const yerelSaat = (t: Date) =>
   `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+
+const ODEME_IKONU: Record<OdemeKodu, LucideIcon> = {
+  nakit: Banknote,
+  kart: CreditCard,
+  havale: Landmark,
+  cek: FileText,
+  diger: MoreHorizontal,
+};
 
 const gunMetni = (t: string) =>
   new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
@@ -275,106 +303,106 @@ function GiderPaneli({
   const sayi = paraSayi(tutar) ?? 0;
   const gecerli = tipId !== null && sayi > 0 && tarih !== "" && saat !== "";
 
+  const kaydet = () =>
+    gecerli &&
+    onKaydet({
+      tipId,
+      tipAd: tipler.find((t) => t.id === tipId)?.ad ?? "",
+      odemeTipi,
+      zaman: new Date(`${tarih}T${saat}`).toISOString(),
+      tutar: sayi,
+      aciklama,
+    });
+
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{masraf ? "Gideri düzenle" : "Yeni gider"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde personel-form">
-          <div className="alan">
-            <label>Gider türü</label>
-            <div className="cip-secim">
-              {tipler.filter((t) => t.aktif || t.id === tipId).map((t) => (
-                <button
-                  key={t.id}
-                  className={tipId === t.id ? "aktif" : ""}
-                  onClick={() => setTipId(t.id)}
-                >
-                  {t.ad}
-                </button>
-              ))}
-              <button className="gider-tur-ekle" onClick={onTurler}>
-                <Plus size={14} /> Tür ekle
-              </button>
-            </div>
-          </div>
-
-          <div className="alan">
-            <label>Ödeme şekli</label>
-            <div className="cip-secim">
-              {ODEME_TIPLERI.map((o) => (
-                <button
-                  key={o.kod}
-                  className={odemeTipi === o.kod ? "aktif" : ""}
-                  onClick={() => setOdemeTipi(o.kod)}
-                >
-                  {o.ad}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="gider-ikili">
-            <div className="alan">
-              <label>Tarih</label>
-              <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} />
-            </div>
-            <div className="alan">
-              <label>Saat</label>
-              <SaatKutusu deger={saat} degis={setSaat} />
-            </div>
-          </div>
-
-          <div className="alan">
-            <label>Tutar</label>
+    <OrtaPencere
+      ikon={Receipt}
+      baslik={masraf ? "Gideri düzenle" : "Yeni gider"}
+      aciklama="Nakit giderler açık vardiyanın kasasından düşer"
+      onKapat={onKapat}
+      alt={
+        <>
+          {onSil && (
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
+            </button>
+          )}
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-kaydet" disabled={!gecerli} onClick={kaydet}>
+            <Check size={17} /> Kaydet
+          </button>
+        </>
+      }
+    >
+          <label className="gdr-tutar">
+            <span>₺</span>
             <input
               autoFocus
               inputMode="decimal"
               placeholder="0,00"
               value={tutar}
               onChange={(e) => setTutar(paraYaz(e.target.value))}
+              onKeyDown={(e) => e.key === "Enter" && kaydet()}
             />
+          </label>
+
+          <div className="gdr-bolum">
+            <b><Tags size={16} /> Gider türü</b>
+            <div className="gdr-secim">
+              {tipler.filter((t) => t.aktif || t.id === tipId).map((t) => (
+                <button
+                  key={t.id}
+                  className={tipId === t.id ? "secili" : ""}
+                  onClick={() => setTipId(t.id)}
+                >
+                  {tipId === t.id && <Check size={14} />} {t.ad}
+                </button>
+              ))}
+              <button className="gdr-tur-ekle" onClick={onTurler}>
+                <Plus size={14} /> Tür ekle
+              </button>
+            </div>
           </div>
 
-          <div className="alan">
-            <label>Açıklama</label>
+          <div className="gdr-bolum">
+            <b><Wallet size={16} /> Ödeme şekli</b>
+            <div className="gdr-odeme">
+              {ODEME_TIPLERI.map((o) => {
+                const Ikon = ODEME_IKONU[o.kod];
+                return (
+                  <button
+                    key={o.kod}
+                    className={odemeTipi === o.kod ? "secili" : ""}
+                    onClick={() => setOdemeTipi(o.kod)}
+                  >
+                    <Ikon size={20} />
+                    {o.ad}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="gdr-ikili">
+            <div className="gdr-alan">
+              <label><CalendarDays size={15} /> Tarih</label>
+              <TarihKutusu className="" gun={tarih} degis={setTarih} />
+            </div>
+            <div className="gdr-alan">
+              <label><Clock size={15} /> Saat</label>
+              <SaatKutusu deger={saat} degis={setSaat} />
+            </div>
+          </div>
+
+          <div className="gdr-alan">
+            <label><StickyNote size={15} /> Açıklama</label>
             <input
               placeholder="Fatura no, satıcı, not"
               value={aciklama}
               onChange={(e) => setAciklama(e.target.value)}
             />
           </div>
-        </div>
-
-        <footer className="modal-aksiyonlar">
-          {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Sil
-            </button>
-          )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button
-            className="uygula"
-            disabled={!gecerli}
-            onClick={() =>
-              onKaydet({
-                tipId,
-                tipAd: tipler.find((t) => t.id === tipId)?.ad ?? "",
-                odemeTipi,
-                zaman: new Date(`${tarih}T${saat}`).toISOString(),
-                tutar: sayi,
-                aciklama,
-              })
-            }
-          >
-            <Check size={16} /> Kaydet
-          </button>
-        </footer>
-      </div>
-    </div>
+    </OrtaPencere>
   );
 }
 

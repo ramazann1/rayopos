@@ -1,11 +1,12 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Check, KeyRound, Lock, ShieldCheck, UserRound, X } from "lucide-react";
+import { Check, KeyRound, Lock, ShieldCheck, UserRound } from "lucide-react";
 import AyarBasligi from "../components/AyarBasligi";
 import AramaKutusu from "../components/AramaKutusu";
 import Bildirim from "../components/Bildirim";
 import OnayModal from "../components/OnayModal";
 import Bilgi from "../components/Bilgi";
+import OrtaPencere from "../components/OrtaPencere";
 import { kilitKaldir, kilitKur } from "../cikisKilidi";
 import { eslesiyor } from "../arama";
 import { personeliGetir, rolleriGetir, type Personel, type Rol } from "../personel";
@@ -54,64 +55,57 @@ function KisiYetkiPaneli({
     kisi.rolId !== null && rolKumesi.has(`${kisi.rolId}-${yetkiId}`);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel genis" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{kisi.ad} · kişiye özel yetkiler</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <Bilgi>
-            Temel yetkiler {kisi.rolAd || "rol"} görevinden gelir. Yalnızca bu kişide
-            farklı olmasını istediğiniz satırları değiştirin.
-          </Bilgi>
-
-          {durumlar === null ? (
-            <div className="yukleniyor"><div className="cember" /></div>
-          ) : (
-            gruplara(yetkiler).map((grup) => (
-              <div key={grup.ad} className="yetki-grup">
-                <h4>{grup.ad}</h4>
-                {grup.yetkiler.map((y) => {
-                  const durum = durumlar.get(y.id) ?? "rolden";
-                  return (
-                    <div key={y.id} className="kisi-yetki-satir">
-                      <span>
-                        {y.ad}
-                        <small>{rolVeriyor(y.id) ? "Rolde açık" : "Rolde kapalı"}</small>
-                      </span>
-                      <div className="mod-sec kompakt">
-                        {DURUMLAR.map((d) => (
-                          <button
-                            key={d.deger}
-                            className={durum === d.deger ? "aktif" : ""}
-                            onClick={() => degistir(y.id, d.deger)}
-                          >
-                            {d.ad}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))
-          )}
-        </div>
-
-        <footer className="modal-aksiyonlar">
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
+    <OrtaPencere
+      ikon={KeyRound}
+      baslik={`${kisi.ad} · kişiye özel yetkiler`}
+      aciklama={`Temel yetkiler ${kisi.rolAd || "rol"} görevinden gelir; yalnız bu kişide farklı olacak satırları değiştirin.`}
+      genislik="genis"
+      onKapat={onKapat}
+      alt={
+        <>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button
-            className="uygula"
+            className="pnc-kaydet"
             disabled={durumlar === null}
             onClick={() => durumlar && onKaydet(durumlar)}
           >
-            Kaydet
+            <Check size={17} /> Kaydet
           </button>
-        </footer>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {durumlar === null ? (
+        <div className="yukleniyor"><div className="cember" /></div>
+      ) : (
+        gruplara(yetkiler).map((grup) => (
+          <div key={grup.ad} className="yetki-grup">
+            <h4>{grup.ad}</h4>
+            {grup.yetkiler.map((y) => {
+              const durum = durumlar.get(y.id) ?? "rolden";
+              return (
+                <div key={y.id} className="kisi-yetki-satir">
+                  <span>
+                    {y.ad}
+                    <small>{rolVeriyor(y.id) ? "Rolde açık" : "Rolde kapalı"}</small>
+                  </span>
+                  <div className="mod-sec kompakt">
+                    {DURUMLAR.map((d) => (
+                      <button
+                        key={d.deger}
+                        className={durum === d.deger ? "aktif" : ""}
+                        onClick={() => degistir(y.id, d.deger)}
+                      >
+                        {d.ad}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))
+      )}
+    </OrtaPencere>
   );
 }
 

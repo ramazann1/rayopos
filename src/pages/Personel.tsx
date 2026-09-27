@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Check, Circle, Pencil, Plus, Trash2, UserRound, X } from "lucide-react";
+import { Check, Circle, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import AyarBasligi from "../components/AyarBasligi";
 import AramaKutusu from "../components/AramaKutusu";
 import Bildirim from "../components/Bildirim";
 import Bilgi from "../components/Bilgi";
 import Anahtar from "../components/Anahtar";
 import OnayModal from "../components/OnayModal";
+import OrtaPencere from "../components/OrtaPencere";
 import { bolgeleriGetir } from "../masalar";
 import { eslesiyor } from "../arama";
 import {
@@ -115,14 +116,28 @@ function PersonelPaneli({
   };
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{kisi ? "Personeli düzenle" : "Yeni personel"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde personel-form">
+    <OrtaPencere
+      ikon={UserRound}
+      baslik={kisi ? "Personeli düzenle" : "Yeni personel"}
+      aciklama="Giriş bilgileri, görevi ve baktığı bölgeler"
+      genislik="genis"
+      onKapat={onKapat}
+      alt={
+        <>
+          {onSil && (
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
+            </button>
+          )}
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-kaydet" disabled={!gecerli} onClick={kaydet}>
+            <Check size={17} /> Kaydet
+          </button>
+        </>
+      }
+    >
+      <div className="prs-sutunlar personel-form">
+        <div>
           <div className="alan">
             <label>Ad soyad</label>
             <input value={ad} onChange={(e) => setAd(e.target.value)} autoFocus />
@@ -189,6 +204,9 @@ function PersonelPaneli({
             )}
           </div>
 
+        </div>
+
+        <div>
           {bolgeler.length > 0 && (
             <div className="alan">
               <label>Bakacağı bölgeler <em>boş = tümü</em></label>
@@ -268,18 +286,8 @@ function PersonelPaneli({
 
           {hata && <small className="alan-uyari">{hata}</small>}
         </div>
-
-        <footer className="modal-aksiyonlar">
-          {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Sil
-            </button>
-          )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button className="uygula" disabled={!gecerli} onClick={kaydet}>Kaydet</button>
-        </footer>
       </div>
-    </div>
+    </OrtaPencere>
   );
 }
 

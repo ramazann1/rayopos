@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { tarifGetir } from "../recete";
 import SaatKutusu from "../components/SaatKutusu";
+import TarihKutusu from "../components/TarihKutusu";
 import StokBasligi from "../components/StokBasligi";
 import AramaKutusu from "../components/AramaKutusu";
 import Bildirim from "../components/Bildirim";
@@ -653,12 +654,7 @@ function HareketPenceresi({
             <div className="up-alan hrk-zaman">
               <label htmlFor="hrk-tarih">Tarih ve saat</label>
               <div>
-                <input
-                  id="hrk-tarih"
-                  type="date"
-                  value={tarih}
-                  onChange={(e) => setTarih(e.target.value)}
-                />
+                <TarihKutusu id="hrk-tarih" className="" gun={tarih} degis={setTarih} />
                 <SaatKutusu aria-label="Saat" deger={saat} degis={setSaat} />
               </div>
             </div>
@@ -965,12 +961,7 @@ function DuzenlePenceresi({
             <div className="up-alan hrk-zaman genis">
               <label htmlFor="dzn-tarih">Tarih ve saat</label>
               <div>
-                <input
-                  id="dzn-tarih"
-                  type="date"
-                  value={tarih}
-                  onChange={(e) => setTarih(e.target.value)}
-                />
+                <TarihKutusu id="dzn-tarih" className="" gun={tarih} degis={setTarih} />
                 <SaatKutusu aria-label="Saat" deger={saat} degis={setSaat} />
               </div>
             </div>

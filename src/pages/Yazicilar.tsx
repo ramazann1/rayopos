@@ -13,9 +13,9 @@ import {
   Plus,
   Printer,
   Receipt,
+  Server,
   Trash2,
   Usb,
-  X,
   Zap,
 } from "lucide-react";
 import { yetkiVar } from "../oturum";
@@ -27,6 +27,7 @@ import Bilgi from "../components/Bilgi";
 import KopruIndir from "../components/KopruIndir";
 import Bildirim from "../components/Bildirim";
 import OnayModal from "../components/OnayModal";
+import OrtaPencere from "../components/OrtaPencere";
 import {
   BAGLANTILAR,
   TURLER,
@@ -116,14 +117,47 @@ function YaziciPaneli({
     (baglanti !== "ethernet" || ip.trim().length > 0);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel yazici-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{yazici ? "Yazıcıyı düzenle" : "Yeni yazıcı"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
+    <OrtaPencere
+      ikon={Printer}
+      baslik={yazici ? "Yazıcıyı düzenle" : "Yeni yazıcı"}
+      aciklama="Bağlantısı ve hangi fişlerin bu yazıcıdan çıkacağı"
+      genislik="cok-genis"
+      onKapat={onKapat}
+      alt={
+        <>
+          {onSil && (
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
+            </button>
+          )}
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button
+            className="pnc-kaydet"
+            disabled={!gecerli}
+            onClick={() =>
+              onKaydet({
+                ad,
+                baglanti,
+                ip,
+                port: Number(port) || 9100,
+                sistemAd,
+                cihaz,
+                kagitGenislik: kagit,
+                zil,
+                cekmece,
+                turler,
+                aktif,
+                istasyonlar: secilenler,
+              })
+            }
+          >
+            <Check size={17} /> Kaydet
+          </button>
+        </>
+      }
+    >
+      <div className="yz-sutunlar">
+        <div>
           <div className="alan">
             <label>Yazıcı adı</label>
             <input
@@ -231,6 +265,9 @@ function YaziciPaneli({
               </div>
             </div>
           </div>
+        </div>
+
+        <div>
 
           <div className="yz-bolum">
             <h4>Bu yazıcıdan çıkacak fişler</h4>
@@ -311,39 +348,8 @@ function YaziciPaneli({
             degistir={setAktif}
           />
         </div>
-
-        <footer className="modal-aksiyonlar">
-          {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Sil
-            </button>
-          )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button
-            className="uygula"
-            disabled={!gecerli}
-            onClick={() =>
-              onKaydet({
-                ad,
-                baglanti,
-                ip,
-                port: Number(port) || 9100,
-                sistemAd,
-                cihaz,
-                kagitGenislik: kagit,
-                zil,
-                cekmece,
-                turler,
-                aktif,
-                istasyonlar: secilenler,
-              })
-            }
-          >
-            Kaydet
-          </button>
-        </footer>
       </div>
-    </div>
+    </OrtaPencere>
   );
 }
 
@@ -365,55 +371,53 @@ function IstasyonPaneli({
   const [paketleme, setPaketleme] = useState(istasyon?.paketleme ?? false);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{istasyon ? "İstasyonu düzenle" : "Yeni istasyon"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <div className="alan">
-            <label>İstasyon adı</label>
-            <input
-              value={ad}
-              onChange={(e) => setAd(e.target.value)}
-              placeholder="Mutfak, Bar, Nargile…"
-              autoFocus
-            />
-          </div>
-
-          <Anahtar
-            etiket="Hazırlanıyor aşaması"
-            ipucu="İstasyon ekranında ürüne başlandığını işaretleyen ayrı bir adım çıkar"
-            acik={pisirme}
-            degistir={setPisirme}
-          />
-          <Anahtar
-            etiket="Paketleniyor aşaması"
-            ipucu="Yemek bittikten sonra kutulanmayı bekleyen ürünler ayrı görünür"
-            acik={paketleme}
-            degistir={setPaketleme}
-          />
-        </div>
-
-        <footer className="modal-aksiyonlar">
+    <OrtaPencere
+      ikon={Server}
+      baslik={istasyon ? "İstasyonu düzenle" : "Yeni istasyon"}
+      aciklama="Siparişin hazırlandığı yer: mutfak, bar, nargile"
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <>
           {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Sil
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
             </button>
           )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button
-            className="uygula"
+            className="pnc-kaydet"
             disabled={!ad.trim()}
             onClick={() => onKaydet({ ad, pisirme, paketleme })}
           >
-            Kaydet
+            <Check size={17} /> Kaydet
           </button>
-        </footer>
+        </>
+      }
+    >
+      <div className="alan">
+        <label>İstasyon adı</label>
+        <input
+          value={ad}
+          onChange={(e) => setAd(e.target.value)}
+          placeholder="Mutfak, Bar, Nargile…"
+          autoFocus
+        />
       </div>
-    </div>
+
+      <Anahtar
+        etiket="Hazırlanıyor aşaması"
+        ipucu="İstasyon ekranında ürüne başlandığını işaretleyen ayrı bir adım çıkar"
+        acik={pisirme}
+        degistir={setPisirme}
+      />
+      <Anahtar
+        etiket="Paketleniyor aşaması"
+        ipucu="Yemek bittikten sonra kutulanmayı bekleyen ürünler ayrı görünür"
+        acik={paketleme}
+        degistir={setPaketleme}
+      />
+    </OrtaPencere>
   );
 }
 

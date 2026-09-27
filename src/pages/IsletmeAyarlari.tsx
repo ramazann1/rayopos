@@ -8,18 +8,19 @@ import {
   ChevronUp,
   Copy,
   Grid3x3,
+  HandCoins,
   LayoutGrid,
   List,
   Lock,
   Map,
   Pencil,
+  Percent,
   Plus,
   Printer,
-
+  Square,
   Trash2,
   Users,
   Wallet,
-  X,
 } from "lucide-react";
 import SaatKutusu from "../components/SaatKutusu";
 import AyarBasligi from "../components/AyarBasligi";
@@ -56,6 +57,7 @@ import Bildirim from "../components/Bildirim";
 import Bilgi from "../components/Bilgi";
 import Anahtar from "../components/Anahtar";
 import OnayModal from "../components/OnayModal";
+import OrtaPencere from "../components/OrtaPencere";
 import MasaPlani, { otomatikDiz, yerlesimiVar } from "../components/MasaPlani";
 import {
   acikAdisyonluMasalar,
@@ -150,50 +152,20 @@ function MasaPaneli({ masa, onKapat, onKaydet, onSil }: MasaPaneliProps) {
   const [sekil, setSekil] = useState(masa.sekil);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>Masa düzenle</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <div className="alan">
-            <label>Masa adı</label>
-            <input value={ad} onChange={(e) => setAd(e.target.value)} autoFocus />
-          </div>
-
-          <div className="alan">
-            <label>Kişi kapasitesi</label>
-            <input
-              type="number"
-              min={1}
-              placeholder="Belirtilmedi"
-              value={kapasite}
-              onChange={(e) => setKapasite(e.target.value)}
-            />
-          </div>
-
-          <div className="alan">
-            <label>Masa şekli</label>
-            <div className="mod-sec">
-              <button className={sekil === "kare" ? "aktif" : ""} onClick={() => setSekil("kare")}>
-                Kare
-              </button>
-              <button className={sekil === "daire" ? "aktif" : ""} onClick={() => setSekil("daire")}>
-                Daire
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <footer className="modal-aksiyonlar">
-          <button className="sil-buton" onClick={onSil}>
-            <Trash2 size={15} /> Masayı sil
+    <OrtaPencere
+      ikon={Square}
+      baslik="Masa düzenle"
+      aciklama="Adı, kaç kişilik olduğu ve şekli"
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <>
+          <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+            <Trash2 size={17} />
           </button>
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button
-            className="uygula"
+            className="pnc-kaydet"
             disabled={!ad.trim()}
             onClick={() =>
               onKaydet({
@@ -203,11 +175,39 @@ function MasaPaneli({ masa, onKapat, onKaydet, onSil }: MasaPaneliProps) {
               })
             }
           >
-            Kaydet
+            <Check size={17} /> Kaydet
           </button>
-        </footer>
+        </>
+      }
+    >
+      <div className="alan">
+        <label>Masa adı</label>
+        <input value={ad} onChange={(e) => setAd(e.target.value)} autoFocus />
       </div>
-    </div>
+
+      <div className="alan">
+        <label>Kişi kapasitesi</label>
+        <input
+          type="number"
+          min={1}
+          placeholder="Belirtilmedi"
+          value={kapasite}
+          onChange={(e) => setKapasite(e.target.value)}
+        />
+      </div>
+
+      <div className="alan">
+        <label>Masa şekli</label>
+        <div className="mod-sec">
+          <button className={sekil === "kare" ? "aktif" : ""} onClick={() => setSekil("kare")}>
+            Kare
+          </button>
+          <button className={sekil === "daire" ? "aktif" : ""} onClick={() => setSekil("daire")}>
+            Daire
+          </button>
+        </div>
+      </div>
+    </OrtaPencere>
   );
 }
 
@@ -227,57 +227,55 @@ function TopluEklePaneli({
   const gecerli = onEk.trim() !== "" && sayi >= 1 && sayi <= 100;
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{bolgeAd} bölgesine toplu masa</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <div className="alan">
-            <label>Masa adının başı</label>
-            <input value={onEk} onChange={(e) => setOnEk(e.target.value)} autoFocus />
-          </div>
-
-          <div className="alan">
-            <label>Kaç masa eklensin</label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={adet}
-              onChange={(e) => setAdet(e.target.value)}
-            />
-          </div>
-
-          <div className="alan">
-            <label>Masa şekli</label>
-            <div className="mod-sec">
-              <button className={sekil === "kare" ? "aktif" : ""} onClick={() => setSekil("kare")}>
-                Kare
-              </button>
-              <button className={sekil === "daire" ? "aktif" : ""} onClick={() => setSekil("daire")}>
-                Daire
-              </button>
-            </div>
-          </div>
-
-          {gecerli && (
-            <p className="ayar-onizleme">
-              Eklenecek: <strong>{onEk.trim()} 1</strong> … <strong>{onEk.trim()} {sayi}</strong>
-            </p>
-          )}
-        </div>
-
-        <footer className="modal-aksiyonlar">
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button className="uygula" disabled={!gecerli} onClick={() => onEkle(onEk.trim(), sayi, sekil)}>
-            Ekle
+    <OrtaPencere
+      ikon={LayoutGrid}
+      baslik={`${bolgeAd} bölgesine toplu masa`}
+      aciklama="Aynı adla sıralı masalar tek seferde eklenir"
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-kaydet" disabled={!gecerli} onClick={() => onEkle(onEk.trim(), sayi, sekil)}>
+            <Check size={17} /> Ekle
           </button>
-        </footer>
+        </>
+      }
+    >
+      <div className="alan">
+        <label>Masa adının başı</label>
+        <input value={onEk} onChange={(e) => setOnEk(e.target.value)} autoFocus />
       </div>
-    </div>
+
+      <div className="alan">
+        <label>Kaç masa eklensin</label>
+        <input
+          type="number"
+          min={1}
+          max={100}
+          value={adet}
+          onChange={(e) => setAdet(e.target.value)}
+        />
+      </div>
+
+      <div className="alan">
+        <label>Masa şekli</label>
+        <div className="mod-sec">
+          <button className={sekil === "kare" ? "aktif" : ""} onClick={() => setSekil("kare")}>
+            Kare
+          </button>
+          <button className={sekil === "daire" ? "aktif" : ""} onClick={() => setSekil("daire")}>
+            Daire
+          </button>
+        </div>
+      </div>
+
+      {gecerli && (
+        <p className="ayar-onizleme">
+          Eklenecek: <strong>{onEk.trim()} 1</strong> … <strong>{onEk.trim()} {sayi}</strong>
+        </p>
+      )}
+    </OrtaPencere>
   );
 }
 
@@ -295,38 +293,36 @@ function BolgePaneli({
   const [ad, setAd] = useState(bolge?.ad ?? "");
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{bolge ? "Bölgeyi düzenle" : "Yeni bölge"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <div className="alan">
-            <label>Bölge adı</label>
-            <input
-              value={ad}
-              onChange={(e) => setAd(e.target.value)}
-              placeholder="Bahçe, Salon, Teras…"
-              autoFocus
-            />
-          </div>
-        </div>
-
-        <footer className="modal-aksiyonlar">
+    <OrtaPencere
+      ikon={Map}
+      baslik={bolge ? "Bölgeyi düzenle" : "Yeni bölge"}
+      aciklama="Masaların gruplandığı alan: bahçe, salon, teras"
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <>
           {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Bölgeyi sil
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
             </button>
           )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button className="uygula" disabled={!ad.trim()} onClick={() => onKaydet(ad.trim())}>
-            Kaydet
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-kaydet" disabled={!ad.trim()} onClick={() => onKaydet(ad.trim())}>
+            <Check size={17} /> Kaydet
           </button>
-        </footer>
+        </>
+      }
+    >
+      <div className="alan">
+        <label>Bölge adı</label>
+        <input
+          value={ad}
+          onChange={(e) => setAd(e.target.value)}
+          placeholder="Bahçe, Salon, Teras…"
+          autoFocus
+        />
       </div>
-    </div>
+    </OrtaPencere>
   );
 }
 
@@ -349,14 +345,32 @@ function OdemeTipiPaneli({
   const [kasayaGirer, setKasayaGirer] = useState(tip?.kasayaGirer ?? false);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{tip ? "Ödeme tipini düzenle" : "Yeni ödeme tipi"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
+    <OrtaPencere
+      ikon={Wallet}
+      baslik={tip ? "Ödeme tipini düzenle" : "Yeni ödeme tipi"}
+      aciklama="Tahsilat ekranındaki düğme ve kasaya etkisi"
+      genislik="genis"
+      onKapat={onKapat}
+      alt={
+        <>
+          {onSil && (
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
+            </button>
+          )}
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button
+            className="pnc-kaydet"
+            disabled={!ad.trim()}
+            onClick={() => onKaydet({ ad: ad.trim(), renk, sinif, acikHesap, aktif, kasayaGirer })}
+          >
+            <Check size={17} /> Kaydet
+          </button>
+        </>
+      }
+    >
+      <div className="pnc-sutunlar">
+        <div>
           <div className="alan">
             <label>Ödeme tipinin adı</label>
             <input
@@ -388,6 +402,9 @@ function OdemeTipiPaneli({
             </Bilgi>
           </div>
 
+        </div>
+
+        <div>
           <Anahtar
             etiket="Cari hesaba yazılsın"
             ipucu="Açık hesap ödemelerinde kasaya para girmez, tutar müşterinin borcuna eklenir"
@@ -409,24 +426,8 @@ function OdemeTipiPaneli({
             degistir={setAktif}
           />
         </div>
-
-        <footer className="modal-aksiyonlar">
-          {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Sil
-            </button>
-          )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button
-            className="uygula"
-            disabled={!ad.trim()}
-            onClick={() => onKaydet({ ad: ad.trim(), renk, sinif, acikHesap, aktif, kasayaGirer })}
-          >
-            Kaydet
-          </button>
-        </footer>
       </div>
-    </div>
+    </OrtaPencere>
   );
 }
 
@@ -451,71 +452,69 @@ function IndirimPaneli({
   const gecerli = ad.trim().length > 0 && sayi > 0 && (tip !== "yuzde" || sayi <= 100);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{tanim ? "İndirimi düzenle" : "Yeni indirim"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <div className="alan">
-            <label>İndirimin adı</label>
-            <input
-              value={ad}
-              onChange={(e) => setAd(e.target.value)}
-              placeholder="Personel, Öğrenci, Kampanya…"
-              autoFocus
-            />
-          </div>
-
-          <div className="alan">
-            <label>İndirim türü</label>
-            <div className="mod-sec">
-              <button className={tip === "yuzde" ? "aktif" : ""} onClick={() => setTip("yuzde")}>
-                Yüzde
-              </button>
-              <button className={tip === "tutar" ? "aktif" : ""} onClick={() => setTip("tutar")}>
-                Tutar
-              </button>
-            </div>
-          </div>
-
-          <div className="alan">
-            <label>{tip === "yuzde" ? "Oran (%)" : "Tutar (₺)"}</label>
-            <input
-              value={deger}
-              onChange={(e) => setDeger(e.target.value)}
-              placeholder={tip === "yuzde" ? "25" : "50"}
-              inputMode="decimal"
-            />
-          </div>
-
-          <Anahtar
-            etiket="Satış ekranında görünsün"
-            ipucu="Kapatırsanız tanım silinmez, indirim penceresinde listelenmez"
-            acik={aktif}
-            degistir={setAktif}
-          />
-        </div>
-
-        <footer className="modal-aksiyonlar">
+    <OrtaPencere
+      ikon={Percent}
+      baslik={tanim ? "İndirimi düzenle" : "Yeni indirim"}
+      aciklama="Satış ekranındaki hazır indirim"
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <>
           {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Sil
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
             </button>
           )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button
-            className="uygula"
+            className="pnc-kaydet"
             disabled={!gecerli}
             onClick={() => onKaydet({ ad: ad.trim(), tip, deger: sayi, sira: tanim?.sira ?? 0, aktif })}
           >
-            Kaydet
+            <Check size={17} /> Kaydet
           </button>
-        </footer>
+        </>
+      }
+    >
+      <div className="alan">
+        <label>İndirimin adı</label>
+        <input
+          value={ad}
+          onChange={(e) => setAd(e.target.value)}
+          placeholder="Personel, Öğrenci, Kampanya…"
+          autoFocus
+        />
       </div>
-    </div>
+
+      <div className="alan">
+        <label>İndirim türü</label>
+        <div className="mod-sec">
+          <button className={tip === "yuzde" ? "aktif" : ""} onClick={() => setTip("yuzde")}>
+            Yüzde
+          </button>
+          <button className={tip === "tutar" ? "aktif" : ""} onClick={() => setTip("tutar")}>
+            Tutar
+          </button>
+        </div>
+      </div>
+
+      <div className="alan">
+        <label>{tip === "yuzde" ? "Oran (%)" : "Tutar (₺)"}</label>
+        <input
+          value={deger}
+          onChange={(e) => setDeger(e.target.value)}
+          placeholder={tip === "yuzde" ? "25" : "50"}
+          inputMode="decimal"
+        />
+      </div>
+
+      <Anahtar
+        etiket="Satış ekranında görünsün"
+        ipucu="Kapatırsanız tanım silinmez, indirim penceresinde listelenmez"
+        acik={aktif}
+        degistir={setAktif}
+      />
+    </OrtaPencere>
   );
 }
 
@@ -546,69 +545,67 @@ function ServisPaneli({
   const gecerli = ad.trim().length > 0 && sayi >= 0 && (tip !== "yuzde" || sayi <= 100);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{baslik}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <div className="alan">
-            <label>Hesapta yazacak ad</label>
-            <input value={ad} onChange={(e) => setAd(e.target.value)} autoFocus />
-          </div>
-
-          <div className="alan">
-            <label>Hesaplama türü</label>
-            <div className="mod-sec">
-              <button className={tip === "tutar" ? "aktif" : ""} onClick={() => setTip("tutar")}>
-                Tutar
-              </button>
-              <button className={tip === "yuzde" ? "aktif" : ""} onClick={() => setTip("yuzde")}>
-                Yüzde
-              </button>
-            </div>
-          </div>
-
-          <div className="alan">
-            <label>{tip === "yuzde" ? "Oran (%)" : kisiBasi ? "Kişi başı tutar (₺)" : "Tutar (₺)"}</label>
-            <input
-              value={deger}
-              onChange={(e) => setDeger(e.target.value)}
-              placeholder={tip === "yuzde" ? "10" : "25"}
-              inputMode="decimal"
-            />
-          </div>
-
-          <Anahtar
-            etiket="Siparişe kendiliğinden eklensin"
-            ipucu="Kapatırsanız tanım durur ama hesaba girmez; yetkisi olan personel masada elle ekler"
-            acik={otomatik}
-            degistir={setOtomatik}
-          />
-
-          <Bilgi>
-            {kisiBasi && tip === "tutar"
-              ? "Kuver misafir sayısıyla çarpılır. Misafir sayısı girilmemiş adisyona kuver yazılmaz — kuver kullanacaksanız \"Misafir sayısı zorunlu\" ayarını da açın."
-              : tip === "yuzde"
-                ? "Yüzde, indirim düşüldükten sonraki hesap tutarı üzerinden alınır."
-                : "Hesabın tamamına bir kez eklenir."}
-          </Bilgi>
-        </div>
-
-        <footer className="modal-aksiyonlar">
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
+    <OrtaPencere
+      ikon={HandCoins}
+      baslik={baslik}
+      aciklama="Hesaba eklenen servis bedeli"
+      genislik="orta"
+      onKapat={onKapat}
+      alt={
+        <>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button
-            className="uygula"
+            className="pnc-kaydet"
             disabled={!gecerli}
             onClick={() => onKaydet({ ad: ad.trim(), tip, deger: sayi, otomatik })}
           >
-            Kaydet
+            <Check size={17} /> Kaydet
           </button>
-        </footer>
+        </>
+      }
+    >
+      <div className="alan">
+        <label>Hesapta yazacak ad</label>
+        <input value={ad} onChange={(e) => setAd(e.target.value)} autoFocus />
       </div>
-    </div>
+
+      <div className="alan">
+        <label>Hesaplama türü</label>
+        <div className="mod-sec">
+          <button className={tip === "tutar" ? "aktif" : ""} onClick={() => setTip("tutar")}>
+            Tutar
+          </button>
+          <button className={tip === "yuzde" ? "aktif" : ""} onClick={() => setTip("yuzde")}>
+            Yüzde
+          </button>
+        </div>
+      </div>
+
+      <div className="alan">
+        <label>{tip === "yuzde" ? "Oran (%)" : kisiBasi ? "Kişi başı tutar (₺)" : "Tutar (₺)"}</label>
+        <input
+          value={deger}
+          onChange={(e) => setDeger(e.target.value)}
+          placeholder={tip === "yuzde" ? "10" : "25"}
+          inputMode="decimal"
+        />
+      </div>
+
+      <Anahtar
+        etiket="Siparişe kendiliğinden eklensin"
+        ipucu="Kapatırsanız tanım durur ama hesaba girmez; yetkisi olan personel masada elle ekler"
+        acik={otomatik}
+        degistir={setOtomatik}
+      />
+
+      <Bilgi>
+        {kisiBasi && tip === "tutar"
+          ? "Kuver misafir sayısıyla çarpılır. Misafir sayısı girilmemiş adisyona kuver yazılmaz — kuver kullanacaksanız \"Misafir sayısı zorunlu\" ayarını da açın."
+          : tip === "yuzde"
+            ? "Yüzde, indirim düşüldükten sonraki hesap tutarı üzerinden alınır."
+            : "Hesabın tamamına bir kez eklenir."}
+      </Bilgi>
+    </OrtaPencere>
   );
 }
 

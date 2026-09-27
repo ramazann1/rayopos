@@ -23244,7 +23244,8 @@ body:has(.up-fon, .menu-perde) {
   font-variant-numeric: tabular-nums;
 }
 
-.ts-saatler input.hatali {
+.ts-saatler input.hatali,
+.hrk-zaman input.hatali {
   border-color: #d90b16;
 }
 
@@ -23911,5 +23912,462 @@ body:has(.up-fon, .menu-perde) {
   .us-secenek {
     min-height: 44px;
     padding: 8px 10px;
+  }
+}
+
+/* Ortada açılan form penceresi (OrtaPencere.tsx). Eski çekmecenin içinden
+   açılan küçük pencereler (.panel-fon, z 40) üstünde kalsın diye bir kat aşağıda. */
+.pnc-fon {
+  position: fixed;
+  inset: 0;
+  z-index: 38;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(16, 24, 40, 0.5);
+  animation: us-belir var(--gecis);
+}
+
+.pnc-pencere {
+  display: flex;
+  flex-direction: column;
+  width: min(540px, 100%);
+  max-height: min(760px, calc(100vh - 32px));
+  border-radius: var(--r-bk);
+  background: var(--kart);
+  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.22);
+  overflow: hidden;
+}
+
+.pnc-ust {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px 14px;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.pnc-ust > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.pnc-im {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 107, 69, 0.12);
+  color: var(--mercan);
+  box-shadow: 0 0 0 6px rgba(255, 107, 69, 0.06);
+}
+
+.pnc-ust h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.pnc-ust p {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--soluk);
+}
+
+.pnc-kapat {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--r-kk);
+  background: var(--zemin);
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.pnc-govde {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 22px 18px;
+}
+
+.gdr-tutar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 16px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-or);
+  background: var(--kart-ust);
+  transition: border-color var(--gecis), box-shadow var(--gecis);
+}
+
+.gdr-tutar:focus-within {
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 3px rgba(255, 107, 69, 0.16);
+}
+
+.gdr-tutar span {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--soluk);
+}
+
+.gdr-tutar input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--metin);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.gdr-bolum {
+  margin-top: 16px;
+}
+
+.gdr-bolum > b,
+.gdr-alan label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.gdr-bolum > b svg,
+.gdr-alan label svg {
+  color: var(--soluk);
+}
+
+.gdr-secim {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gdr-secim button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-tam);
+  background: var(--kart);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--metin);
+  cursor: pointer;
+  transition: border-color var(--gecis), background var(--gecis);
+}
+
+.gdr-secim button:hover,
+.gdr-odeme button:hover {
+  border-color: var(--metin);
+}
+
+.gdr-secim button.secili,
+.gdr-odeme button.secili {
+  border-color: var(--metin);
+  background: var(--kart-ust);
+  box-shadow: inset 0 0 0 1px var(--metin);
+  font-weight: 600;
+}
+
+.gdr-secim .gdr-tur-ekle {
+  border-style: dashed;
+  color: var(--soluk);
+}
+
+.gdr-odeme {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.gdr-odeme button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 4px 8px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--metin);
+  cursor: pointer;
+  transition: border-color var(--gecis), background var(--gecis);
+}
+
+.gdr-odeme button svg {
+  color: var(--soluk);
+}
+
+.gdr-odeme button.secili svg {
+  color: var(--metin);
+}
+
+.gdr-ikili {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.gdr-ikili + .gdr-alan {
+  margin-top: 12px;
+}
+
+.gdr-alan input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  font: inherit;
+  font-size: 15px;
+  color: var(--metin);
+  outline: none;
+  transition: border-color var(--gecis), box-shadow var(--gecis);
+}
+
+.gdr-alan input:focus {
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 3px rgba(255, 107, 69, 0.16);
+}
+
+.gdr-alan input.hatali {
+  border-color: #d90b16;
+}
+
+.pnc-alt {
+  display: flex;
+  gap: 10px;
+  padding: 12px 22px;
+  border-top: 1px solid var(--cizgi);
+  background: var(--kart-ust);
+}
+
+.pnc-alt button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border-radius: var(--r-or);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pnc-sil {
+  width: 48px;
+  flex: none;
+  border: 1px solid rgba(224, 49, 49, 0.35);
+  background: var(--kart);
+  color: #d62828;
+}
+
+.pnc-vazgec {
+  flex: 1;
+  border: 1px solid var(--cizgi-koyu);
+  background: var(--kart);
+  color: var(--metin);
+}
+
+.pnc-kaydet {
+  flex: 1.4;
+  border: 0;
+  background: var(--mercan);
+  color: #fff;
+}
+
+.pnc-kaydet:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .pnc-ust,
+  .pnc-govde,
+  .pnc-alt {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .gdr-odeme {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .gdr-tutar input {
+    font-size: 26px;
+  }
+}
+
+.pnc-pencere.dar { width: min(440px, 100%); }
+.pnc-pencere.genis { width: min(680px, 100%); }
+
+/* Eski çekmeceden taşınan formların alanları: etiket koyu ve okunur,
+   seçili çip mercan dolgu yerine koyu çerçeve. */
+.pnc-govde .alan {
+  margin-bottom: 16px;
+}
+
+.pnc-govde .alan label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.pnc-govde .alan input,
+.pnc-govde .alan select,
+.pnc-govde .alan textarea {
+  border-color: var(--cizgi-koyu);
+  border-radius: var(--r-or);
+  background: var(--kart);
+}
+
+.pnc-govde .cip-secim {
+  gap: 8px;
+}
+
+.pnc-govde .cip-secim button {
+  min-height: 38px;
+  padding: 0 14px;
+  border-color: var(--cizgi-koyu);
+  font-weight: 500;
+}
+
+.pnc-govde .cip-secim button:hover {
+  border-color: var(--metin);
+  color: var(--metin);
+}
+
+.pnc-govde .cip-secim button.aktif {
+  border-color: var(--metin);
+  background: var(--kart-ust);
+  color: var(--metin);
+  box-shadow: inset 0 0 0 1px var(--metin);
+  font-weight: 600;
+}
+
+/* Personel penceresi iki sütun: solda kimlik, sağda ayarlar; uzun form
+   kaydırmadan sığsın. */
+.prs-sutunlar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 28px;
+}
+
+@media (max-width: 720px) {
+  .prs-sutunlar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pnc-pencere.cok-genis { width: min(1000px, 100%); }
+
+/* Yazıcı penceresi iki sütun: solda ad ve bağlantı, sağda fişler ve anahtarlar. */
+.yz-sutunlar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 32px;
+}
+
+.yz-sutunlar > div > .yz-bolum:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (max-width: 860px) {
+  .yz-sutunlar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ortadaki pencerede mercan yalnız Kaydet düğmesinde: seçimler ve anahtarlar
+   koyu tonda. */
+.pnc-govde .anahtar-satir.acik .anahtar {
+  background: var(--metin);
+}
+
+.pnc-govde .yz-kart.secili {
+  border-color: var(--metin);
+  background: var(--kart-ust);
+  color: var(--metin);
+  box-shadow: inset 0 0 0 1px var(--metin);
+}
+
+.pnc-govde .yz-secim-kutu.secili {
+  border-color: var(--metin);
+  background: var(--kart-ust);
+  box-shadow: inset 0 0 0 1px var(--metin);
+}
+
+.pnc-govde .yz-secim-kutu.secili .yz-secim-ikon {
+  background: var(--zemin);
+  color: var(--metin);
+}
+
+.pnc-govde .yz-secim-kutu.secili .yz-tik {
+  background: var(--metin);
+  border-color: var(--metin);
+}
+
+.pnc-govde .yz-cip.secili {
+  border-color: var(--metin);
+  background: var(--kart-ust);
+  color: var(--metin);
+  box-shadow: inset 0 0 0 1px var(--metin);
+  font-weight: 600;
+}
+
+.pnc-govde .mod-sec button {
+  border-color: var(--cizgi-koyu);
+  border-radius: var(--r-or);
+  font-family: inherit;
+  color: var(--metin);
+}
+
+.pnc-govde .mod-sec button.aktif {
+  border-color: var(--metin);
+  background: var(--kart-ust);
+  color: var(--metin);
+  box-shadow: inset 0 0 0 1px var(--metin);
+  font-weight: 600;
+}
+
+/* Uzun form iki sütuna bölünür: solda tanım alanları, sağda anahtarlar. */
+.pnc-sutunlar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 28px;
+}
+
+@media (max-width: 720px) {
+  .pnc-sutunlar {
+    grid-template-columns: 1fr;
   }
 }
