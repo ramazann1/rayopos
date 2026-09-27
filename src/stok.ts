@@ -74,6 +74,11 @@ export type Malzeme = {
   sonAlisFiyati: number | null;
   ortalamaMaliyet: number | null;
   aktif: boolean;
+  /**
+   * Doluysa malzeme mutfakta hazırlanıyor (sos, hamur): tarifi bu kadar
+   * çıkarır, en küçük birimde. Satışta tarifindeki hammaddeler düşer.
+   */
+  tarifMiktari: number | null;
 };
 
 /** Malzeme kartında kişinin düzenleyebildiği alanlar — miktar burada yok. */
@@ -84,6 +89,7 @@ export type MalzemeAlanlari = {
   birim: OlcuKodu;
   kritikSeviye: number;
   aktif: boolean;
+  tarifMiktari: number | null;
 };
 
 /** Kritik seviyenin altına düşmüş mü — 0 "takip etme" demek. */
@@ -143,7 +149,7 @@ export async function malzemeleriGetir(): Promise<Malzeme[]> {
   const { data } = await supabase
     .from("malzemeler")
     .select(
-      "id, grup_id, ad, kod, birim, kritik_seviye, miktar, son_alis_fiyati, ortalama_maliyet, aktif, malzeme_gruplari(ad)"
+      "id, grup_id, ad, kod, birim, kritik_seviye, miktar, son_alis_fiyati, ortalama_maliyet, aktif, tarif_miktari, malzeme_gruplari(ad)"
     )
     .order("ad");
   return ((data as any[]) ?? []).map((m) => ({
@@ -158,6 +164,7 @@ export async function malzemeleriGetir(): Promise<Malzeme[]> {
     sonAlisFiyati: m.son_alis_fiyati == null ? null : Number(m.son_alis_fiyati),
     ortalamaMaliyet: m.ortalama_maliyet == null ? null : Number(m.ortalama_maliyet),
     aktif: m.aktif,
+    tarifMiktari: m.tarif_miktari,
   }));
 }
 
@@ -168,15 +175,21 @@ const satira = (a: MalzemeAlanlari) => ({
   birim: a.birim,
   kritik_seviye: a.kritikSeviye,
   aktif: a.aktif,
+  tarif_miktari: a.tarifMiktari,
 });
 
-export async function malzemeEkle(alanlar: MalzemeAlanlari) {
-  const { error } = await supabase.from("malzemeler").insert(satira(alanlar));
-  if (error) {
+export async function malzemeEkle(alanlar: MalzemeAlanlari): Promise<number> {
+  const { data, error } = await supabase
+    .from("malzemeler")
+    .insert(satira(alanlar))
+    .select("id")
+    .single();
+  if (error || !data) {
     throw new Error(
-      error.code === "23505" ? "Bu adda bir malzeme zaten var." : "Malzeme eklenemedi."
+      error?.code === "23505" ? "Bu adda bir malzeme zaten var." : "Malzeme eklenemedi."
     );
   }
+  return data.id;
 }
 
 /**
@@ -193,7 +206,7 @@ export async function hazirUrunMalzemesi(ad: string): Promise<Malzeme> {
 
   const { error } = await supabase
     .from("malzemeler")
-    .insert(satira({ grupId: null, ad: temiz, kod: "", birim: "adet", kritikSeviye: 0, aktif: true }));
+    .insert(satira({ grupId: null, ad: temiz, kod: "", birim: "adet", kritikSeviye: 0, aktif: true, tarifMiktari: null }));
   if (error) throw new Error("Stok kaydı açılamadı. Stok yönetme yetkiniz olmayabilir.");
 
   const yeni = (await malzemeleriGetir()).find((m) => m.ad === temiz);
@@ -208,7 +221,11 @@ export async function malzemeGuncelle(id: number, alanlar: MalzemeAlanlari) {
     .eq("id", id);
   if (error) {
     throw new Error(
-      error.code === "23505" ? "Bu adda bir malzeme zaten var." : "Malzeme kaydedilemedi."
+      error.code === "23505"
+        ? "Bu adda bir malzeme zaten var."
+        : error.code === "P0001"
+          ? error.message
+          : "Malzeme kaydedilemedi."
     );
   }
 }

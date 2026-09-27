@@ -107,6 +107,50 @@ export async function receteYaz(porsiyonId: number, satirlar: ReceteSatiri[]) {
   }
 }
 
+/** Mutfakta hazırlanan malzemenin tarifi: hangi hammaddeden ne kadar. */
+export type TarifSatiri = { malzemeId: number; miktar: number };
+
+export async function tarifGetir(malzemeId: number): Promise<TarifSatiri[]> {
+  const { data } = await supabase
+    .from("recete_satirlari")
+    .select("malzeme_id, miktar")
+    .eq("sahip_malzeme_id", malzemeId)
+    .order("sira")
+    .order("id");
+  return ((data as any[]) ?? []).map((r) => ({ malzemeId: r.malzeme_id, miktar: r.miktar }));
+}
+
+/** Porsiyon reçetesi gibi baştan yazılıyor. */
+export async function tarifYaz(malzemeId: number, satirlar: TarifSatiri[]) {
+  const { error: silme } = await supabase
+    .from("recete_satirlari")
+    .delete()
+    .eq("sahip_malzeme_id", malzemeId);
+  if (silme) throw new Error("Tarif kaydedilemedi.");
+
+  const temiz = satirlar.filter((s) => s.malzemeId && s.miktar > 0);
+  if (temiz.length === 0) return;
+
+  const { error } = await supabase.from("recete_satirlari").insert(
+    temiz.map((s, i) => ({
+      sahip_malzeme_id: malzemeId,
+      malzeme_id: s.malzemeId,
+      miktar: s.miktar,
+      tip: "normal",
+      sira: i,
+    }))
+  );
+  if (error) {
+    throw new Error(
+      error.code === "P0001"
+        ? error.message
+        : error.code === "23505"
+          ? "Aynı malzeme tarifte iki kez yazılamaz."
+          : "Tarif kaydedilemedi."
+    );
+  }
+}
+
 /**
  * Çıkarılan malzemenin sepette ve mutfakta okunan hâli: "Soğansız". Tek
  * kelimede ek ünlü uyumuyla geliyor; "kaşar peyniri" gibi tamlamaya ek

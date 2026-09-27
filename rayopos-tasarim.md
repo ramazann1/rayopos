@@ -1,10 +1,39 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (27 Eyl 2026 güncellendi — reçete tipi seansı)
+## 0. SIRADAKİ İŞ (28 Eyl 2026 güncellendi — ara reçete ve üretim seansı)
 
-> **YENİ SEANSIN BAŞI: 6. madde — iç içe reçete + Üretim ekranı, önce
-> Adisyo turu.** 1-3 dışarıdan bekliyor.
+> **YENİ SEANSIN BAŞI: 6. madde — stok modülünün iki küçük artığı** (giriş
+> formlarındaki tarih kutuları + üretimin telefonda gözle denenmesi). Sonra
+> 4. madde. 1-3 dışarıdan bekliyor.
+>
+> **BİTTİ (27-28 Eyl 2026): ara reçete + Üretim — stok modülünün son büyük
+> parçası.** Adisyo turu yol haritası 12.2'de (orada üretim yok, KÜLBASTI SOS
+> −91). Kararlar yukarıdaki 6. maddenin altında; yapılanlar:
+> - `sql/2026-09-27-ara-recete-uretim.sql` ve `sql/2026-09-28-sos-firesi.sql`
+>   (ikisi de canlıda çalıştırıldı). `malzemeler.tarif_miktari` doluysa malzeme
+>   "mutfakta hazırlanıyor"; tarif parti olarak yazılır ("2 kg çıkarır").
+>   Satışta `recete_acilimi` görünümü sosu ve tarifindeki hammaddeleri birlikte
+>   düşürür; "salsasız" ikisini de düşürmez. Sosun maliyeti tariften hesaplanır
+>   (hammadde fiyatı değişince kendiliğinden tazelenir); stok değerine girmez;
+>   sosun içine sos yazılamaz (tek kat).
+> - Hareket tipi **Üretim** (mor): yalnız sosun stoğunu artırır. Tarife yetecek
+>   hammadde görünmüyorsa **uyarı penceresi** çıkar, kayıt engellenmez
+>   (Ramazan: "uyarı olsun, engellenmesin").
+> - **Sos firesi/çıkışı** tarifindeki hammaddeleri aynı fişte düşürür
+>   (Ramazan kararı). Bu satırlar sosun satırına bağlıdır (`bagli_hareket_id`),
+>   fişte "tariften" etiketiyle görünür, tek başına düzenlenip silinemez; sos
+>   satırı düzeltilince oranla değişir. Tutar hammaddelerde, sos satırı ₺0.
+> - **Yeni pencere dili** (Ramazan çok beğendi): üretim uyarısı, satıştaki
+>   "stok yetersiz" (`OnayModal` bu mesajı tabloya çeviriyor) ve seçenekli
+>   ürün penceresi (`UrunSecim`, `us-` sınıfları). Telefonda da ortada açılır;
+>   açılışta yalnız saydamlık animasyonu (ölçek ve bulanık arka plan telefonda
+>   titretiyordu).
+> - Chrome'da uçtan uca denendi: tarif maliyeti, üretim, satış düşümü, salsasız,
+>   iptal, sos firesi + düzeltme + silme, uyarı pencereleri. Deneme verisi
+>   silindi; Ramazan'ın kendi "salsa" malzemesi duruyor.
+> - Bilinen sınır: tarifi değiştirmek **menüyü düzenleme** yetkisi istiyor
+>   (reçete tablosunun yetkisi); stok yetkisi yetmiyor.
 >
 > **BİTTİ (27 Eyl 2026): reçete tipi — "soğansız", "+ jambon".**
 > Adisyo turu: yol haritası 12.1.1. Terimler Adisyo'dan farklı (Ramazan):
@@ -160,20 +189,33 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **STOK MODÜLÜ — kalan tek iş: iç içe reçete + Üretim ekranı.**
+> 6. **STOK MODÜLÜ — yalnız iki küçük artık kaldı:** (a) giriş formlarındaki
+>    `type="date"` kutuları (gider, stok hareketi) hâlâ Chrome takvimi, ortak
+>    tarih kutusuna geçecek; (b) ara reçete / üretim / yeni pencereler
+>    telefonda gözle denenecek (ürün seçim penceresi telefonda denendi).
 >    Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
 >    ürün stok takibi, eksi stok engeli (25 Eyl), fire/çıkış raporu, geçmiş
->    sayımlar (26 Eyl), reçete tipi (27 Eyl) bitti (aşağıda). Küçük işler
+>    sayımlar (26 Eyl), reçete tipi (27 Eyl), ara reçete + üretim (28 Eyl)
+>    bitti (aşağıda). Küçük işler
 >    kapandı: mobil alt sekme kapsülü olduğu gibi kalıyor (Ramazan), Kârlılık
 >    telefona gelmiyor ("telefonda ne gerek var"), geçmiş sayımlar telefonda
 >    doğrulandı, "Tutar bilinmiyor" hata değil (23 Eyl sayımları maliyet
 >    dondurulmadan önce).
->    **Önce Adisyo turu** (yol haritası 12.2'de yalnız KÜLBASTI SOS örneği
->    var; Adisyo'da üretim/yarı mamul ekranı nasıl, bakılmadı).
->    - **İç içe reçete** (yarı mamul: kendi reçetesi olan malzeme, "kremalı
->      mantar sosu"). Tablo buna hazır (`sahip_malzeme_id` sütunu baştan
->      kondu) ama ekranı yok; bir de **Üretim ekranı** gerekiyor ("bugün 5 kg
->      sos yaptım" → krema/mantar düşer, sos stoğu artar).
+    **KARAR (27 Eyl 2026, Ramazan) — ara reçete + Üretim ekranı:**
+>    Adisyo turu (yol haritası 12.2): orada üretim yok, sos stoğu −91.
+>    - Sos gibi malzeme **ara reçete** taşır. Satışta sosun reçetesi açılır,
+>      **hammaddeler düşer** (mutfak üretim girmese de malzeme stoğu doğru).
+>    - Satışta **sos stoğu da** kullanılan kadar düşer.
+>    - **Üretim** ("5 kg salsa yaptık") yalnız **sos stoğunu artırır**,
+>      hammaddeye dokunmaz — böylece hiçbir şey iki kez düşmez.
+>    - Sos stoğu "hazırda ne kadar var" bilgisidir: **para değeri yok**
+>      (maliyet/stok değerine girmez), **eksi stok engeli uygulanmaz**, eksiye
+>      düşmesi "üretim girilmemiş" demektir.
+>    - Üretim, Hareketler'de Giriş/Fire/Çıkış'ın yanında bir hareket tipi
+>      (yeni hareket penceresinde seçilir, şeritte kendi sekmesi var).
+>    - (28 Eyl) Sosun firesi hammaddeleri de düşürür; üretimde hammadde
+>      yetmiyorsa uyarı çıkar ama kayıt engellenmez.
+>    - Tasarım: modern, sade, mercan az (Ramazan).
 >
 > **Yapılanlar (26 Eyl 2026 — fire/çıkış raporu, geçmiş sayımlar):**
 > - **Fire ve çıkış maliyeti** (`sql/2026-09-25-fire-maliyeti.sql`, canlıda

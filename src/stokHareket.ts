@@ -23,6 +23,11 @@ export const HAREKET_TIPLERI = [
   },
   { kod: "fire", ad: "Fire", fiil: "Fire", fiyatli: false, yon: -1 },
   { kod: "cikis", ad: "Çıkış", fiil: "Çıkan", fiyatli: false, yon: -1 },
+  /**
+   * Mutfakta hazırlanan malzeme (sos, hamur). Yalnız onun stoğu artar;
+   * hammaddeler satışta düşüyor, burada da düşselerdi iki kez düşerlerdi.
+   */
+  { kod: "uretim", ad: "Üretim", fiil: "Hazırlanan", fiyatli: false, yon: 1 },
 ] as const;
 
 export type HareketTipi = (typeof HAREKET_TIPLERI)[number]["kod"];
@@ -97,6 +102,8 @@ export type Hareket = {
   zaman: string;
   kisi: string;
   aciklama: string;
+  /** Hazırlanan malzemenin firesinden gelen hammadde satırı; tek başına düzeltilmez. */
+  bagli: boolean;
 };
 
 /**
@@ -154,7 +161,7 @@ export async function hareketleriGetir(
   let sorgu = supabase
     .from("stok_hareketleri")
     .select(
-      "id, belge_id, tip, malzeme_id, malzeme_ad, miktar, onceki, sonraki, birim_maliyet, zaman, malzemeler(birim), stok_belgeleri(sebep, aciklama, kisi_ad)"
+      "id, belge_id, tip, malzeme_id, malzeme_ad, miktar, onceki, sonraki, birim_maliyet, zaman, bagli_hareket_id, malzemeler(birim), stok_belgeleri(sebep, aciklama, kisi_ad)"
     )
     // Satış düşümü defterde duruyor ama bu ekranda gösterilmiyor: günde yüz
     // elli adisyon alış ve fire fişlerini listenin dibine iterdi.
@@ -181,6 +188,7 @@ export async function hareketleriGetir(
     zaman: h.zaman,
     kisi: h.stok_belgeleri?.kisi_ad ?? "",
     aciklama: h.stok_belgeleri?.aciklama ?? "",
+    bagli: h.bagli_hareket_id != null,
   }));
 }
 

@@ -1315,6 +1315,20 @@ Opsiyonel), sipariş kaydedilmedi, ürün sonra silindi.
 (KREMA 1 · MANTAR 0,4 · TEREYAĞI 0,01), hem kendi stoğu tutuluyor. Yani yarı
 mamul = reçetesi olan hammadde. RayoPOS'da da malzeme reçeteli olabilmeli.
 
+**27 Eyl 2026 turu (KÜLBASTI SOS):**
+- Yarı mamul ayrı bir tür değil: HAMMADDE kategorisinde sıradan bir ürün,
+  "Satış Ekranında Göster" kapalı, "Reçeteli ürün kullan" açık, yedi satırlık
+  reçete (SIVI YAĞ, DOMATES SALÇASI, SRİRACHO 0,15, YOĞURT 0,2, SOYA SOS
+  0,025, TUZ 0,005, KARABİBER 0,0075). Reçete 1 birim sos içindir.
+- Maliyet Tutarı kilitli, reçeteden hesaplanıyor.
+- "Stok takibi yap" açık, stok **−91,025**. **Üretim ekranı yok:** Stok
+  İşlemleri'nde yalnız Stok Sayımı ve Yeni Stok Girişi var, İşlem Tipi
+  süzgecinde de bu ikisi. Sos yapıldığında stoğa sokmanın yolu yok, satıldıkça
+  eksiye gidiyor. İşletmeci bunu elle girişle ya da sayımla düzeltmek zorunda
+  ve o zaman krema/yoğurt stoktan düşmüyor.
+- Sonuç: Adisyo'da iç içe reçete yalnız **maliyet** için işe yarıyor, stokta
+  yarım. RayoPOS'un Üretim ekranı buradaki açığı kapatır.
+
 ### 12.3 İki stok işlemi, tek tablo
 - **Yeni Stok Girişi** (`/app/stock/0/3`): girilen sayı **eklenir**. Başlıkta
   *Fatura Tarihi* + *Açıklama*.

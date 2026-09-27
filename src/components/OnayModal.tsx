@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PackageX } from "lucide-react";
 
 /**
  * Mesajın içinde *yıldız arasına* alınan parçalar koyu yazılıyor. Masa adı,
@@ -9,6 +10,23 @@ function vurgula(mesaj: string) {
   return mesaj.split(/\*(.+?)\*/g).map((parca, i) =>
     i % 2 === 1 ? <strong key={i}>{parca}</strong> : parca
   );
+}
+
+/**
+ * Veritabanının "stok yetersiz" mesajı: "*LATTE* için stok yetersiz" ve altında
+ * "*süt*: 1 lt var, 3 lt gerekiyor" satırları. Tablo olarak gösterilsin diye
+ * parçalara ayrılıyor; biçim tutmazsa düz mesaj olarak kalıyor.
+ */
+function stokEksigi(mesaj: string) {
+  const [ilk, ...geri] = mesaj.split("\n");
+  const baslik = ilk.match(/^\*(.+)\* için stok yetersiz$/);
+  if (!baslik || geri.length === 0) return null;
+  const satirlar = geri.map((s) => s.match(/^\*(.+)\*: (.+) var, (.+) gerekiyor$/));
+  if (satirlar.some((s) => !s)) return null;
+  return {
+    urun: baslik[1],
+    satirlar: satirlar.map((s) => ({ ad: s![1], stok: s![2], gereken: s![3] })),
+  };
 }
 
 type Props = {
@@ -54,6 +72,38 @@ export default function OnayModal({
 
   const sebep = secili === "diger" ? serbest.trim() : secili;
   const onaylanabilir = !sebepler || !!sebep;
+
+  const stok = stokEksigi(mesaj);
+  if (stok && tekTus) {
+    return (
+      <div className="onay-fon" onClick={(e) => { e.stopPropagation(); onKapat(); }}>
+        <div className="urt-uyari" onClick={(e) => e.stopPropagation()}>
+          <span className="urt-uyari-im tehlike"><PackageX size={24} /></span>
+          <h3>Stok yetersiz</h3>
+          <p>{vurgula(`*${stok.urun}* için gereken malzeme stokta yok.`)}</p>
+
+          <div className="urt-uyari-liste">
+            <div className="urt-uyari-bas">
+              <span>Malzeme</span>
+              <span>Gereken</span>
+              <span>Stokta</span>
+            </div>
+            {stok.satirlar.map((s) => (
+              <div key={s.ad} className="urt-uyari-satir">
+                <b>{s.ad}</b>
+                <span>{s.gereken}</span>
+                <em>{s.stok}</em>
+              </div>
+            ))}
+          </div>
+
+          <footer>
+            <button className="up-tus kaydet" autoFocus onClick={onKapat}>Tamam</button>
+          </footer>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="onay-fon" onClick={(e) => { e.stopPropagation(); onKapat(); }}>

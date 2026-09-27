@@ -10,7 +10,7 @@ import {
   type Donem as StokDonemi,
 } from "./TarihSuzgeci";
 
-const TIP_SIRASI = ["giris", "satis", "fire", "cikis", "sayim"];
+const TIP_SIRASI = ["giris", "uretim", "satis", "fire", "cikis", "sayim"];
 
 const zamanMetni = (t: string, saatli: boolean) =>
   new Date(t).toLocaleString("tr-TR", {

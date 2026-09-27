@@ -14,9 +14,11 @@ import {
   StickyNote,
   Tag,
   Trash2,
+  TriangleAlert,
   UserRound,
   X,
 } from "lucide-react";
+import { tarifGetir } from "../recete";
 import SaatKutusu from "../components/SaatKutusu";
 import StokBasligi from "../components/StokBasligi";
 import AramaKutusu from "../components/AramaKutusu";
@@ -113,6 +115,10 @@ function fisleriKur(hareketler: Hareket[]): Fis[] {
     if (h.birimMaliyet != null) {
       f.tutar = (f.tutar ?? 0) + Math.abs(h.miktar) * h.birimMaliyet;
     }
+  }
+  // Sosun firesinde tariften düşen hammaddeler sosun altında okunsun.
+  for (const f of fisler.values()) {
+    f.kalemler.sort((a, b) => Number(a.bagli) - Number(b.bagli));
   }
   return [...fisler.values()];
 }
@@ -420,6 +426,7 @@ function FisPenceresi({
               <div key={h.id} className="sfis-kalem">
                 <span className="sfis-kalem-ad">
                   <Package size={15} /> {h.malzemeAd}
+                  {h.bagli && <small className="sfis-bagli">tariften</small>}
                 </span>
 
                 {/* Eski → değişim → yeni: stoğun o an ne olduğu değil, nasıl
@@ -436,11 +443,12 @@ function FisPenceresi({
                 </span>
 
                 <span className="sfis-kalem-fiyat">
-                  {h.birimMaliyet != null &&
+                  {/* Sosun satırı ₺0: tutarı tariften düşen hammaddeler taşıyor. */}
+                  {h.birimMaliyet != null && !(h.birimMaliyet === 0 && fis.kalemler.some((k) => k.bagli)) &&
                     `${paraGoster(h.birimMaliyet * (tabanaCevir(1, h.birim) || 1))} / ${olcuKisa(h.birim)}`}
                 </span>
 
-                {duzenlenir && (
+                {duzenlenir && !h.bagli && (
                   <span className="sfis-kalem-islem">
                     <button onClick={() => onDuzenle(h)} title="Düzenle" aria-label="Düzenle">
                       <Pencil size={15} />
@@ -499,14 +507,25 @@ function HareketPenceresi({
   const [sebep, setSebep] = useState<string | null>(null);
   const [aciklama, setAciklama] = useState("");
   const [satirlar, setSatirlar] = useState<Satir[]>([bosSatir()]);
+  const [eksikler, setEksikler] = useState<Eksik[] | null>(null);
 
   const bilgi = tipBilgisi(tip);
   const sebepler = SEBEPLER[tip] ?? [];
+
+  // Üretimde yalnız mutfakta hazırlanan malzemeler seçilir; sos satın
+  // alınmadığı için girişte o çıkmaz.
+  const secilebilir =
+    tip === "uretim"
+      ? malzemeler.filter((m) => m.tarifMiktari != null)
+      : tip === "giris"
+        ? malzemeler.filter((m) => m.tarifMiktari == null)
+        : malzemeler;
 
   const tipDegis = (yeni: HareketTipi) => {
     setTip(yeni);
     // Sebep listesi tipe bağlı; eski seçim yeni tipte geçersiz olurdu.
     setSebep(null);
+    if (yeni === "uretim" || tip === "uretim") setSatirlar([bosSatir()]);
   };
 
   const satirDegis = (i: number, parca: Partial<Satir>) =>
@@ -542,11 +561,39 @@ function HareketPenceresi({
   // İşletme eksi stoğa izin vermiyorsa sonucu eksiye düşüren satır kaydı
   // durdurur. İzin açıkken (varsayılan) eksi stok engel değil: malzeme girişi
   // geç kalabiliyor, satış durursa işletme duruyor — kırmızı görünür, geçer.
-  const eksiye = dolu.some((s) => (yeniMiktar(s) ?? 0) < 0);
+  // Hazırlanan sosun stoğu yalnız bilgi; eksiye düşmesi kaydı durdurmaz.
+  const eksiye = dolu.some(
+    (s) => malzeme(s.malzemeId)?.tarifMiktari == null && (yeniMiktar(s) ?? 0) < 0
+  );
   const eksiEngel = eksiye && !ayarlar().eksiStokIzin;
 
   const gecerli =
     dolu.length > 0 && !tekrar && !sebepGerekli && !eksiEngel && tarih !== "" && saat !== "";
+
+  /**
+   * Üretimde hammadde düşmüyor ama tarifine yetecek kadarı görünmüyorsa bu
+   * genelde girilmemiş bir alışın izi. Kayıt durmuyor, işletmeci sosu yaparken
+   * fark etsin diye söyleniyor — satışta fark etmekten iyi.
+   */
+  const denetle = async () => {
+    if (tip !== "uretim") return kaydet();
+    const gereken = new Map<number, number>();
+    for (const s of dolu) {
+      const sos = malzeme(s.malzemeId)!;
+      const miktar = tabanaCevir(miktarSayi(s.miktar)!, sos.birim);
+      for (const t of await tarifGetir(sos.id)) {
+        const pay = Math.round((miktar * t.miktar) / (sos.tarifMiktari ?? 1));
+        gereken.set(t.malzemeId, (gereken.get(t.malzemeId) ?? 0) + pay);
+      }
+    }
+    const liste: Eksik[] = [];
+    for (const [id, miktar] of gereken) {
+      const h = malzemeler.find((m) => m.id === id);
+      if (h && h.miktar < miktar) liste.push({ ad: h.ad, birim: h.birim, gereken: miktar, stok: h.miktar });
+    }
+    if (liste.length) setEksikler(liste);
+    else kaydet();
+  };
 
   const kaydet = () => {
     const kalemler: BelgeKalemi[] = dolu.map((s) => {
@@ -596,6 +643,7 @@ function HareketPenceresi({
                 <option value="giris">Giriş — mal alımı</option>
                 <option value="fire">Fire — döküldü, bozuldu, kırıldı</option>
                 <option value="cikis">Çıkış — personel, iade, numune</option>
+                <option value="uretim">Üretim — mutfakta hazırlanan sos, hamur</option>
               </select>
             </div>
 
@@ -650,7 +698,7 @@ function HareketPenceresi({
                   className={bilgi.fiyatli ? "hrk-satir-giris fiyatli" : "hrk-satir-giris"}
                 >
                   <MalzemeSecici
-                    malzemeler={malzemeler}
+                    malzemeler={secilebilir}
                     secili={m ?? null}
                     sec={(id) => satirDegis(i, { malzemeId: id })}
                   />
@@ -721,6 +769,14 @@ function HareketPenceresi({
             />
           </div>
 
+          {tip === "uretim" && (
+            <p className="hrk-uyari bilgi">
+              {secilebilir.length === 0
+                ? "Mutfakta hazırlanan malzeme yok. Malzemeler ekranında bir malzemenin tarifini açın."
+                : "Yalnız hazırlanan malzemenin stoğu artar. Tarifindeki hammaddeler satıldıkça düşer."}
+            </p>
+          )}
+
           {tekrar && (
             <p className="hrk-uyari">
               Aynı malzeme birden çok satırda. Tek satırda toplayın, yoksa
@@ -742,8 +798,72 @@ function HareketPenceresi({
             {bilgi.fiyatli && toplam > 0 && ` · toplam ${paraGoster(toplam)}`}
           </span>
           <button className="up-tus vazgec" onClick={onKapat}>Vazgeç</button>
-          <button className="up-tus kaydet" disabled={!gecerli} onClick={kaydet}>
+          <button className="up-tus kaydet" disabled={!gecerli} onClick={denetle}>
             <Check size={16} /> Kaydet
+          </button>
+        </footer>
+      </div>
+
+      {eksikler && (
+        <EksikHammadde
+          eksikler={eksikler}
+          onVazgec={() => setEksikler(null)}
+          onKaydet={() => {
+            setEksikler(null);
+            kaydet();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+type Eksik = { ad: string; birim: string; gereken: number; stok: number };
+
+function EksikHammadde({
+  eksikler,
+  onVazgec,
+  onKaydet,
+}: {
+  eksikler: Eksik[];
+  onVazgec: () => void;
+  onKaydet: () => void;
+}) {
+  return (
+    <div
+      className="up-fon ust"
+      onClick={(e) => {
+        e.stopPropagation();
+        onVazgec();
+      }}
+    >
+      <div className="urt-uyari" onClick={(e) => e.stopPropagation()}>
+        <span className="urt-uyari-im"><TriangleAlert size={24} /></span>
+        <h3>Hammadde yetmiyor görünüyor</h3>
+        <p>
+          Tarife göre gereken miktar stokta yok. Mal girişi eksik kalmış olabilir;
+          üretim yine de kaydedilir.
+        </p>
+
+        <div className="urt-uyari-liste">
+          <div className="urt-uyari-bas">
+            <span>Hammadde</span>
+            <span>Gereken</span>
+            <span>Stokta</span>
+          </div>
+          {eksikler.map((e) => (
+            <div key={e.ad} className="urt-uyari-satir">
+              <b>{e.ad}</b>
+              <span>{miktarGoster(e.gereken, e.birim)}</span>
+              <em>{miktarGoster(e.stok, e.birim)}</em>
+            </div>
+          ))}
+        </div>
+
+        <footer>
+          <button className="up-tus vazgec" onClick={onVazgec}>Geri dön</button>
+          <button className="up-tus kaydet" onClick={onKaydet}>
+            <Check size={16} /> Yine de kaydet
           </button>
         </footer>
       </div>

@@ -2,6 +2,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ClipboardCheck,
+  CookingPot,
   History,
   ShoppingBag,
   Trash2,
@@ -14,5 +15,6 @@ export function StokTipIkonu({ tip, boy = 17 }: { tip: string; boy?: number }) {
   if (tip === "cikis") return <ArrowUpRight size={boy} />;
   if (tip === "sayim") return <ClipboardCheck size={boy} />;
   if (tip === "satis") return <ShoppingBag size={boy} />;
+  if (tip === "uretim") return <CookingPot size={boy} />;
   return <History size={boy} />;
 }

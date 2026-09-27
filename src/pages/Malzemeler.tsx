@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleAlert,
+  CookingPot,
   History,
   Layers,
   Package,
@@ -32,6 +33,7 @@ import { renkler } from "../components/RenkSecici";
 import { eslesiyor } from "../arama";
 import { useKutuBoyu } from "../kutuBoyu";
 import { yetkiVar } from "../oturum";
+import { tarifGetir, tarifYaz, type TarifSatiri } from "../recete";
 import {
   OLCULER,
   gruplariGetir,
@@ -61,8 +63,12 @@ import {
 const olcuFiyati = (tabanFiyat: number, birim: OlcuKodu) =>
   `${paraGoster(tabanFiyat * tabanaCevir(1, birim))} / ${olcuKisa(birim)}`;
 
+// Hazırlanan sosun stoğu para sayılmıyor: içindeki domates hâlâ domates
+// stoğunda duruyor, sos da sayılsaydı aynı mal iki kez değer taşırdı.
 const stokDegerHesapla = (m: Malzeme) =>
-  m.ortalamaMaliyet == null || m.miktar <= 0 ? null : m.miktar * m.ortalamaMaliyet;
+  m.ortalamaMaliyet == null || m.miktar <= 0 || m.tarifMiktari != null
+    ? null
+    : m.miktar * m.ortalamaMaliyet;
 
 export default function Malzemeler() {
   const [gruplar, setGruplar] = useState<MalzemeGrubu[]>([]);
@@ -124,12 +130,15 @@ export default function Malzemeler() {
     }
   };
 
-  const kaydet = async (alanlar: MalzemeAlanlari) => {
+  const kaydet = async (alanlar: MalzemeAlanlari, tarif: TarifSatiri[] | null) => {
     const duzenlenen = panel;
-    await isle(
-      () => (duzenlenen ? malzemeGuncelle(duzenlenen.id, alanlar) : malzemeEkle(alanlar)),
-      duzenlenen ? "Malzeme güncellendi" : "Malzeme eklendi"
-    );
+    await isle(async () => {
+      let id = duzenlenen?.id;
+      if (id) await malzemeGuncelle(id, alanlar);
+      else id = await malzemeEkle(alanlar);
+      // Tarif kapatılınca satırlarını veritabanı siliyor.
+      if (tarif) await tarifYaz(id, tarif);
+    }, duzenlenen ? "Malzeme güncellendi" : "Malzeme eklendi");
     setPanel(undefined);
   };
 
@@ -273,13 +282,26 @@ export default function Malzemeler() {
                       style={grup?.renk ? { ["--satir-renk" as any]: grup.renk } : undefined}
                     >
                       <span className="stok-im">
-                        {eksi ? <PackageX size={18} /> : kritik ? <TriangleAlert size={18} /> : <Package size={18} />}
+                        {eksi ? (
+                          <PackageX size={18} />
+                        ) : kritik ? (
+                          <TriangleAlert size={18} />
+                        ) : m.tarifMiktari != null ? (
+                          <CookingPot size={18} />
+                        ) : (
+                          <Package size={18} />
+                        )}
                       </span>
 
                       <span className="stok-ad">
                         {m.ad}
                         <small>
-                          {[grup?.ad, m.kod, m.aktif ? null : "Kullanım dışı"]
+                          {[
+                            m.tarifMiktari != null ? "Mutfakta hazırlanıyor" : null,
+                            grup?.ad,
+                            m.kod,
+                            m.aktif ? null : "Kullanım dışı",
+                          ]
                             .filter(Boolean)
                             .join(" · ") || "Grupsuz"}
                         </small>
@@ -302,7 +324,9 @@ export default function Malzemeler() {
                             <>
                               {olcuFiyati(m.ortalamaMaliyet, m.birim)}
                               <small>
-                                {stokDegerHesapla(m) == null
+                                {m.tarifMiktari != null
+                                  ? "Tariften"
+                                  : stokDegerHesapla(m) == null
                                   ? "Stok değeri yok"
                                   : `Stok değeri ${paraGoster(stokDegerHesapla(m)!)}`}
                               </small>
@@ -352,6 +376,7 @@ export default function Malzemeler() {
       {panel !== undefined && (
         <MalzemePaneli
           malzeme={panel}
+          malzemeler={liste}
           gruplar={gruplar}
           onKapat={() => setPanel(undefined)}
           onKaydet={kaydet}
@@ -513,6 +538,7 @@ function GrupSuzgeci({
 /** Malzeme kartı. Miktar alanı bilerek yok: stok yalnız hareketle değişir. */
 function MalzemePaneli({
   malzeme,
+  malzemeler,
   gruplar,
   onKapat,
   onKaydet,
@@ -521,9 +547,10 @@ function MalzemePaneli({
   onGecmis,
 }: {
   malzeme: Malzeme | null;
+  malzemeler: Malzeme[];
   gruplar: MalzemeGrubu[];
   onKapat: () => void;
-  onKaydet: (alanlar: MalzemeAlanlari) => void;
+  onKaydet: (alanlar: MalzemeAlanlari, tarif: TarifSatiri[] | null) => void;
   onSil?: () => void;
   onGruplar: () => void;
   onGecmis?: () => void;
@@ -539,8 +566,42 @@ function MalzemePaneli({
       : ""
   );
 
+  const [hazirlanir, setHazirlanir] = useState(malzeme?.tarifMiktari != null);
+  const [tarifMiktar, setTarifMiktar] = useState(
+    malzeme?.tarifMiktari != null
+      ? String(olcuyeCevir(malzeme.tarifMiktari, malzeme.birim)).replace(".", ",")
+      : "1"
+  );
+  const [tarif, setTarif] = useState<TarifTaslagi[]>([]);
+
+  useEffect(() => {
+    if (malzeme?.tarifMiktari == null) return;
+    tarifGetir(malzeme.id).then((satirlar) =>
+      setTarif(
+        satirlar.map((t) => {
+          const h = malzemeler.find((m) => m.id === t.malzemeId);
+          return {
+            malzemeId: t.malzemeId,
+            miktar: h ? String(olcuyeCevir(t.miktar, h.birim)).replace(".", ",") : String(t.miktar),
+          };
+        })
+      )
+    );
+  }, [malzeme?.id]);
+
   const kritikDeger = miktarSayi(kritik);
-  const gecerli = ad.trim() !== "" && (kritikDeger === undefined || kritikDeger >= 0);
+  const tarifDeger = miktarSayi(tarifMiktar);
+  const tarifSatirlari = tarif
+    .map((t): TarifSatiri | null => {
+      const h = malzemeler.find((m) => m.id === t.malzemeId);
+      const deger = miktarSayi(t.miktar);
+      return h && deger && deger > 0 ? { malzemeId: h.id, miktar: tabanaCevir(deger, h.birim) } : null;
+    })
+    .filter((t): t is TarifSatiri => t !== null);
+  const tarifGecerli =
+    !hazirlanir || (!!tarifDeger && tarifDeger > 0 && tarifSatirlari.length > 0);
+  const gecerli =
+    ad.trim() !== "" && (kritikDeger === undefined || kritikDeger >= 0) && tarifGecerli;
 
   return (
     <div className="up-fon" onClick={onKapat}>
@@ -626,6 +687,18 @@ function MalzemePaneli({
             </div>
           </div>
 
+          <TarifBolumu
+            malzemeId={malzeme?.id ?? null}
+            birim={birim}
+            malzemeler={malzemeler}
+            acik={hazirlanir}
+            degistir={setHazirlanir}
+            miktar={tarifMiktar}
+            miktarDegis={setTarifMiktar}
+            satirlar={tarif}
+            satirlarDegis={setTarif}
+          />
+
           {malzeme && (
             <div className="stok-panel-durum">
               <span>
@@ -684,20 +757,166 @@ function MalzemePaneli({
             className="up-tus kaydet"
             disabled={!gecerli}
             onClick={() =>
-              onKaydet({
-                grupId,
-                ad,
-                kod,
-                birim,
-                kritikSeviye: kritikDeger ? tabanaCevir(kritikDeger, birim) : 0,
-                aktif,
-              })
+              onKaydet(
+                {
+                  grupId,
+                  ad,
+                  kod,
+                  birim,
+                  kritikSeviye: kritikDeger ? tabanaCevir(kritikDeger, birim) : 0,
+                  aktif,
+                  tarifMiktari: hazirlanir && tarifDeger ? tabanaCevir(tarifDeger, birim) : null,
+                },
+                hazirlanir ? tarifSatirlari : null
+              )
             }
           >
             <Check size={16} /> Kaydet
           </button>
         </footer>
       </div>
+    </div>
+  );
+}
+
+type TarifTaslagi = { malzemeId: number; miktar: string };
+
+/**
+ * Mutfakta hazırlanan malzemenin tarifi: sos, hamur, marine.
+ *
+ * Tarif parti olarak yazılıyor ("1,4 kg domatesten 2 kg salsa") çünkü mutfak
+ * onu öyle biliyor; bir kiloya bölüp yazdırmak hata getirirdi. Satışta
+ * hammaddeler bu orana göre düşüyor.
+ */
+function TarifBolumu({
+  malzemeId,
+  birim,
+  malzemeler,
+  acik,
+  degistir,
+  miktar,
+  miktarDegis,
+  satirlar,
+  satirlarDegis,
+}: {
+  malzemeId: number | null;
+  birim: OlcuKodu;
+  malzemeler: Malzeme[];
+  acik: boolean;
+  degistir: (acik: boolean) => void;
+  miktar: string;
+  miktarDegis: (s: string) => void;
+  satirlar: TarifTaslagi[];
+  satirlarDegis: (s: TarifTaslagi[]) => void;
+}) {
+  const malzeme = (id: number) => malzemeler.find((m) => m.id === id);
+
+  // Sosun içine sos yazılmıyor: hesap tek kat açılıyor.
+  const eklenebilir = malzemeler.filter(
+    (m) =>
+      m.aktif &&
+      m.id !== malzemeId &&
+      m.tarifMiktari == null &&
+      !satirlar.some((s) => s.malzemeId === m.id)
+  );
+
+  const tutarlar = satirlar.map((t) => {
+    const m = malzeme(t.malzemeId);
+    const deger = miktarSayi(t.miktar);
+    if (!m || m.ortalamaMaliyet == null || !deger) return null;
+    return tabanaCevir(deger, m.birim) * m.ortalamaMaliyet;
+  });
+  const toplam = tutarlar.reduce<number>((t, x) => t + (x ?? 0), 0);
+  const eksik = satirlar.length === 0 || tutarlar.some((x) => x == null);
+  const parti = miktarSayi(miktar);
+  const birimMaliyet = !eksik && parti && parti > 0 ? toplam / parti : null;
+
+  const satirDegis = (i: number, deger: string) =>
+    satirlarDegis(satirlar.map((s, j) => (j === i ? { ...s, miktar: deger } : s)));
+
+  return (
+    <div className={acik ? "trf-bolum acik" : "trf-bolum"}>
+      <Anahtar
+        etiket="Mutfakta hazırlanıyor"
+        bilgi="Sos, hamur gibi tarifle yapılan malzeme. Satıldıkça tarifindeki hammaddeler düşer; ne kadar hazırlandığı Stok Hareketleri'nden Üretim olarak girilir."
+        acik={acik}
+        degistir={degistir}
+      />
+
+      {acik && (
+        <>
+          <div className="trf-parti">
+            <CookingPot size={16} />
+            <span>Bu tarif</span>
+            <div className="up-sonek">
+              <input
+                inputMode="decimal"
+                value={miktar}
+                onChange={(e) => miktarDegis(miktarYaz(e.target.value))}
+              />
+              <em>{olcuKisa(birim)}</em>
+            </div>
+            <span>çıkarır</span>
+          </div>
+
+          {satirlar.length > 0 && (
+            <div className="trf-liste">
+              {satirlar.map((t, i) => {
+                const m = malzeme(t.malzemeId);
+                const x = tutarlar[i];
+                return (
+                  <div className="trf-satir" key={t.malzemeId}>
+                    <span className="trf-ad">{m?.ad ?? "Silinmiş malzeme"}</span>
+                    <div className="up-sonek">
+                      <input
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={t.miktar}
+                        onChange={(e) => satirDegis(i, miktarYaz(e.target.value))}
+                      />
+                      <em>{m ? olcuKisa(m.birim) : ""}</em>
+                    </div>
+                    <span className={x == null ? "trf-tutar yok" : "trf-tutar"}>
+                      {x == null ? "—" : paraGoster(x)}
+                    </span>
+                    <button
+                      type="button"
+                      className="trf-sil"
+                      title="Tariften çıkar"
+                      onClick={() => satirlarDegis(satirlar.filter((_, j) => j !== i))}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <label className="trf-ekle">
+            <Plus size={16} />
+            <select
+              value=""
+              onChange={(e) =>
+                e.target.value &&
+                satirlarDegis([...satirlar, { malzemeId: Number(e.target.value), miktar: "" }])
+              }
+            >
+              <option value="">
+                {satirlar.length === 0 ? "İlk hammaddeyi seçin" : "Hammadde ekle"}
+              </option>
+              {eklenebilir.map((m) => (
+                <option key={m.id} value={m.id}>{m.ad}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="trf-ozet">
+            <span>1 {olcuKisa(birim)} maliyeti</span>
+            <b>{birimMaliyet == null ? "—" : paraGoster(birimMaliyet)}</b>
+          </div>
+        </>
+      )}
     </div>
   );
 }

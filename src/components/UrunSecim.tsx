@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Check, CircleMinus, CirclePlus, ListChecks, Ruler, X } from "lucide-react";
+import { paraGoster } from "../para";
 import { porsiyonFiyat } from "../menu";
 import { cikanMetni, eklenenMetni } from "../recete";
 import type { MenuPorsiyon, MenuSecenekGrubu, MenuUrun, SiparisTuru } from "../types";
@@ -102,109 +104,158 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
     (g) => g.zorunlu && (secilenler[g.id] ?? []).length < enAzi(g)
   );
 
+  const secimSayisi = (g: MenuSecenekGrubu) => (secilenler[g.id] ?? []).length;
+
+  const kural = (g: MenuSecenekGrubu) => {
+    if (g.tekli) return g.zorunlu ? "Birini seçin" : "En fazla bir";
+    if (g.zorunlu && enAzi(g) > 1) return `En az ${enAzi(g)}`;
+    return g.zorunlu ? "En az bir" : "İsteğe bağlı";
+  };
+
   return (
-    <div className="perde" onClick={onKapat}>
-      <div className="pencere" onClick={(e) => e.stopPropagation()}>
-        <h3>{urun.ad}</h3>
-
-        {urun.porsiyonlar.length > 1 && (
-          <div className="grup">
-            <span className="grup-ad">Porsiyon</span>
-            <div className="secim-liste">
-              {urun.porsiyonlar.map((p) => (
-                <button
-                  key={p.birimId}
-                  className={porsiyon?.birimId === p.birimId ? "secim aktif" : "secim"}
-                  onClick={() => porsiyonSec(p)}
-                >
-                  {p.ad} · ₺{porsiyonFiyat(p, tur)}
-                </button>
-              ))}
-            </div>
+    <div className="us-fon" onClick={onKapat}>
+      <div className="us-pencere" onClick={(e) => e.stopPropagation()}>
+        <header className="us-ust">
+          <div>
+            <h3>{urun.ad}</h3>
+            {porsiyon && <span>{paraGoster(porsiyonFiyat(porsiyon, tur))}</span>}
           </div>
-        )}
+          <button className="us-kapat" aria-label="Kapat" onClick={onKapat}>
+            <X size={19} />
+          </button>
+        </header>
 
-        {urunGruplari.map((grup) => (
-          <div className="grup" key={grup.id}>
-            <span className="grup-ad">
-              {grup.ad}
-              {grup.zorunlu && (
-                <em className="zorunlu-im">
-                  {enAzi(grup) > 1 ? `en az ${enAzi(grup)}` : "zorunlu"}
-                </em>
-              )}
+        <div className="us-govde">
+          {urun.porsiyonlar.length > 1 && (
+            <section className="us-bolum">
+              <div className="us-bolum-bas">
+                <Ruler size={16} />
+                <b>Porsiyon</b>
+              </div>
+              <div className="us-secenekler">
+                {urun.porsiyonlar.map((p) => {
+                  const secili = porsiyon?.birimId === p.birimId;
+                  return (
+                    <button
+                      key={p.birimId}
+                      className={secili ? "us-secenek secili" : "us-secenek"}
+                      onClick={() => porsiyonSec(p)}
+                    >
+                      <span className="us-isaret">{secili && <Check size={13} />}</span>
+                      <span className="us-ad">{p.ad}</span>
+                      <em>{paraGoster(porsiyonFiyat(p, tur))}</em>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {urunGruplari.map((grup) => {
+            const eksik = eksikler.includes(grup);
+            return (
+              <section className="us-bolum" key={grup.id}>
+                <div className="us-bolum-bas">
+                  <ListChecks size={16} />
+                  <b>{grup.ad}</b>
+                  <small className={eksik ? "us-kural eksik" : secimSayisi(grup) ? "us-kural tamam" : "us-kural"}>
+                    {kural(grup)}
+                  </small>
+                </div>
+                <div className="us-secenekler">
+                  {grup.liste.map((secenek) => {
+                    const secili = (secilenler[grup.id] ?? []).includes(secenek.id!);
+                    return (
+                      <button
+                        key={secenek.id}
+                        className={secili ? "us-secenek secili" : "us-secenek"}
+                        onClick={() => sec(grup, secenek.id!)}
+                      >
+                        <span className={grup.tekli ? "us-isaret yuvarlak" : "us-isaret"}>
+                          {secili && <Check size={13} />}
+                        </span>
+                        <span className="us-ad">{secenek.ad}</span>
+                        {secenek.ekFiyat > 0 && <em>+{paraGoster(secenek.ekFiyat)}</em>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+
+          {cikarilabilir.length > 0 && (
+            <section className="us-bolum">
+              <div className="us-bolum-bas">
+                <CircleMinus size={16} />
+                <b>Olmasın</b>
+              </div>
+              <div className="us-secenekler">
+                {cikarilabilir.map((d) => {
+                  const secili = cikan.includes(d.malzemeId);
+                  return (
+                    <button
+                      key={d.malzemeId}
+                      className={secili ? "us-secenek cikan" : "us-secenek"}
+                      onClick={() => setCikan((l) => degistir(l, d.malzemeId))}
+                    >
+                      <span className="us-isaret">{secili && <X size={13} />}</span>
+                      <span className="us-ad">{d.ad}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {ekstralar.length > 0 && (
+            <section className="us-bolum">
+              <div className="us-bolum-bas">
+                <CirclePlus size={16} />
+                <b>Ekstra</b>
+              </div>
+              <div className="us-secenekler">
+                {ekstralar.map((d) => {
+                  const secili = eklenen.includes(d.malzemeId);
+                  return (
+                    <button
+                      key={d.malzemeId}
+                      className={secili ? "us-secenek secili" : "us-secenek"}
+                      onClick={() => setEklenen((l) => degistir(l, d.malzemeId))}
+                    >
+                      <span className="us-isaret">{secili && <Check size={13} />}</span>
+                      <span className="us-ad">{d.ad}</span>
+                      <em>{d.ekFiyat > 0 ? `+${paraGoster(d.ekFiyat)}` : "Ücretsiz"}</em>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <footer className="us-alt">
+          <div className="us-ozet">
+            <strong>{paraGoster(fiyat)}</strong>
+            <span>
+              {eksikler.length > 0
+                ? `Seçilmeli: ${eksikler.map((g) => g.ad).join(", ")}`
+                : secimAdlari.join(" · ") || porsiyon?.ad || ""}
             </span>
-            <div className="secim-liste">
-              {grup.liste.map((secenek) => (
-                <button
-                  key={secenek.id}
-                  className={(secilenler[grup.id] ?? []).includes(secenek.id!) ? "secim aktif" : "secim"}
-                  onClick={() => sec(grup, secenek.id!)}
-                >
-                  {secenek.ad}
-                  {secenek.ekFiyat > 0 && ` (+₺${secenek.ekFiyat})`}
-                </button>
-              ))}
-            </div>
           </div>
-        ))}
-
-        {cikarilabilir.length > 0 && (
-          <div className="grup">
-            <span className="grup-ad">Olmasın</span>
-            <div className="secim-liste">
-              {cikarilabilir.map((d) => (
-                <button
-                  key={d.malzemeId}
-                  className={cikan.includes(d.malzemeId) ? "secim aktif cikarildi" : "secim"}
-                  onClick={() => setCikan((l) => degistir(l, d.malzemeId))}
-                >
-                  {d.ad}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {ekstralar.length > 0 && (
-          <div className="grup">
-            <span className="grup-ad">Ekstra</span>
-            <div className="secim-liste">
-              {ekstralar.map((d) => (
-                <button
-                  key={d.malzemeId}
-                  className={eklenen.includes(d.malzemeId) ? "secim aktif" : "secim"}
-                  onClick={() => setEklenen((l) => degistir(l, d.malzemeId))}
-                >
-                  {d.ad}
-                  {d.ekFiyat > 0 && ` (+₺${d.ekFiyat})`}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {eksikler.length > 0 && (
-          <p className="secim-uyari">
-            Önce seçilmeli:{" "}
-            {eksikler
-              .map((g) => (enAzi(g) > 1 ? g.ad + " (en az " + enAzi(g) + ")" : g.ad))
-              .join(", ")}
-          </p>
-        )}
-
-        <button
-          className="kaydet"
-          disabled={eksikler.length > 0}
-          onClick={() =>
-            onEkle(porsiyon?.ad, fiyat, secimAdlari, {
-              cikan: cikan.length ? cikan : undefined,
-              eklenen: eklenen.length ? eklenen : undefined,
-            })
-          }
-        >
-          Ekle
-        </button>
+          <button
+            className="us-ekle"
+            disabled={eksikler.length > 0}
+            onClick={() =>
+              onEkle(porsiyon?.ad, fiyat, secimAdlari, {
+                cikan: cikan.length ? cikan : undefined,
+                eklenen: eklenen.length ? eklenen : undefined,
+              })
+            }
+          >
+            <Check size={17} /> Ekle
+          </button>
+        </footer>
       </div>
     </div>
   );
