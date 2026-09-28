@@ -8350,6 +8350,53 @@ body {
   color: rgba(255, 255, 255, 0.82);
 }
 
+/* PIN'i olmayan ya da bilmeyen kişi burada mahsur kalmasın. Tuş takımından
+   ince bir çizgiyle ayrılıyor; birincil iş PIN, bu ikinci planda. */
+.kilit-cikis {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.kilit-cikis button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 40px;
+  padding: 0 18px 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--r-tam);
+  background: rgba(255, 255, 255, 0.06);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  cursor: pointer;
+  transition: background var(--gecis), border-color var(--gecis), color var(--gecis);
+}
+
+.kilit-cikis button svg {
+  transition: transform var(--gecis);
+}
+
+.kilit-cikis button:hover {
+  border-color: var(--mercan);
+  background: var(--mercan-sis);
+  color: #fff;
+}
+
+.kilit-cikis button:hover svg {
+  transform: translateX(2px);
+}
+
+.kilit-cikis button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ---- Kasa ----
    Kasa satış ekranından kopmuyor: şeridin sonunda duran düğme ve onun açtığı
    pencere. Düğme durumu üstünde yazıyor, kasiyer bakınca anlıyor. */

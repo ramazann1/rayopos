@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
-import { Delete, LockKeyhole, WifiOff } from "lucide-react";
-import { pinIleAc } from "../oturum";
+import { Delete, LockKeyhole, LogOut, WifiOff } from "lucide-react";
+import { oturumuKapat, pinIleAc } from "../oturum";
 import { useBaglanti } from "../baglanti";
 
 // Kasa gün boyu açık kalıyor; başındaki kişi değiştiğinde ekran kilitleniyor ve
 // gelen kişi PIN'iyle devam ediyor. Program burada kapanmıyor — açık adisyonlar
-// olduğu gibi duruyor. Oturumu kapatma buraya konmuyor: kilidi açan yönetici
-// bunu yan menüden zaten yapabiliyor.
+// olduğu gibi duruyor. PIN'i olmayan için çıkış var; bağlantı yokken gizli,
+// çünkü o an çıkan kişi yeniden giriş yapamaz ve kasa kullanılamaz kalır.
 export default function KilitEkrani() {
   const [pin, setPin] = useState("");
   const [hata, setHata] = useState("");
   const [bekliyor, setBekliyor] = useState(false);
+  const [cikiliyor, setCikiliyor] = useState(false);
   const cevrimici = useBaglanti();
+
+  const cik = () => {
+    setCikiliyor(true);
+    oturumuKapat().catch((e) => {
+      setHata(e.message);
+      setCikiliyor(false);
+    });
+  };
 
   // Dört hane dolunca ayrıca bir düğmeye basılmıyor.
   useEffect(() => {
@@ -84,6 +93,14 @@ export default function KilitEkrani() {
           </button>
         </div>
 
+        {cevrimici && (
+          <div className="kilit-cikis">
+            <button onClick={cik} disabled={cikiliyor}>
+              <LogOut size={17} />
+              {cikiliyor ? "Çıkış yapılıyor…" : "Çıkış yap"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
