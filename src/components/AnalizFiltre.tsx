@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Filter, SlidersHorizontal, X } from "lucide-react";
+import { CalendarDays, Check, Filter, SlidersHorizontal, X } from "lucide-react";
+import Anahtar from "./Anahtar";
+import OrtaPencere from "./OrtaPencere";
 import { ayarlar } from "../isletmeAyarlari";
 import { vardiyaGecmisi, type VardiyaOzeti } from "../kasa";
 import { BOLGE_ANAHTAR, bolgeleriGetir } from "../masalar";
@@ -99,6 +101,8 @@ export default function AnalizFiltre({
     });
   }
   const sayi = filtreSayisi(filtre);
+  const temizle = () =>
+    degistir({ ...BOS_FILTRE, donem: filtre.donem, ozelBas: filtre.ozelBas, ozelBit: filtre.ozelBit });
   const { bas, bit } = donemAraligi(filtre);
 
   return (
@@ -134,17 +138,7 @@ export default function AnalizFiltre({
           </button>
         ))}
         {sayi > 0 && (
-          <button
-            className="analiz-cip-temizle"
-            onClick={() =>
-              degistir({
-                ...BOS_FILTRE,
-                donem: filtre.donem,
-                ozelBas: filtre.ozelBas,
-                ozelBit: filtre.ozelBit,
-              })
-            }
-          >
+          <button className="analiz-cip-temizle" onClick={temizle}>
             Filtreleri temizle
           </button>
         )}
@@ -170,18 +164,24 @@ export default function AnalizFiltre({
       )}
 
       {panelAcik && (
-        <div className="panel-fon" onClick={() => setPanelAcik(false)}>
-          <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-            <header className="panel-ust">
-              <h3>
-                <Filter size={17} /> Filtreler
-              </h3>
-              <button className="panel-kapat" onClick={() => setPanelAcik(false)}>
-                <X size={19} />
+        <OrtaPencere
+          ikon={Filter}
+          baslik="Filtreler"
+          aciklama="Seçtikleriniz rapora hemen uygulanır."
+          onKapat={() => setPanelAcik(false)}
+          alt={
+            <>
+              {sayi > 0 && (
+                <button className="pnc-vazgec" onClick={temizle}>Temizle</button>
+              )}
+              <button className="pnc-kaydet" onClick={() => setPanelAcik(false)}>
+                <Check size={17} /> Tamam
               </button>
-            </header>
-
-            <div className="panel-govde analiz-filtre-panel">
+            </>
+          }
+        >
+          <div className="pnc-sutunlar analiz-filtre-panel">
+            <div>
               {vardiyalar.length > 0 && (
                 <label>
                   <span>Vardiya</span>
@@ -280,7 +280,9 @@ export default function AnalizFiltre({
                   {ayarlar().paketAcik && <option value="paket">Paket</option>}
                 </select>
               </label>
+            </div>
 
+            <div>
               <label>
                 <span>Ödeme tipi</span>
                 <select
@@ -334,15 +336,16 @@ export default function AnalizFiltre({
                 </div>
               </label>
 
-              <button
-                className={filtre.indirimli ? "analiz-secenek acik" : "analiz-secenek"}
-                onClick={() => yaz({ indirimli: !filtre.indirimli })}
-              >
-                Yalnızca indirim uygulanmış adisyonlar
-              </button>
+              <div className="alan-anahtarlar">
+                <Anahtar
+                  etiket="Yalnız indirimli adisyonlar"
+                  acik={filtre.indirimli}
+                  degistir={(v) => yaz({ indirimli: v })}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </OrtaPencere>
       )}
     </div>
   );

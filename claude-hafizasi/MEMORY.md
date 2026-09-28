@@ -40,4 +40,5 @@
 - [SQL'i Ramazan çalıştırır](rayopos-sql-ramazan-calistirir.md) — canlı Supabase SQL Editor Claude'a kapalı; dosyayı ver, Success'i bekle.
 - [Tarih/saat kutuları](rayopos-tarih-saat-kutulari.md) — tarayıcı seçicisi yok, maskeli kendi kutumuz; önemli ayar tik + onayla kaydedilir.
 - [Pencere dili](rayopos-pencere-dili.md) — form pencereleri OrtaPencere; mercan yalnız Kaydet, kaydırmadan sığdır, uzun liste tek sütun.
+- [Canlıda test yok](rayopos-canlida-test-yok.md) — 28 Eyl'den sonra gerçek cafe ayrı işletme; testler yalnız deneme işletmesinde (15003).
 - [Testte menü önbelleği](rayopos-testte-menu-onbellegi.md) — veritabanına doğrudan yazılan reçeteyi sipariş ekranı görmez; önbelleği temizle.

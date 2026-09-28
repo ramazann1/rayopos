@@ -5,9 +5,10 @@ import {
   Check,
   History,
   LockOpen,
-  X,
+  Wallet,
 } from "lucide-react";
 import KasaBasligi from "../components/KasaBasligi";
+import OrtaPencere from "../components/OrtaPencere";
 import Bilgi from "../components/Bilgi";
 import { eslesiyor } from "../arama";
 import { paraGoster } from "../para";
@@ -143,17 +144,14 @@ function VardiyaDetay({ vardiya, onKapat }: { vardiya: VardiyaOzeti; onKapat: ()
   useCanli(["kasa_hareketleri"], oku, SAKIN);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>Vardiya detayı</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
-          <p className="kasa-kim">
-            <strong>{kisaAd(vardiya.acan) || "—"}</strong> açtı · {tamMetin(vardiya.acilis)}
-          </p>
+    <OrtaPencere
+      ikon={Wallet}
+      baslik="Vardiya detayı"
+      aciklama={`${kisaAd(vardiya.acan) || "—"} açtı · ${tamMetin(vardiya.acilis)}`}
+      onKapat={onKapat}
+    >
+      <div className="pnc-sutunlar">
+        <div>
           <p className="kasa-kim">
             {vardiya.kapanis ? (
               <>
@@ -224,8 +222,10 @@ function VardiyaDetay({ vardiya, onKapat }: { vardiya: VardiyaOzeti; onKapat: ()
               )}
             </div>
           )}
+        </div>
 
-          {hareketler.length > 0 && (
+        <div>
+          {hareketler.length > 0 ? (
             <ul className="kasa-hareket">
               {hareketler.map((h) => (
                 <li key={h.id}>
@@ -249,9 +249,11 @@ function VardiyaDetay({ vardiya, onKapat }: { vardiya: VardiyaOzeti; onKapat: ()
                 </li>
               ))}
             </ul>
+          ) : (
+            <p className="kasa-kim">Bu vardiyada kasaya para eklenmedi, çıkarılmadı.</p>
           )}
         </div>
       </div>
-    </div>
+    </OrtaPencere>
   );
 }

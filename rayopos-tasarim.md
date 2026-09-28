@@ -1,12 +1,44 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (28 Eyl 2026 güncellendi — ortadaki pencere seansı)
+## 0. SIRADAKİ İŞ (28 Eyl 2026 güncellendi — çekmeceler bitti seansı)
 
-> **YENİ SEANSIN BAŞI: 6. madde — kalan çekmeceleri ortadaki pencereye
-> taşımak** (Ödenmezler, Kasa Geçmişi, Analiz süzgeci, Masasız Sipariş, Gider
-> türü penceresi, Menü Stüdyosu paneli). Tek tek, her biri Ramazan'a
-> gösterilerek. Sonra 4. madde. 1-3 dışarıdan bekliyor.
+> **YENİ SEANSIN BAŞI: CANLIYA GEÇİŞ — yeni temiz işletme.** Ramazan cafede
+> gerçek kullanıma başlıyor. Bugünkü işletmedeki (kod 15003, "eGZOZ lounge")
+> bütün işlemler denemeydi; bu işletme **deneme işletmesi olarak kalacak**,
+> bundan sonraki testler orada yapılır (canlıda test yapılmaz). Konuşulacaklar:
+> 1. Bu işletmenin adı değişecek. Ad programdan değişmiyor, SQL ile:
+>    `update isletmeler set ad = 'eGZOZ Deneme' where kod = 15003;` (ad Ramazan'ın
+>    onayını bekliyor). **Önce ad değişir, sonra yeni işletme açılır** — aynı adla
+>    iki işletme girişte karışır.
+> 2. Ramazan "eGZOZ lounge" adıyla yeni işletmeyi kayıt ekranından açar.
+> 3. Tanımların taşınması: menü Excel ile aktarılıyor ama reçete, malzeme,
+>    sos tarifi, seçenek grubu, masa/bölge, personel, yetki, ödeme tipi, ayarlar
+>    aktarılmıyor. Seçenek: bunları 15003'ten yeni işletmeye kopyalayan tek SQL
+>    (işlem verisi — adisyon, tahsilat, stok hareketi, kasa, gider — **kopyalanmaz**,
+>    malzeme stokları sıfırdan başlar, gerçek ilk sayım girilir). Ramazan
+>    "sonraki seansta konuşalım" dedi — önce ne taşınacağını beraber listele.
+> Sonra 4. madde. 1-3 dışarıdan bekliyor. ÖKC konuşuldu, "zamanı gelince":
+> firma yazışması gerekiyor; o güne kadar sahte ÖKC ile akış kurulabilir.
+>
+> **BİTTİ (28 Eyl 2026, 2. seans): sağdan kayan çekmece uygulamada kalmadı.**
+> - Taşınanlar: Ödenmezler, Kasa Geçmişi vardiya detayı (iki sütun: döküm |
+>   hareketler), Analiz Filtreler (iki sütun; "yalnız indirimli" mercan düğme
+>   yerine anahtar; altta Temizle + Tamam), Masasız Sipariş (ikon türe göre),
+>   Menü Stüdyosu seçenek grubu (geniş, sol ayar | sağ seçenekler, sil çöp
+>   ikonu), Gider türleri (altta yalnız Tamam — anında kaydediliyor).
+> - Eski `.panel-fon/.ayar-panel/.urun-panel/.panel-ust/.panel-govde` CSS'i
+>   silindi. `.panel-kapat` kaldı (EksikKapat, OdemeTipDuzelt kullanıyor).
+> - **Pencere içi kurallar (Ramazan: "yine çok fazla mercan var"):** mercan
+>   yalnız Kaydet/Tamam ve başlık ikonunda. Sırala/+Seçenek/Ekle gibi ikincil
+>   düğmeler koyu, "i" işareti gri, işaretli yıldız koyu. İki satırlık Bilgi
+>   kutusu pencerede yer yiyorsa başlığın yanındaki Ipucu'ya taşınır.
+> - Pencere gövdesi kaydığı için **"i" balonu pencerede aşağı açılıyor**
+>   (yukarı açılınca tepede kesiliyordu); gövdede yatay kaydırma kapalı.
+> - Vite bir kez dosyanın yarım kopyasını sundu (`OrtaPencere is not defined`,
+>   kod doğruydu); dosya zamanı tazelenince düzeldi.
+> - Denenemeyen: telefon genişliği (Chrome penceresi daralmadı), var olan
+>   Paket siparişinin bilgi düzenleme penceresi (açık sipariş yoktu).
 >
 > **BİTTİ (28 Eyl 2026): ortadaki pencere dili + tarih kutuları.**
 > - Stok modülünün artıkları kapandı: gider ve stok hareketi formlarındaki
@@ -210,14 +242,6 @@
 >    *(Adisyo'da doğrulanan ve bizde de korunması gereken desen: sepete ürün
 >    eklerken sunucuya hiç gidilmiyor, kalemler tarayıcıda birikip KAYDET'te
 >    tek seferde gönderiliyor.)*
-> 6. **KALAN ÇEKMECELERİ ORTADAKİ PENCEREYE TAŞIMAK** (28 Eyl kararı):
->    `Odenmezler.tsx`, `KasaGecmisi.tsx`, `components/AnalizFiltre.tsx`,
->    `components/MasasizSiparis.tsx`, `Giderler.tsx` içindeki `TurPenceresi`,
->    `MenuStudyosu.tsx` (satır ~270'teki panel). Hepsi `OrtaPencere` ile;
->    kural yukarıdaki "BİTTİ" notunda. Masasız Sipariş mobilde de açılıyorsa
->    telefonda ortada açıldığı denenecek. Bittiğinde `.ayar-panel` CSS'i
->    kullanılmıyorsa silinir.
->
 >    *STOK MODÜLÜ tamamen bitti (28 Eyl).* Maliyet, otomatik düşüm (siparişte), kârlılık, malzeme geçmişi, hazır
 >    ürün stok takibi, eksi stok engeli (25 Eyl), fire/çıkış raporu, geçmiş
 >    sayımlar (26 Eyl), reçete tipi (27 Eyl), ara reçete + üretim (28 Eyl)

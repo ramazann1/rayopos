@@ -3252,44 +3252,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.panel-fon {
-  position: fixed;
-  inset: 0;
-  background: rgba(20, 32, 48, 0.26);
-  display: flex;
-  justify-content: flex-end;
-  z-index: 40;
-  animation: fon-gir 0.24s ease;
-}
-
-@keyframes fon-gir {
-  from { background: rgba(20, 32, 48, 0); }
-}
-
-.urun-panel {
-  width: 470px;
-  background: var(--kart);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  border-radius: 22px 0 0 22px;
-  box-shadow: -10px 0 44px rgba(20, 32, 48, 0.13);
-  animation: panel-gir 0.32s cubic-bezier(0.22, 0.92, 0.28, 1);
-}
-
-@keyframes panel-gir {
-  from { transform: translateX(100%); }
-}
-
-.panel-ust {
-  display: flex;
-  align-items: center;
-}
-
-.panel-ust h3 {
-  flex: 1;
-}
-
 .panel-kapat {
   border: none;
   background: none;
@@ -3297,16 +3259,6 @@ body {
   line-height: 1;
   color: var(--soluk);
   cursor: pointer;
-}
-
-.panel-govde {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.urun-panel .modal-aksiyonlar {
-  padding: 14px 22px 20px;
-  border-top: 1px solid #dfe6ef;
 }
 
 .satir-alan {
@@ -3353,18 +3305,6 @@ body {
 }
 
 /* yumuşatmalar */
-.panel-ust {
-  background: var(--zemin);
-  border-bottom: 1px solid #e3eaf3;
-  border-radius: 22px 0 0 0;
-  padding: 22px 24px 17px;
-}
-
-.panel-ust h3 {
-  font-size: 19px;
-  letter-spacing: -0.2px;
-}
-
 .panel-kapat {
   width: 32px;
   height: 32px;
@@ -3375,10 +3315,6 @@ body {
 .panel-kapat:hover {
   background: #dce4ee;
   color: var(--metin);
-}
-
-.panel-govde {
-  padding: 22px 24px;
 }
 
 .bolum {
@@ -5490,31 +5426,6 @@ body {
   max-width: 340px;
 }
 
-/* Ayar panelleri */
-
-.ayar-panel {
-  width: 400px;
-  background: var(--kart);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  border-radius: 22px 0 0 22px;
-  box-shadow: -10px 0 44px rgba(20, 32, 48, 0.13);
-  animation: panel-gir 0.32s cubic-bezier(0.22, 0.92, 0.28, 1);
-}
-
-.ayar-panel .modal-aksiyonlar {
-  padding: 14px 22px 20px;
-  border-top: 1px solid #dfe6ef;
-}
-
-.ayar-panel .alan label {
-  display: block;
-  font-size: 13px;
-  color: var(--soluk);
-  margin-bottom: 7px;
-}
-
 /* Çok satırlı not alanı; kutu görünümü metin kutularıyla aynı. */
 .alan textarea {
   width: 100%;
@@ -5533,14 +5444,6 @@ body {
   background: var(--kart);
   border-color: var(--mercan);
   box-shadow: 0 0 0 3px rgba(255, 107, 69, 0.16);
-}
-
-.ayar-panel .sil-buton {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 14px;
-  font-size: 13px;
 }
 
 .ayar-onizleme {
@@ -7769,7 +7672,6 @@ body {
 .kaydet-serit .uygula:hover { background: #f26a48; }
 
 /* Kişiye özel yetki penceresi geniş: üç durumlu seçim yan yana sığsın. */
-.ayar-panel.genis { width: 560px; }
 
 .yetki-grup h4 {
   margin: 16px 0 8px;
@@ -9605,12 +9507,12 @@ body {
   color: var(--mercan);
 }
 
-.analiz-filtre-panel label {
+.analiz-filtre-panel > div > label {
   display: block;
   margin-bottom: 16px;
 }
 
-.analiz-filtre-panel label > span {
+.analiz-filtre-panel > div > label > span {
   display: block;
   margin-bottom: 7px;
   font-size: 14px;
@@ -9618,11 +9520,11 @@ body {
 }
 
 .analiz-filtre-panel select,
-.analiz-filtre-panel input {
+.analiz-tutar input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d4dce6;
-  border-radius: 11px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-or);
   background: var(--kart);
   color: var(--metin);
   font-size: 14px;
@@ -9631,25 +9533,6 @@ body {
 .analiz-tutar > div {
   display: flex;
   gap: 10px;
-}
-
-.analiz-secenek {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #d4dce6;
-  border-radius: 12px;
-  background: var(--kart);
-  color: var(--metin);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-
-.analiz-secenek.acik {
-  border-color: var(--mercan);
-  background: #fff1ec;
-  color: #c1503a;
 }
 
 /* ---- Özet sekmesi ---- */
@@ -12659,18 +12542,6 @@ body {
   background: var(--cizgi-koyu);
   color: var(--kart);
   cursor: not-allowed;
-}
-
-/* Ödenmezler paneli hâlâ dar yan paneli kullanıyor. */
-.ayar-panel.dar {
-  width: 360px;
-}
-
-.ayar-panel .alan-ipucu {
-  display: block;
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--soluk);
 }
 
 /* ---- Açık hesap müşteri seçici ----
@@ -19737,7 +19608,6 @@ body {
 .ms-kat-liste,
 .msc-liste,
 .onay-modal,
-.panel-govde,
 .pencere,
 .sepet-liste,
 .sr-liste,
@@ -23992,6 +23862,7 @@ body:has(.up-fon, .menu-perde) {
 
 .pnc-govde {
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 16px 22px 18px;
 }
@@ -24370,4 +24241,80 @@ body:has(.up-fon, .menu-perde) {
   .pnc-sutunlar {
     grid-template-columns: 1fr;
   }
+}
+
+.scg-sutunlar {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+}
+
+@media (max-width: 720px) {
+  .scg-sutunlar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.scg-ust {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.scg-ust label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.scg-ust .ekle-satir {
+  gap: 6px;
+  margin: 0;
+}
+
+.pnc-govde .satir-varsayilan.aktif {
+  color: var(--metin);
+}
+
+.pnc-govde .ekle-satir button {
+  color: var(--metin);
+  border-color: var(--cizgi-koyu);
+}
+
+.pnc-govde .ekle-satir button:hover:not(:disabled) {
+  background: var(--kart-ust);
+  border-color: var(--metin);
+}
+
+.pnc-govde .ayar-ekle {
+  background: var(--metin);
+  color: var(--kart);
+}
+
+.pnc-govde .ayar-ekle:disabled {
+  background: var(--cizgi-koyu);
+}
+
+.pnc-govde .ipucu > svg {
+  color: var(--soluk);
+}
+
+/* Pencere gövdesi kaydığı için yukarı açılan balon tepede kesiliyor;
+   burada aşağı açılıyor. */
+.pnc-govde .ipucu-balon {
+  top: calc(100% + 11px);
+  bottom: auto;
+  width: 280px;
+  transform: translateY(-4px);
+}
+
+.pnc-govde .ipucu-balon::after {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: -6px;
+  transform: rotate(-135deg);
 }

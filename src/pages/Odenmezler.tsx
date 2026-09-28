@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Check,
   Download,
   Gift,
   Pencil,
@@ -8,9 +9,9 @@ import {
   Upload,
   UserRound,
   Users,
-  X,
 } from "lucide-react";
 import AyarBasligi from "../components/AyarBasligi";
+import OrtaPencere from "../components/OrtaPencere";
 import Anahtar from "../components/Anahtar";
 import Bilgi from "../components/Bilgi";
 import Bildirim from "../components/Bildirim";
@@ -51,50 +52,50 @@ function OdenmezPaneli({
   const [aktif, setAktif] = useState(kayit?.aktif ?? true);
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel dar" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{kayit ? kayit.ad : "Yeni ödenmez"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde musteri-form">
-          <div className="alan">
-            <label>Ad soyad</label>
-            <input value={ad} onChange={(e) => setAd(e.target.value)} autoFocus />
-          </div>
-
-          <div className="alan">
-            <label>Unvan</label>
-            <input
-              value={unvan}
-              onChange={(e) => setUnvan(e.target.value)}
-              placeholder="Garson, Müdür, Ev sahibi…"
-            />
-          </div>
-
-          <div className="alan-anahtarlar">
-            <Anahtar etiket="Listede görünsün" acik={aktif} degistir={setAktif} />
-          </div>
-        </div>
-
-        <footer className="modal-aksiyonlar">
+    <OrtaPencere
+      ikon={Gift}
+      baslik={kayit ? kayit.ad : "Yeni ödenmez"}
+      aciklama="Hesabı işletmenin karşıladığı kişi"
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <>
           {onSil && (
-            <button className="sil-buton" onClick={onSil}>
-              <Trash2 size={15} /> Sil
+            <button className="pnc-sil" onClick={onSil} aria-label="Sil">
+              <Trash2 size={17} />
             </button>
           )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button
-            className="uygula"
+            className="pnc-kaydet"
             disabled={!ad.trim()}
             onClick={() => onKaydet({ ad, unvan, aktif })}
           >
-            Kaydet
+            <Check size={17} /> Kaydet
           </button>
-        </footer>
+        </>
+      }
+    >
+      <div className="musteri-form">
+        <div className="alan">
+          <label>Ad soyad</label>
+          <input value={ad} onChange={(e) => setAd(e.target.value)} autoFocus />
+        </div>
+
+        <div className="alan">
+          <label>Unvan</label>
+          <input
+            value={unvan}
+            onChange={(e) => setUnvan(e.target.value)}
+            placeholder="Garson, Müdür, Ev sahibi…"
+          />
+        </div>
+
+        <div className="alan-anahtarlar">
+          <Anahtar etiket="Listede görünsün" acik={aktif} degistir={setAktif} />
+        </div>
       </div>
-    </div>
+    </OrtaPencere>
   );
 }
 

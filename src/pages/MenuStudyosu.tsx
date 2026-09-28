@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowUpDown,
   ArrowLeftRight,
+  Check,
   ChevronDown,
   Copy,
   LayoutGrid,
@@ -19,6 +20,8 @@ import {
   X,
 } from "lucide-react";
 import Bilgi from "../components/Bilgi";
+import Ipucu from "../components/Ipucu";
+import OrtaPencere from "../components/OrtaPencere";
 import UrunPaneli from "../components/UrunPaneli";
 import { receteleriGetir, receteMaliyetleriGetir } from "../recete";
 import OnayModal from "../components/OnayModal";
@@ -267,22 +270,38 @@ function GrupPaneli({
   };
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="urun-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>{grup ? "Grubu düzenle" : "Yeni seçenek grubu"}</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
+    <OrtaPencere
+      ikon={ListChecks}
+      baslik={grup ? "Grubu düzenle" : "Yeni seçenek grubu"}
+      aciklama="Siparişte ürüne eklenen seçimler."
+      genislik="genis"
+      onKapat={onKapat}
+      alt={
+        <>
+          {grup && onSil && (
+            <button className="pnc-sil" onClick={onSil} aria-label="Grubu sil">
+              <Trash2 size={17} />
+            </button>
+          )}
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button className="pnc-kaydet" disabled={!gecerli} onClick={kaydet}>
+            <Check size={17} /> Kaydet
+          </button>
+        </>
+      }
+    >
+      <div className="pnc-sutunlar scg-sutunlar">
+        <div>
           <div className="alan">
-            <span>Grup adı</span>
+            <label>Grup adı</label>
             <input value={ad} onChange={(e) => setAd(e.target.value)} placeholder="Şeker" autoFocus />
           </div>
 
-          <div className="mod-sec">
-            <button className={tekli ? "aktif" : ""} onClick={() => setTekli(true)}>Tekli seçim</button>
-            <button className={!tekli ? "aktif" : ""} onClick={() => setTekli(false)}>Çoklu seçim</button>
+          <div className="alan">
+            <div className="mod-sec">
+              <button className={tekli ? "aktif" : ""} onClick={() => setTekli(true)}>Tekli seçim</button>
+              <button className={!tekli ? "aktif" : ""} onClick={() => setTekli(false)}>Çoklu seçim</button>
+            </div>
           </div>
 
           <Anahtar
@@ -294,7 +313,7 @@ function GrupPaneli({
 
           {enAzSorulur && (
             <div className="alan">
-              <span>En az kaç seçim yapılmalı</span>
+              <label>En az kaç seçim yapılmalı</label>
               <input
                 className="kisa"
                 value={enAz}
@@ -304,8 +323,17 @@ function GrupPaneli({
               />
             </div>
           )}
+        </div>
 
-          <div className="bolum">
+        <div className="scg-secenekler">
+          <div className="scg-ust">
+            <label>
+              Seçenekler{" "}
+              <Ipucu>
+                Ek fiyat boş bırakılırsa ücretsiz sayılır. Yıldızlı seçenekler ürün
+                penceresi açılınca işaretli gelir.
+              </Ipucu>
+            </label>
             <div className="ekle-satir">
               <button
                 disabled={liste.length < 2}
@@ -315,10 +343,7 @@ function GrupPaneli({
               </button>
               <button onClick={() => setListe([...liste, { ad: "", ekFiyat: 0 }])}><Plus size={14} /> Seçenek</button>
             </div>
-            <Bilgi>
-              Ek fiyat boş bırakılırsa ücretsiz sayılır. Yıldızlı seçenekler ürün
-              penceresi açılınca işaretli gelir.
-            </Bilgi>
+          </div>
             {liste.map((s, i) => (
               <div key={i} className="satir-alan">
                 <input value={s.ad} onChange={(e) => satirDegis(i, "ad", e.target.value)} placeholder="Sade" />
@@ -341,30 +366,21 @@ function GrupPaneli({
                 </button>
               </div>
             ))}
-          </div>
         </div>
-
-        {siralama && (
-          <SiralamaModal
-            baslik="Seçenekleri sırala"
-            satirlar={liste.map((s, i) => ({ id: i, ad: s.ad.trim() || "(adsız)" }))}
-            onKapat={() => setSiralama(false)}
-            onKaydet={(sira) => {
-              setListe(sira.map((i) => liste[i]));
-              setSiralama(false);
-            }}
-          />
-        )}
-
-        <footer className="modal-aksiyonlar">
-          {grup && onSil && (
-            <button className="sil-buton" onClick={onSil}>Grubu sil</button>
-          )}
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button className="uygula" disabled={!gecerli} onClick={kaydet}>Kaydet</button>
-        </footer>
       </div>
-    </div>
+
+      {siralama && (
+        <SiralamaModal
+          baslik="Seçenekleri sırala"
+          satirlar={liste.map((s, i) => ({ id: i, ad: s.ad.trim() || "(adsız)" }))}
+          onKapat={() => setSiralama(false)}
+          onKaydet={(sira) => {
+            setListe(sira.map((i) => liste[i]));
+            setSiralama(false);
+          }}
+        />
+      )}
+    </OrtaPencere>
   );
 }
 

@@ -432,14 +432,18 @@ function TurPenceresi({
   };
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>Gider türleri</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
+    <OrtaPencere
+      ikon={Tags}
+      baslik="Gider türleri"
+      aciklama="Giderler bu başlıklarla gruplanır."
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <button className="pnc-kaydet" onClick={onKapat}>
+          <Check size={17} /> Tamam
+        </button>
+      }
+    >
           <div className="gider-tur-ekleme">
             <input
               placeholder="Yeni tür adı"
@@ -516,8 +520,6 @@ function TurPenceresi({
           </button>
 
           {hata && <p className="kasa-hata">{hata}</p>}
-        </div>
-      </div>
-    </div>
+    </OrtaPencere>
   );
 }

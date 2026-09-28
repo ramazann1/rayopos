@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Bike, ShoppingBag, UserRound, X } from "lucide-react";
-import Bilgi from "./Bilgi";
+import { Bike, Check, ShoppingBag, UserRound } from "lucide-react";
+import Ipucu from "./Ipucu";
+import OrtaPencere from "./OrtaPencere";
 import MusteriSecici from "./MusteriSecici";
 import type { MusteriBilgisi } from "../adisyonlar";
 import { adresleriGetir, tamAd, type Musteri } from "../cari";
@@ -46,26 +47,50 @@ export default function MasasizSiparis({
   };
 
   return (
-    <div className="panel-fon" onClick={onKapat}>
-      <div className="ayar-panel" onClick={(e) => e.stopPropagation()}>
-        <header className="panel-ust">
-          <h3>
-            {mevcut
-              ? "Sipariş bilgileri"
-              : tip === "paket"
-                ? "Yeni paket siparişi"
-                : "Yeni gel al siparişi"}
-          </h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
-        </header>
-
-        <div className="panel-govde">
+    <>
+      <OrtaPencere
+        ikon={tip === "paket" ? Bike : ShoppingBag}
+        baslik={
+          mevcut
+            ? "Sipariş bilgileri"
+            : tip === "paket"
+              ? "Yeni paket siparişi"
+              : "Yeni gel al siparişi"
+        }
+        aciklama="Müşteri bilgileri isteğe bağlıdır."
+        genislik="dar"
+        onKapat={onKapat}
+        alt={
+          <>
+            <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+            <button
+              className="pnc-kaydet"
+              onClick={() =>
+                onAc(tip, {
+                  ad,
+                  telefon,
+                  adres: tip === "paket" ? adres : "",
+                  musteriId,
+                })
+              }
+            >
+              <Check size={17} /> {mevcut ? "Kaydet" : "Siparişi aç"}
+            </button>
+          </>
+        }
+      >
           {/* Yeni siparişte tür zaten girilen karttan belli; sadece var olan
               siparişin türü düzeltilirken seçici gösteriliyor. */}
           {/* Tek tür açıksa seçilecek bir şey de yok. */}
           {mevcut && ayarlar().gelalAcik && ayarlar().paketAcik && (
           <div className="alan">
-            <label>Sipariş türü</label>
+            <label>
+              Sipariş türü{" "}
+              <Ipucu>
+                Gel Al siparişini müşteri tezgâhtan alır, Paket siparişi adrese gider.
+                Ürünün o türe ait fiyatı tanımlıysa satışta o fiyat kullanılır.
+              </Ipucu>
+            </label>
             <div className="mod-sec">
               <button className={tip === "gelal" ? "aktif" : ""} onClick={() => setTip("gelal")}>
                 <ShoppingBag size={16} /> Gel Al
@@ -74,10 +99,6 @@ export default function MasasizSiparis({
                 <Bike size={16} /> Paket
               </button>
             </div>
-            <Bilgi>
-              Gel Al siparişi müşteri tezgâhtan alır, Paket siparişi adrese gider.
-              Ürünün o türe ait fiyatı tanımlıysa satışta o fiyat kullanılır.
-            </Bilgi>
           </div>
           )}
 
@@ -120,25 +141,7 @@ export default function MasasizSiparis({
               />
             </div>
           )}
-        </div>
-
-        <footer className="modal-aksiyonlar">
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button
-            className="uygula"
-            onClick={() =>
-              onAc(tip, {
-                ad,
-                telefon,
-                adres: tip === "paket" ? adres : "",
-                musteriId,
-              })
-            }
-          >
-            {mevcut ? "Kaydet" : "Siparişi aç"}
-          </button>
-        </footer>
-      </div>
+      </OrtaPencere>
 
       {seciciAcik && (
         <MusteriSecici
@@ -148,6 +151,6 @@ export default function MasasizSiparis({
           onKapat={() => setSeciciAcik(false)}
         />
       )}
-    </div>
+    </>
   );
 }
