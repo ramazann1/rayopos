@@ -1,25 +1,38 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (28 Eyl 2026 güncellendi — çekmeceler bitti seansı)
+## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — canlıya geçiş seansı)
 
-> **YENİ SEANSIN BAŞI: CANLIYA GEÇİŞ — yeni temiz işletme.** Ramazan cafede
-> gerçek kullanıma başlıyor. Bugünkü işletmedeki (kod 15003, "eGZOZ lounge")
-> bütün işlemler denemeydi; bu işletme **deneme işletmesi olarak kalacak**,
-> bundan sonraki testler orada yapılır (canlıda test yapılmaz). Konuşulacaklar:
-> 1. Bu işletmenin adı değişecek. Ad programdan değişmiyor, SQL ile:
->    `update isletmeler set ad = 'eGZOZ Deneme' where kod = 15003;` (ad Ramazan'ın
->    onayını bekliyor). **Önce ad değişir, sonra yeni işletme açılır** — aynı adla
->    iki işletme girişte karışır.
-> 2. Ramazan "eGZOZ lounge" adıyla yeni işletmeyi kayıt ekranından açar.
-> 3. Tanımların taşınması: menü Excel ile aktarılıyor ama reçete, malzeme,
->    sos tarifi, seçenek grubu, masa/bölge, personel, yetki, ödeme tipi, ayarlar
->    aktarılmıyor. Seçenek: bunları 15003'ten yeni işletmeye kopyalayan tek SQL
->    (işlem verisi — adisyon, tahsilat, stok hareketi, kasa, gider — **kopyalanmaz**,
->    malzeme stokları sıfırdan başlar, gerçek ilk sayım girilir). Ramazan
->    "sonraki seansta konuşalım" dedi — önce ne taşınacağını beraber listele.
-> Sonra 4. madde. 1-3 dışarıdan bekliyor. ÖKC konuşuldu, "zamanı gelince":
-> firma yazışması gerekiyor; o güne kadar sahte ÖKC ile akış kurulabilir.
+> **YENİ SEANSIN BAŞI: KÖPRÜ İÇİN AYRI HESAP.** Köprü programına bugün bir
+> personelin telefon + şifresiyle giriliyor; o şifre bir kişinin gerçek şifresi
+> oluyor. Ramazan bunu istemiyor. Anlaşılan (onaylanmadı, plan konuşulacak):
+> Personel'de "Köprü" rolü; yalnız fiş basmaya yetecek yetki; bu hesap
+> programın ekranlarına giremez, yalnız köprüde çalışır; şifresi kimseye ait
+> değil. Önce planı anlat, onay al.
+>
+> Sonrakiler:
+> 1. **Köprü işletme uyuşmazlığı:** köprü tek işletmeye bağlı; başka
+>    işletmenin sekmesinden fiş gelince yazıcı bulunamıyor, sessizce basılmıyor.
+>    Program köprünün `/bilgi` cevabındaki işletme kodunu kendi oturumuyla
+>    karşılaştırsın, farklıysa açıkça söylesin (`src/yerelYazdirma.ts`).
+> 2. **Hazır rol yetkileri eski:** `isletme_kur_uygula` içindeki Kasa/Garson/
+>    İstasyon/Kurye şablonu 19 Ağu'dan; sonra eklenen yetkiler (stok, gider...)
+>    yeni işletmede bu rollere işaretsiz geliyor. Şablon güncellenmeli
+>    (Ramazan henüz "ekle" demedi, öneri olarak duruyor).
+> ÖKC konuşuldu, "zamanı gelince": firma yazışması gerekiyor; o güne kadar
+> sahte ÖKC ile akış kurulabilir.
+>
+> **BİTTİ (29 Eyl 2026): canlıya geçiş.**
+> - 15000-15002 deneme işletmeleri silindi (`sql/2026-09-29-diger-isletmeleri-sil.sql`).
+> - 15003'ün adı **"Deneme"**, testler burada; giriş 05000000001.
+> - **"eGZOZ lounge"** gerçek işletme, SQL Editor'dan `isletme_kur(...)` ile
+>   açıldı (kayıt dışarıya kapalı kalıyor). Aynı telefon iki hesapta olamıyor.
+>   Bölgeleri Ramazan kurdu; menü, reçete, ayar vb. kendisi kuruyor.
+> - Deneme'den taşınan: istasyonlar, yazıcılar, yazıcı–istasyon, fiş
+>   şablonları, seçenek grupları ve seçenekler (ürün bağlantısı YOK, Ramazan
+>   elle bağlıyor) — `sql/2026-09-29-denemeden-tasima.sql`, sayılar tuttu.
+> - Kilit ekranına "Çıkış yap" (bağlantı yokken gizli): PIN'i olmayan yeni
+>   işletmede Ramazan kilitte mahsur kaldı.
 >
 > **BİTTİ (28 Eyl 2026, 2. seans): sağdan kayan çekmece uygulamada kalmadı.**
 > - Taşınanlar: Ödenmezler, Kasa Geçmişi vardiya detayı (iki sütun: döküm |
