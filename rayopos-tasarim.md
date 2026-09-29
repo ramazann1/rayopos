@@ -17,6 +17,7 @@
 > - HATA DÜZELDİ: aktarım menüyü cihaz kopyasından (`menuGetir`) okuyordu, az
 >   önce açılan kategorileri bilmiyordu → ilk aktarımda ürünler kategorisiz
 >   yazılıyordu. Artık `menuOku` ile sunucudan okuyor.
+> - Giriş kutularında tarayıcının otomatik doldurma mavisi kalktı.
 >
 > **BİTTİ (29 Eyl 2026): KÖPRÜ KODLA EŞLEŞİYOR + YENİ ARAYÜZ.**
 > - Telefon/şifre ve "Köprü rolü" fikri bırakıldı. Köprü 6 haneli kod gösterir;
