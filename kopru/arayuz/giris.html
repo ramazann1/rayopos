@@ -9,30 +9,43 @@
     <link rel="stylesheet" href="ortak.css" />
   </head>
   <body>
-    <div class="band">
-      <img src="../varliklar/simge-128.png" alt="" />
-      <h1>RayoPOS <em>Kasa Köprüsü</em></h1>
-      <span class="surum" id="surum">—</span>
+    <div class="giris-sayfa">
+      <header class="ust">
+        <img src="../varliklar/simge-128.png" alt="" />
+        <div class="ust-ad">
+          <strong>RayoPOS</strong>
+          <span>Kasa köprüsü</span>
+        </div>
+        <span class="rozet" id="surum">—</span>
+      </header>
+
+      <main class="giris">
+        <div class="uyari" id="uyari"></div>
+
+        <section class="kod-kart">
+          <div class="baglan-im" data-ikon="bagla" data-boy="26"></div>
+          <h2>Bu kasayı bağlayın</h2>
+          <p>Aşağıdaki kodu RayoPOS'a yazın</p>
+
+          <div class="haneler" id="haneler"></div>
+
+          <span class="bekleme" id="bekleme">Kod alınıyor</span>
+        </section>
+
+        <ol class="adimlar">
+          <li><span>RayoPOS'ta <b>Ayarlar → Yazıcılar</b></span></li>
+          <li><span><b>Köprü ekle</b> düğmesine basın</span></li>
+          <li><span>Yukarıdaki kodu yazın</span></li>
+        </ol>
+      </main>
+
+      <footer class="alt">
+        <span data-ikon="ekran" data-boy="15"></span>
+        <span id="bilgisayar">—</span>
+      </footer>
     </div>
 
-    <div class="giris">
-      <h2>Bu kasayı bağlayın</h2>
-      <p class="aciklama">
-        RayoPOS'ta Ayarlar → Yazıcılar → Köprü ekle'ye bu kodu yazın. Bir kez
-        yapılır, köprü bir daha giriş sormaz.
-      </p>
-
-      <div class="uyari" id="uyari"></div>
-
-      <div class="kod" id="kod">— — —</div>
-      <p class="kod-bekliyor">Onay bekleniyor...</p>
-    </div>
-
-    <div class="kunye">
-      Cihaz <span id="cihaz">—</span>
-      <button type="button" id="kopyala">Kopyala</button>
-    </div>
-
+    <script src="ikon.js"></script>
     <script src="giris.js"></script>
   </body>
 </html>

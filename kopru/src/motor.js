@@ -140,7 +140,7 @@ export async function motorBaslat(ayar, bildir = () => {}) {
     const liste = [];
     for (const y of yazicilar.values()) {
       if (y.baglanti === "webusb") {
-        liste.push({ id: y.id, ad: y.ad, durum: "webusb" });
+        liste.push({ id: y.id, ad: y.ad, baglanti: y.baglanti, durum: "webusb" });
         continue;
       }
       // Başka kasaya bağlanmış yazıcı bu bilgisayardan görünmüyor; yoklanırsa
@@ -148,7 +148,14 @@ export async function motorBaslat(ayar, bildir = () => {}) {
       if (y.cihaz && y.cihaz !== cihaz) continue;
       const sonuc = await yaziciDurumu(y);
       await yaziciDurumBildir(y.id, cihaz, sonuc.cevrimici, sonuc.hata).catch(() => {});
-      liste.push({ id: y.id, ad: y.ad, durum: sonuc.cevrimici ? "bagli" : "kopuk", hata: sonuc.hata });
+      liste.push({
+        id: y.id,
+        ad: y.ad,
+        baglanti: y.baglanti,
+        ip: y.ip,
+        durum: sonuc.cevrimici ? "bagli" : "kopuk",
+        hata: sonuc.hata,
+      });
     }
     durum.yazicilar = liste;
     yayinla();

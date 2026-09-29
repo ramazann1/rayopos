@@ -1,25 +1,55 @@
 const bul = (ad) => document.getElementById(ad);
 
 let sonDurum = null;
-let kunye = { cihaz: "", surum: "" };
+let kunye = { cihaz: "", bilgisayar: "", surum: "" };
+
+ikonlariYerlestir();
 
 const saat = (zaman) =>
   new Date(zaman).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-/** Bir bağlantı/yazıcı satırı: sol kenarı durum rengi · ad · durum etiketi. */
-function satir(ad, durum, etiket, aciklama = "") {
+// Yazıcının türü köprüye gelmiyor; adından tahmin ediliyor, bulunamazsa düz
+// yazıcı ikonu.
+function yaziciIkonu(ad) {
+  const kucuk = ad.toLocaleLowerCase("tr-TR");
+  if (kucuk.includes("mutfak")) return "mutfak";
+  if (kucuk.includes("bar")) return "bar";
+  if (kucuk.includes("kasa") || kucuk.includes("adisyon")) return "fis";
+  return "yazici";
+}
+
+function yaziciSatiri(y) {
+  const [hal, etiket] =
+    y.durum === "webusb"
+      ? ["", "Tarayıcıdan"]
+      : y.durum === "bagli"
+        ? ["acik", "Hazır"]
+        : ["kapali", "Ulaşılamıyor"];
+
+  const baglanti =
+    y.durum === "webusb" ? "Tarayıcıdan USB" : y.baglanti === "usb" ? "USB" : y.ip || "Ağ";
+
   const kutu = document.createElement("div");
-  kutu.className = `satir ${durum}`;
+  kutu.className = `yazici ${hal}`;
   kutu.innerHTML =
-    `<span class="satir-ad"><strong></strong><em></em></span>` + `<span class="etiket ${durum}"></span>`;
-  kutu.querySelector("strong").textContent = ad;
-  kutu.querySelector("em").textContent = aciklama;
-  kutu.querySelector(".etiket").textContent = etiket;
+    `<span class="yazici-im">${ikon(yaziciIkonu(y.ad), 22)}</span>` +
+    `<span class="yazici-tur">Yazıcı</span>` +
+    `<span class="yazici-ad"><strong></strong><span></span></span>` +
+    `<span class="durum-etiket ${hal}"></span>`;
+  kutu.querySelector("strong").textContent = y.ad;
+  // Hata cümlesi satırı iki katına çıkarıyordu; üstüne gelince görünüyor.
+  kutu.querySelector(".yazici-ad span").textContent = baglanti;
+  if (y.hata) kutu.title = y.hata;
+  kutu.querySelector(".durum-etiket").textContent = etiket;
   return kutu;
 }
 
+// "KASA kapalı" köprünün kendisi kapalıymış gibi okunuyordu; cümlede yazıcı
+// olduğu açıkça söyleniyor.
+const yaziciAdi = (ad) => (ad.toLocaleLowerCase("tr-TR").includes("yazıcı") ? ad : `${ad} yazıcısı`);
+
 /**
- * Nabız satırı. Sıra önemli: sunucu bağlantısı yoksa yazıcıların durumu zaten
+ * Tek cümle. Sıra önemli: sunucu bağlantısı yoksa yazıcıların durumu zaten
  * anlamsız, önce o söyleniyor.
  */
 function nabiz(durum) {
@@ -36,10 +66,13 @@ function nabiz(durum) {
   if (kapali.length === basanlar.length) {
     return { hal: "kapali", baslik: "Yazıcılara ulaşılamıyor", alt: kapali.map((y) => y.ad).join(", ") };
   }
-  if (kapali.length) {
-    return { hal: "bekliyor", baslik: "Fiş basılıyor, bir yazıcı kapalı", alt: `Kapalı: ${kapali.map((y) => y.ad).join(", ")}` };
+  if (kapali.length === 1) {
+    return { hal: "bekliyor", baslik: `${yaziciAdi(kapali[0].ad)} kapalı`, alt: "Diğer yazıcılar basıyor" };
   }
-  return { hal: "acik", baslik: "Fiş basmaya hazır", alt: "Sunucu ve yazıcılar bağlı" };
+  if (kapali.length) {
+    return { hal: "bekliyor", baslik: `${kapali.length} yazıcı kapalı`, alt: kapali.map((y) => y.ad).join(", ") };
+  }
+  return { hal: "acik", baslik: "Her şey yolunda", alt: `${basanlar.length} yazıcı hazır` };
 }
 
 function ciz(durum) {
@@ -51,58 +84,26 @@ function ciz(durum) {
   bul("nabizBaslik").textContent = n.baslik;
   bul("nabizAlt").textContent = n.alt;
 
-  const oturum = durum.oturum ?? {};
-  bul("isletme").textContent = oturum.isletme || "—";
-  bul("kisi").textContent = oturum.kisi ? `· ${oturum.kisi}` : "";
-
-  const kod = bul("kodKopyala");
-  kod.hidden = !oturum.kod;
-  kod.textContent = oturum.kod ? `Kod ${oturum.kod}` : "";
-
-  bul("cihaz").textContent = durum.cihaz || kunye.cihaz;
-
-  const bagli = durum.bulut === "bagli";
-  const baglantilar = bul("baglantilar");
-  baglantilar.replaceChildren(
-    satir(
-      "RayoPOS sunucusu",
-      bagli ? "acik" : "kapali",
-      bagli ? "Bağlı" : "Bağlantı yok",
-      bagli ? "Fişler anında alınıyor" : durum.bulutHata || "Yeniden deneniyor"
-    ),
-    // Kasanın kendi ekranından doğrudan basma yolu. İnternet gitse de bu yol
-    // ayakta kalıyor; açık olup olmadığı bakılan ilk yer burası olmalı.
-    satir(
-      "Yerel yazdırma",
-      durum.yerel === "acik" ? "acik" : "kapali",
-      durum.yerel === "acik" ? "Açık" : "Kapalı",
-      durum.yerel === "acik"
-        ? `Bu kasanın fişleri internetsiz de basılıyor · port ${durum.yerelPort}`
-        : "Fişler yalnız internet varken basılabilir"
-    )
-  );
+  const isletme = durum.oturum?.isletme || "—";
+  bul("isletme").textContent = isletme;
 
   const yazicilar = bul("yazicilar");
   if (!durum.yazicilar.length) {
     const bos = document.createElement("p");
     bos.className = "bos";
-    bos.textContent = "Henüz yazıcı tanımlanmamış ya da ilk yoklama yapılmadı.";
+    bos.textContent = "Henüz yazıcı yok ya da ilk yoklama sürüyor.";
     yazicilar.replaceChildren(bos);
   } else {
-    yazicilar.replaceChildren(
-      ...durum.yazicilar.map((y) =>
-        y.durum === "webusb"
-          ? satir(y.ad, "bilinmiyor", "Tarayıcıdan", "Bu yazıcıya köprü dokunmuyor")
-          : satir(
-              y.ad,
-              y.durum === "bagli" ? "acik" : "kapali",
-              y.durum === "bagli" ? "Çevrimiçi" : "Çevrimdışı",
-              y.durum === "bagli" ? "" : y.hata || "Ulaşılamıyor"
-            )
-      )
-    );
+    yazicilar.replaceChildren(...durum.yazicilar.map(yaziciSatiri));
   }
-}
+
+  const bagli = durum.bulut === "bagli";
+  const sunucu = bul("sunucu");
+  sunucu.className = bagli ? "sunucu" : "sunucu kapali";
+  sunucu.innerHTML = ikon(bagli ? "bulut" : "bulutYok", 15);
+  sunucu.append(bagli ? "Sunucuya bağlı" : "Sunucuya bağlı değil");
+
+  bul("bIsletme").textContent = durum.oturum?.kod ? `${isletme} · ${durum.oturum.kod}` : isletme;}
 
 /** Destek hattına yapıştırılacak özet — tek tek yazdırmaya gerek kalmıyor. */
 function ozetMetni() {
@@ -112,7 +113,6 @@ function ozetMetni() {
   const satirlar = [
     "RayoPOS Kasa Köprüsü",
     `İşletme : ${d.oturum?.isletme ?? "-"} (${d.oturum?.kod ?? "-"})`,
-    `Kişi    : ${d.oturum?.kisi ?? "-"}`,
     `Cihaz   : ${d.cihaz}`,
     `Sürüm   : ${d.surum}`,
     `Sunucu  : ${d.bulut === "bagli" ? "bağlı" : `bağlantı yok (${d.bulutHata || "sebep yok"})`}`,
@@ -129,17 +129,24 @@ function ozetMetni() {
 
 kopru.kunye().then((k) => {
   kunye = k;
-  bul("cihaz").textContent = k.cihaz;
-  bul("surum").textContent = `s${k.surum}`;
-  ciz(sonDurum);
+  bul("bBilgisayar").textContent = k.bilgisayar;
+  bul("bSurum").textContent = k.surum;
 });
 
 kopru.durumAl().then(ciz);
 kopru.durumDinle(ciz);
 
-// Elle yoklama. Yoklama sürerken düğme kapalı kalıyor; sonucu ayrıca
-// yazmıyoruz, yazıcı satırları zaten yerinde güncelleniyor.
-bul("yeniden").onclick = async (olay) => {
+for (const dugme of document.querySelectorAll("[data-sekme]")) {
+  dugme.onclick = () => {
+    for (const d of document.querySelectorAll("[data-sekme]")) d.classList.toggle("secili", d === dugme);
+    bul("durum").hidden = dugme.dataset.sekme !== "durum";
+    bul("ayarlar").hidden = dugme.dataset.sekme !== "ayarlar";
+  };
+}
+
+// Elle yoklama. Sürerken düğme kapalı ve ikonu dönüyor; sonuç satırlara
+// kendiliğinden yansıyor.
+bul("yokla").onclick = async (olay) => {
   const dugme = olay.currentTarget;
   dugme.disabled = true;
   try {
@@ -149,5 +156,13 @@ bul("yeniden").onclick = async (olay) => {
   }
 };
 
-bul("kodKopyala").onclick = () => kopru.kopyala(sonDurum?.oturum?.kod ?? "");
-bul("hepsiniKopyala").onclick = () => kopru.kopyala(ozetMetni());
+bul("kopyala").onclick = async (olay) => {
+  const dugme = olay.currentTarget;
+  await kopru.kopyala(ozetMetni());
+  dugme.lastChild.textContent = " Kopyalandı";
+  setTimeout(() => (dugme.lastChild.textContent = " Bilgileri kopyala"), 1500);
+};
+
+bul("kes").onclick = () => (bul("onay").hidden = false);
+bul("vazgec").onclick = () => (bul("onay").hidden = true);
+bul("evet").onclick = () => kopru.baglantiyiKes();

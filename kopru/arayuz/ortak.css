@@ -1,9 +1,7 @@
 /* RayoPOS Kasa Köprüsü — pencere görünümü.
 
-   Köprü, RayoPOS'un bir sayfası değil; kasada duran bir cihazın paneli. Bu
-   yüzden ana programın açık zemini burada kullanılmıyor: pencere koyu, vurgu
-   mercan. Yazı tipi RayoPOS ile aynı (Poppins) ve pakete gömülü — kasa
-   çevrimdışıyken de doğru görünmeli. */
+   Açık zemin, beyaz kartlar, vurgu mercan: ana programla aynı aile. Yazı
+   tipi Poppins ve pakete gömülü — kasa çevrimdışıyken de doğru görünmeli. */
 
 @font-face {
   font-family: Poppins;
@@ -31,15 +29,20 @@
 }
 
 :root {
-  --zemin: #15171c;
-  --kart: #1e222a;
-  --kart-ust: #262b34;
-  --cizgi: #30353f;
-  --mercan: #ff7a59;
-  --yesil: #2ecc9a;
-  --kirmizi: #ef6a55;
-  --metin: #f4f2ef;
-  --soluk: #a9b0bd;
+  --zemin: #f5f6f8;
+  --kart: #ffffff;
+  --cizgi: #e6e9ee;
+  --cizgi-acik: #f0f2f5;
+  --metin: #1c1f26;
+  --soluk: #5b6270;
+  --mercan: #ff6b45;
+  --mercan-koyu: #e2502c;
+  --mercan-zemin: #fff1ec;
+  --yesil: #22b863;
+  --yesil-koyu: #178a4a;
+  --yesil-zemin: #e6f8ee;
+  --kirmizi: #e5484d;
+  --kirmizi-zemin: #fdecec;
 }
 
 * {
@@ -48,9 +51,10 @@
   box-sizing: border-box;
 }
 
-input,
 button {
   font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 html,
@@ -65,294 +69,48 @@ body {
   background: var(--zemin);
   color: var(--metin);
   user-select: none;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
-/* Kaydırma yalnız listenin kendi içinde: pencere hiç kaymıyor, üstteki durum
-   satırı her zaman görünüyor. */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--cizgi);
-  border-radius: 4px;
-}
-
-/* --- Marka bandı (iki pencerede de en üstte) --- */
-
-.band {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 14px 20px;
-  background: linear-gradient(120deg, #ff8a6b, #e85f3c);
-  color: #fff;
-}
-
-.band img {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: #fff;
-  padding: 3px;
-}
-
-.band h1 {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-}
-
-.band h1 em {
-  font-style: normal;
-  font-weight: 500;
-  opacity: 0.85;
-}
-
-.band .surum {
-  margin-left: auto;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-/* --- Giriş penceresi --- */
-
-.giris {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0 24px;
-}
-
-.giris h2 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.aciklama {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--soluk);
-  margin-bottom: 20px;
-}
-
-/* Bağlantı kodu. Kasadaki kişi bunu okuyup RayoPOS'a yazıyor; uzaktan da
-   okunsun diye iri ve üçerli gruplanmış. */
-.kod {
-  font-size: 52px;
-  font-weight: 600;
-  letter-spacing: 6px;
-  text-align: center;
-  color: var(--metin);
-  background: var(--kart);
-  border: 1.5px solid var(--mercan);
-  border-radius: 14px;
-  padding: 18px 0;
-  margin-bottom: 14px;
-}
-
-.kod-bekliyor {
-  font-size: 14px;
-  text-align: center;
-  color: var(--soluk);
-}
-
-.uyari {
-  display: none;
-  background: rgba(239, 106, 85, 0.14);
-  border: 1px solid rgba(239, 106, 85, 0.45);
-  color: #ffb4a3;
-  border-radius: 11px;
-  padding: 11px 13px;
-  font-size: 14px;
-  line-height: 1.4;
-  margin-bottom: 16px;
-}
-
-.uyari.acik {
+svg {
   display: block;
-}
-
-.kunye {
   flex: none;
-  display: flex;
+}
+
+/* Düğme ailesi: beyaz, ince çerçeveli; tehlikeli olan kırmızı yazılı. */
+.dugme {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  border-top: 1px solid var(--cizgi);
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
   font-size: 13px;
-  color: var(--soluk);
-}
-
-.kunye span {
-  user-select: text;
-}
-
-.kunye button {
-  margin-left: auto;
+  color: var(--metin);
   background: var(--kart);
   border: 1px solid var(--cizgi);
-  border-radius: 9px;
-  padding: 7px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--metin);
-  cursor: pointer;
+  border-radius: 10px;
 }
 
-/* --- Durum penceresi --- */
-
-/* Nabız: pencerenin tek cümlesi. Renk zeminden geliyor, küçük bir rozet değil
-   — kasadaki kişi iki metre uzaktan da okuyabilmeli. */
-.nabiz {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px 20px;
-  background: var(--kart-ust);
-  border-bottom: 1px solid var(--cizgi);
+.dugme:hover {
+  border-color: #d3d8e0;
+  background: #fafbfc;
 }
 
-.nabiz .isik {
-  flex: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--soluk);
-  box-shadow: 0 0 0 5px rgba(169, 176, 189, 0.15);
-}
-
-.nabiz strong {
-  display: block;
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.nabiz span {
-  font-size: 13px;
-  color: var(--soluk);
-}
-
-.nabiz.acik .isik {
-  background: var(--yesil);
-  box-shadow: 0 0 0 5px rgba(46, 204, 154, 0.18);
-}
-
-.nabiz.acik strong {
-  color: var(--yesil);
-}
-
-.nabiz.bekliyor .isik {
-  background: var(--mercan);
-  box-shadow: 0 0 0 5px rgba(255, 122, 89, 0.18);
-}
-
-.nabiz.bekliyor strong {
-  color: var(--mercan);
-}
-
-.nabiz.kapali .isik {
-  background: var(--kirmizi);
-  box-shadow: 0 0 0 5px rgba(239, 106, 85, 0.18);
-}
-
-.nabiz.kapali strong {
+.dugme.tehlikeli {
   color: var(--kirmizi);
 }
 
-/* Künye şeridi: işletme adı ve kod. Kart değil, ince bir bant — asıl bilgi
-   üstteki durum. */
-.kunye-serit {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 20px;
-  border-bottom: 1px solid var(--cizgi);
-  font-size: 14px;
+.dugme.ana {
+  color: #fff;
+  background: var(--mercan);
+  border-color: var(--mercan);
 }
 
-.kunye-serit strong {
-  font-weight: 600;
+.dugme.ana:hover {
+  background: var(--mercan-koyu);
 }
 
-.kunye-serit em {
-  font-style: normal;
-  color: var(--soluk);
-}
-
-.kod-rozet {
-  margin-left: auto;
-  background: rgba(255, 122, 89, 0.16);
-  border: 1px solid rgba(255, 122, 89, 0.4);
-  color: var(--mercan);
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 5px 11px;
-  cursor: pointer;
-}
-
-.liste {
-  flex: 1;
-  overflow-y: auto;
-  padding: 6px 20px 14px;
-}
-
-.liste h2 {
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: var(--soluk);
-  margin: 16px 0 8px;
-}
-
-/* Başlık ile yanındaki düğme aynı satırda; düğme sağa yaslanıyor. */
-.liste h2.baslik-satir {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Yazıcı yoklaması 30 saniyede bir dönüyor. Yazıcıyı çalışırken takan kişi
-   sıranın gelmesini beklemesin diye bu düğme var. */
-.yokla {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--kart);
-  border: 1px solid var(--cizgi);
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--metin);
-  cursor: pointer;
-}
-
-.yokla svg {
-  width: 14px;
-  height: 14px;
-}
-
-.yokla:disabled {
-  cursor: default;
-  color: var(--soluk);
-}
-
-.yokla:disabled svg {
+.dugme:disabled svg {
   animation: doner 900ms linear infinite;
 }
 
@@ -362,76 +120,548 @@ body {
   }
 }
 
-.satirlar {
+/* --- Bağlantı penceresi --- */
+
+.giris-sayfa {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  height: 100%;
 }
 
-.satir {
+.ust {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 16px 20px;
+}
+
+.ust img {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.ust-ad strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ust-ad span {
+  font-size: 12px;
+  color: var(--soluk);
+}
+
+.rozet {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--soluk);
+  background: var(--kart);
+  border: 1px solid var(--cizgi);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.giris {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+}
+
+.kod-kart {
+  background: var(--kart);
+  border: 1px solid var(--cizgi-acik);
+  border-radius: 18px;
+  padding: 26px 20px 22px;
+  text-align: center;
+}
+
+.baglan-im {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 14px;
+  border-radius: 18px;
+  background: var(--mercan-zemin);
+  color: var(--mercan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kod-kart h2 {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.kod-kart > p {
+  font-size: 14px;
+  color: var(--soluk);
+  margin-top: 3px;
+}
+
+/* Kod hane hane: uzaktan okunup yazılıyor, 3+3 gruplu. */
+.haneler {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin: 20px 0 14px;
+}
+
+.haneler span {
+  width: 42px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 27px;
+  font-weight: 600;
+  background: var(--zemin);
+  border: 1px solid var(--cizgi);
+  border-radius: 11px;
+}
+
+.haneler .ara {
+  width: 8px;
+  background: none;
+  border: none;
+}
+
+.bekleme {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+.bekleme::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mercan);
+  animation: nabiz 1.6s ease-in-out infinite;
+}
+
+@keyframes nabiz {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.adimlar {
+  list-style: none;
+  counter-reset: adim;
+  margin-top: 14px;
+  background: var(--kart);
+  border: 1px solid var(--cizgi-acik);
+  border-radius: 16px;
+  padding: 6px 16px;
+}
+
+.adimlar li {
+  counter-increment: adim;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--kart);
-  border: 1px solid var(--cizgi);
-  border-left: 3px solid var(--soluk);
+  padding: 9px 0;
+  font-size: 13px;
+}
+
+.adimlar li + li {
+  border-top: 1px solid var(--cizgi-acik);
+}
+
+.adimlar li::before {
+  content: counter(adim);
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--mercan-zemin);
+  color: var(--mercan-koyu);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adimlar b {
+  font-weight: 600;
+}
+
+.uyari {
+  display: none;
+  margin-bottom: 12px;
+  background: var(--kirmizi-zemin);
+  color: #b4282d;
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.uyari.acik {
+  display: block;
+}
+
+.alt {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 20px;
+  font-size: 12px;
+  color: var(--soluk);
+}
+
+/* --- Durum penceresi --- */
+
+.durum-sayfa {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  height: 100%;
+}
+
+.serit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  background: #fbfbfc;
+  border-right: 1px solid var(--cizgi-acik);
+}
+
+.serit img {
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
-  padding: 10px 12px;
+  margin-bottom: 14px;
 }
 
-.satir.acik {
-  border-left-color: var(--yesil);
+.serit button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 11px;
+  background: none;
+  color: var(--soluk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.satir.kapali {
-  border-left-color: var(--kirmizi);
+.serit button:hover {
+  background: var(--cizgi-acik);
 }
 
-.satir.bilinmiyor {
-  border-left-color: var(--soluk);
+.serit button.secili {
+  background: var(--mercan-zemin);
+  color: var(--mercan);
 }
 
-.satir-ad {
-  flex: 1;
+.serit .ayar-sekme {
+  margin-top: auto;
+}
+
+.icerik {
+  overflow-y: auto;
+  padding: 22px 22px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.icerik[hidden] {
+  display: none;
+}
+
+/* Durum sekmesi ortalı: işletme, tek cümle ve kartlar pencerenin ortasında. */
+.icerik.ortali {
+  align-items: center;
+  text-align: center;
+  padding: 28px 28px 18px;
+}
+
+.isletme-baslik {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.isletme-baslik strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.isletme-im {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--mercan);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Kaydırma gerekirse ince ve zemine karışan bir çubuk; Windows'un kalın gri
+   çubuğu pencereyi bozuyordu. */
+.icerik::-webkit-scrollbar {
+  width: 6px;
+}
+
+.icerik::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.icerik:hover::-webkit-scrollbar-thumb {
+  background: var(--cizgi);
+}
+
+/* Tek cümlelik durum: yanıp sönen nokta + büyük yazı. */
+.nabiz {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 4px;
+}
+
+.nabiz .isik {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--soluk);
+  box-shadow: 0 0 0 5px var(--cizgi-acik);
+}
+
+.nabiz.acik .isik {
+  background: var(--yesil);
+  box-shadow: 0 0 0 5px var(--yesil-zemin);
+}
+
+.nabiz.bekliyor .isik {
+  background: var(--mercan);
+  box-shadow: 0 0 0 5px var(--mercan-zemin);
+}
+
+.nabiz.kapali .isik {
+  background: var(--kirmizi);
+  box-shadow: 0 0 0 5px var(--kirmizi-zemin);
+}
+
+.nabiz strong {
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.nabiz-alt {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--soluk);
+}
+
+/* Yazıcılar kare kart: pencere genişledikçe yan yana sığanı artıyor. */
+.yazicilar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.yazici {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--kart);
+  border: 1px solid var(--cizgi-acik);
+  border-radius: 16px;
+  padding: 16px 10px 14px;
+}
+
+.yazici.kapali {
+  border-color: #f5b5b7;
+}
+
+.yazici-im {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--mercan-zemin);
+  color: var(--mercan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.yazici-tur {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--soluk);
+}
+
+.yazici-ad {
   min-width: 0;
+  max-width: 100%;
 }
 
-.satir-ad strong {
+.yazici-ad strong {
   display: block;
   font-size: 14px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.satir-ad em {
-  font-style: normal;
-  font-size: 13px;
+.yazici-ad span {
+  font-size: 12px;
   color: var(--soluk);
 }
 
-/* Etiket sabit sütunda duruyor: yanındaki yazı uzayıp kısaldıkça satırlar
-   birbirine göre kaymasın. */
-.etiket {
-  flex: none;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 4px 11px;
-  background: var(--kart-ust);
+.durum-etiket {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
   color: var(--soluk);
 }
 
-.etiket.acik {
-  background: rgba(46, 204, 154, 0.16);
-  color: var(--yesil);
+.durum-etiket::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
-.etiket.kapali {
-  background: rgba(239, 106, 85, 0.16);
-  color: #ff9d8a;
+.durum-etiket.acik {
+  color: var(--yesil-koyu);
+}
+
+.durum-etiket.kapali {
+  color: var(--kirmizi);
 }
 
 .bos {
-  font-size: 14px;
+  grid-column: 1 / -1;
+  background: var(--kart);
+  border: 1px dashed var(--cizgi);
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 13px;
   color: var(--soluk);
+  text-align: center;
+}
+
+.icerik-alt {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sunucu {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--soluk);
+}
+
+.sunucu.kapali {
+  color: var(--kirmizi);
+}
+
+.dugme.vurgu {
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--mercan-koyu);
+}
+
+/* Ayarlar: bilgi satırları tek kartta, işlemler altta. */
+.ayar-baslik {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.bilgiler {
+  margin-top: 16px;
+  background: var(--kart);
+  border: 1px solid var(--cizgi-acik);
+  border-radius: 14px;
+  padding: 2px 16px;
+}
+
+.bilgiler div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  font-size: 13px;
+}
+
+.bilgiler div + div {
+  border-top: 1px solid var(--cizgi-acik);
+}
+
+.bilgiler dt {
+  color: var(--soluk);
+}
+
+.bilgiler dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.islemler {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.islemler .dugme {
+  flex: 1;
+}
+
+/* Kendi onay penceremiz — tarayıcının confirm() kutusu kullanılmıyor. */
+.onay-fon {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 31, 38, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.onay-fon[hidden] {
+  display: none;
+}
+
+.onay {
+  width: 100%;
+  max-width: 340px;
+  background: var(--kart);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.onay p {
+  font-size: 14px;
   line-height: 1.5;
+}
+
+.onay .islemler {
+  margin-top: 18px;
 }

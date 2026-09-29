@@ -1,5 +1,6 @@
-import { app, BrowserWindow, clipboard, ipcMain, Menu, nativeImage, shell, Tray } from "electron";
+import { app, BrowserWindow, clipboard, ipcMain, Menu, nativeImage, Tray } from "electron";
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { hostname } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SURUM } from "../src/surum.js";
@@ -70,7 +71,7 @@ const pencereAyari = (genislik, yukseklik) => ({
   title: "RayoPOS Kasa Köprüsü",
   icon: nativeImage.createFromPath(simge(256)),
   autoHideMenuBar: true,
-  backgroundColor: "#15171c",
+  backgroundColor: "#f5f6f8",
   show: false,
   webPreferences: {
     preload: join(buDizin, "onyuk.cjs"),
@@ -118,7 +119,7 @@ function durumPenceresiAc() {
     return;
   }
 
-  durumPenceresi = new BrowserWindow({ ...pencereAyari(500, 580), minWidth: 440, minHeight: 440 });
+  durumPenceresi = new BrowserWindow({ ...pencereAyari(720, 560), minWidth: 560, minHeight: 460 });
   durumPenceresi.loadFile(join(kopruKoku, "arayuz", "durum.html"));
   durumPenceresi.once("ready-to-show", () => durumPenceresi.show());
   durumPenceresi.on("closed", () => {
@@ -178,22 +179,17 @@ function tepsiyiTazele() {
   tepsi.setToolTip(`RayoPOS Kasa Köprüsü\n${cumle}${oturum ? `\n${oturum.isletme}` : ""}`);
   tepsi.setContextMenu(
     Menu.buildFromTemplate([
-      // Menünün ilk satırı bilgi değil durum: kasadaki kişi sağ tıkladığında
-      // aradığı cevap zaten bu.
-      { label: cumle, icon: isikSimgesi, enabled: false },
-      { type: "separator" },
+      // Menünün ilk satırı durum: kasadaki kişi sağ tıkladığında aradığı cevap
+      // bu. Tıklanabilir bırakılıyor — kapalı satırı Windows soluk çiziyor.
       {
-        label: oturum ? `${oturum.isletme} · ${oturum.kod}` : "İşletme bağlı değil",
-        enabled: Boolean(oturum?.kod),
-        click: () => clipboard.writeText(String(oturum?.kod ?? "")),
-        toolTip: "İşletme kodunu kopyalar",
+        label: oturum ? `${cumle} · ${oturum.isletme}` : cumle,
+        icon: isikSimgesi,
+        click: () => (motor ? durumPenceresiAc() : girisPenceresiAc()),
       },
-      { label: oturum?.kisi ? `Kasa kişisi: ${oturum.kisi}` : "Kasa kişisi yok", enabled: false },
       { type: "separator" },
-      { label: "Durum panelini aç", icon: nativeImage.createFromPath(simge(16)), enabled: Boolean(motor), click: durumPenceresiAc },
-      { label: "RayoPOS'u tarayıcıda aç", click: () => shell.openExternal("https://rayopos.com.tr") },
+      { label: "Durum panelini aç", enabled: Boolean(motor), click: durumPenceresiAc },
+      { label: "Yazıcıları yokla", enabled: Boolean(motor), click: () => motor?.yoklaSimdi() },
       { type: "separator" },
-      { label: "Bu kasanın bağlantısını kes", click: oturumuKapat },
       { label: "Köprüyü kapat", click: cik },
     ])
   );
@@ -201,6 +197,10 @@ function tepsiyiTazele() {
 
 async function oturumuKapat() {
   await motor?.kapat();
+  // Sunucuya ulaşılamasa da bağlantı kesiliyor; hesap o durumda RayoPOS'taki
+  // listeden elle silinir.
+  const { kendiniKaldir } = await import("../src/bulut.js");
+  await kendiniKaldir().catch(() => {});
   motor = null;
   sonDurum = null;
   kimlikSil(AYAR_YOLU);
@@ -266,6 +266,9 @@ async function eslesmeyiBaslat() {
 
 ipcMain.handle("kod", () => sonKod);
 
+// Durum panelinin Ayarlar sekmesinden, onay alındıktan sonra.
+ipcMain.handle("baglantiyi-kes", oturumuKapat);
+
 ipcMain.handle("durum", () => sonDurum);
 
 // Yazıcı çalışırken takıldığında yoklama sırasını beklemesin diye elle yoklama.
@@ -278,7 +281,7 @@ ipcMain.handle("yazicilari-yokla", async () => {
 // bununla ayırt ediyor.
 ipcMain.handle("kunye", async () => {
   const { cihazKimligi } = await import("../src/ayar.js");
-  return { cihaz: cihazKimligi(), surum: SURUM };
+  return { cihaz: cihazKimligi(), bilgisayar: hostname(), surum: SURUM };
 });
 
 ipcMain.handle("kopyala", (_olay, metin) => clipboard.writeText(String(metin)));

@@ -3,57 +3,70 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:" />
-    <title>RayoPOS Kasa Köprüsü — Durum</title>
+    <title>RayoPOS Kasa Köprüsü</title>
     <link rel="stylesheet" href="ortak.css" />
   </head>
   <body>
-    <div class="band">
-      <img src="../varliklar/simge-128.png" alt="" />
-      <h1>RayoPOS <em>Kasa Köprüsü</em></h1>
-      <span class="surum" id="surum">—</span>
+    <div class="durum-sayfa">
+      <nav class="serit">
+        <img src="../varliklar/simge-128.png" alt="" />
+        <button type="button" class="secili" data-sekme="durum" data-ikon="durum" data-boy="20" title="Durum"></button>
+        <button type="button" class="ayar-sekme" data-sekme="ayarlar" data-ikon="ayar" data-boy="20" title="Ayarlar"></button>
+      </nav>
+
+      <!-- Durum: pencereyi açan kişinin tek bakışta anlaması gereken cümle,
+           altında yazıcılar. -->
+      <main class="icerik ortali" id="durum">
+        <div class="isletme-baslik">
+          <span class="isletme-im" data-ikon="isletme" data-boy="18"></span>
+          <strong id="isletme">—</strong>
+        </div>
+        <div class="nabiz" id="nabiz">
+          <span class="isik"></span>
+          <strong id="nabizBaslik">Bağlanıyor</strong>
+        </div>
+        <p class="nabiz-alt" id="nabizAlt">Durum okunuyor</p>
+
+        <div class="yazicilar" id="yazicilar"></div>
+
+        <div class="icerik-alt">
+          <span class="sunucu" id="sunucu"></span>
+          <button type="button" class="dugme vurgu" id="yokla" title="Yazıcıları şimdi yokla">
+            <span data-ikon="yenile" data-boy="14"></span> Yazıcıları yokla
+          </button>
+        </div>
+      </main>
+
+      <main class="icerik" id="ayarlar" hidden>
+        <h2 class="ayar-baslik">Ayarlar</h2>
+        <dl class="bilgiler">
+          <div><dt>İşletme</dt><dd id="bIsletme">—</dd></div>
+          <div><dt>Bilgisayar</dt><dd id="bBilgisayar">—</dd></div>
+          <div><dt>Sürüm</dt><dd id="bSurum">—</dd></div>
+        </dl>
+
+        <div class="islemler">
+          <button type="button" class="dugme" id="kopyala">
+            <span data-ikon="kopyala" data-boy="15"></span> Bilgileri kopyala
+          </button>
+          <button type="button" class="dugme tehlikeli" id="kes">
+            <span data-ikon="cikis" data-boy="15"></span> Bağlantıyı kes
+          </button>
+        </div>
+      </main>
     </div>
 
-    <!-- Nabız: pencereyi açan kişinin tek bakışta anlaması gereken cümle.
-         Altındaki listeler ayrıntı; buradan çıkarım yapmak zorunda kalmasın. -->
-    <div class="nabiz" id="nabiz">
-      <span class="isik"></span>
-      <div>
-        <strong id="nabizBaslik">Bağlanıyor...</strong>
-        <span id="nabizAlt">Durum okunuyor</span>
+    <div class="onay-fon" id="onay" hidden>
+      <div class="onay">
+        <p>Bu kasanın bağlantısı kesilsin mi? Fiş basma durur; yeniden bağlamak için RayoPOS'a yeni kod yazmanız gerekir.</p>
+        <div class="islemler">
+          <button type="button" class="dugme" id="vazgec">Vazgeç</button>
+          <button type="button" class="dugme ana" id="evet">Evet, kes</button>
+        </div>
       </div>
     </div>
 
-    <div class="kunye-serit">
-      <strong id="isletme">—</strong>
-      <em id="kisi"></em>
-      <button type="button" id="kodKopyala" class="kod-rozet" hidden></button>
-    </div>
-
-    <div class="liste">
-      <h2>Bağlantı</h2>
-      <div class="satirlar" id="baglantilar"></div>
-
-      <h2 class="baslik-satir">
-        Yazıcılar
-        <button type="button" id="yeniden" class="yokla" title="Yazıcıları şimdi yokla">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-            <path d="M21 3v5h-5" />
-            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-            <path d="M8 16H3v5" />
-          </svg>
-          Şimdi yokla
-        </button>
-      </h2>
-      <div class="satirlar" id="yazicilar"></div>
-    </div>
-
-    <div class="kunye">
-      Cihaz <span id="cihaz">—</span>
-      <button type="button" id="hepsiniKopyala">Bilgileri Kopyala</button>
-    </div>
-
+    <script src="ikon.js"></script>
     <script src="durum.js"></script>
   </body>
 </html>

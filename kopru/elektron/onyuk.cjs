@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("kopru", {
   kodAl: () => ipcRenderer.invoke("kod"),
   kodDinle: (isle) => ipcRenderer.on("kod", (_olay, bilgi) => isle(bilgi)),
   durumAl: () => ipcRenderer.invoke("durum"),
+  baglantiyiKes: () => ipcRenderer.invoke("baglantiyi-kes"),
   kunye: () => ipcRenderer.invoke("kunye"),
   yazicilariYokla: () => ipcRenderer.invoke("yazicilari-yokla"),
   kopyala: (metin) => ipcRenderer.invoke("kopyala", metin),

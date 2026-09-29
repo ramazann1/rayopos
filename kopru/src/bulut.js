@@ -128,6 +128,11 @@ export async function yaziciDurumBildir(yaziciId, cihaz, cevrimici, hata) {
   });
 }
 
+/** Bağlantı kesilirken hesabı RayoPOS'taki köprü listesinden de siliyor. */
+export async function kendiniKaldir() {
+  await istemci?.rpc("kopru_kendini_kaldir");
+}
+
 export async function sonucBildir(id, basarili, hata = null) {
   const { error } = await istemci.rpc("kuyruk_sonuc", {
     p_id: id,
