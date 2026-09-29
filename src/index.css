@@ -7991,6 +7991,16 @@ body {
   outline: none;
 }
 
+/* Tarayıcı kayıtlı bilgiyle doldurduğu kutuyu kendi mavisine boyuyor; renk
+   değişimi hiç bitmeyecek kadar uzatılınca kutu kendi zemininde kalıyor. */
+.giris-satir input:-webkit-autofill,
+.giris-satir input:-webkit-autofill:hover,
+.giris-satir input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--metin);
+  caret-color: var(--metin);
+  transition: background-color 100000s;
+}
+
 .giris-goz {
   border: none;
   background: none;
