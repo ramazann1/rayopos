@@ -30,11 +30,11 @@ export function kimlikOku(yol) {
     }
   }
 
-  if (!kayit.telefon || !sifre) return null;
-  return { telefon: kayit.telefon, sifre, yoklamaSaniye: kayit.yoklamaSaniye ?? 3 };
+  if (!kayit.eposta || !sifre) return null;
+  return { eposta: kayit.eposta, sifre, yoklamaSaniye: kayit.yoklamaSaniye ?? 3 };
 }
 
-export function kimlikYaz(yol, { telefon, sifre }) {
+export function kimlikYaz(yol, { eposta, sifre }) {
   // Dosyada giriş bilgisinden başka şeyler de duruyor (cihaz kimliği); üstüne
   // yazılmıyor, üzerine ekleniyor.
   let onceki = {};
@@ -44,7 +44,8 @@ export function kimlikYaz(yol, { telefon, sifre }) {
     onceki = {};
   }
 
-  const kayit = { ...onceki, telefon, yoklamaSaniye: 3 };
+  const kayit = { ...onceki, eposta, yoklamaSaniye: 3 };
+  delete kayit.telefon;
   delete kayit.sifre;
   delete kayit.sifreKapali;
 
@@ -67,6 +68,7 @@ export function kimlikSil(yol) {
     return;
   }
 
+  delete kayit.eposta;
   delete kayit.telefon;
   delete kayit.sifre;
   delete kayit.sifreKapali;

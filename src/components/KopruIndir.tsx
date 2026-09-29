@@ -8,7 +8,7 @@ import { KOPRU_INDIRME } from "../kopruIndirme";
  * Adres burada yazmıyor, bkz. kopruIndirme.ts.
  */
 export default function KopruIndir() {
-  const { surum, adres, yayinda } = KOPRU_INDIRME;
+  const { adres, yayinda } = KOPRU_INDIRME;
 
   const icerik = (
     <>
@@ -17,7 +17,7 @@ export default function KopruIndir() {
       </span>
       <span className="ki-metin">
         Yazıcı programı
-        <small>{yayinda ? `Windows · v${surum}` : "Yayına hazırlanıyor"}</small>
+        <small>{yayinda ? "Windows için indir" : "Yayına hazırlanıyor"}</small>
       </span>
     </>
   );
@@ -30,7 +30,7 @@ export default function KopruIndir() {
   }
 
   return (
-    <a className="kopru-indir" href={adres} download title={`Sürüm ${surum}`}>
+    <a className="kopru-indir" href={adres} download>
       {icerik}
     </a>
   );

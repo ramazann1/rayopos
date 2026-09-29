@@ -12,9 +12,9 @@ Kasada Node kurulu olması gerekmiyor. Tek dosya: `rayopos-kopru-kurulum-<sürü
 1. Kurulum dosyasına çift tıklayın. Windows imzasız program için "bilinmeyen
    yayıncı" uyarısı verir: **Daha fazla bilgi → Yine de çalıştır** (uyarı ancak
    kod imzalama sertifikasıyla kalkıyor).
-2. Kurulum soru sormadan biter, program kendiliğinden açılır ve telefon/şifre
-   ister. Sunucu adresi ve anahtarı sorulmuyor — ikisi de programa gömülü.
-3. Girişten sonra pencere kapanır, program saat yanındaki simgeye iner. Simgeye
+2. Kurulum soru sormadan biter, program kendiliğinden açılır ve 6 haneli bir
+   kod gösterir. Kodu RayoPOS'ta Ayarlar → Yazıcılar → Köprü ekle'ye yazın.
+3. Kod onaylanınca pencere kendiliğinden kapanır, program saat yanındaki simgeye iner. Simgeye
    çift tıklayınca durum penceresi açılır; çıkış yalnız simgenin sağ tık
    menüsünden.
 

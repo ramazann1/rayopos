@@ -3,12 +3,14 @@
 
 ## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — canlıya geçiş seansı)
 
-> **YENİ SEANSIN BAŞI: KÖPRÜ İÇİN AYRI HESAP.** Köprü programına bugün bir
-> personelin telefon + şifresiyle giriliyor; o şifre bir kişinin gerçek şifresi
-> oluyor. Ramazan bunu istemiyor. Anlaşılan (onaylanmadı, plan konuşulacak):
-> Personel'de "Köprü" rolü; yalnız fiş basmaya yetecek yetki; bu hesap
-> programın ekranlarına giremez, yalnız köprüde çalışır; şifresi kimseye ait
-> değil. Önce planı anlat, onay al.
+> **SÜRÜYOR: KÖPRÜ KODLA EŞLEŞİYOR (29 Eyl 2026 kararı).** Telefon/şifre ve
+> "Köprü rolü" fikri bırakıldı. Köprü ilk açılışta 6 haneli kod gösterir;
+> yetkili (`yazici.hesap`) RayoPOS'ta Yazıcılar → Kasa köprüleri → Köprü
+> ekle'ye yazar; köprüye kendi yetkisiz sistem hesabı açılır, bir daha giriş
+> sormaz. Her köprünün ayrı hesabı var, listeden tek tek kaldırılır. Geçiş
+> doğrudan: eski telefonlu köprü yeniden kodla bağlanacak.
+> Kod yazıldı (`sql/2026-09-29-kopru-eslestirme.sql`, `kopru/src/eslesme.js`);
+> kalan: SQL'i çalıştırmak, köprüyü paketleyip eGZOZ kasasında denemek.
 >
 > Sonrakiler:
 > 1. **Köprü işletme uyuşmazlığı:** köprü tek işletmeye bağlı; başka

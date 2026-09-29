@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
-import { ayarlariOku, ayarYolu } from "./ayar.js";
+import { ayarlariOku, dosyaOku } from "./ayar.js";
 import { ayarlariSor } from "./kurulum.js";
 import { motorBaslat } from "./motor.js";
 import { kuruluYazicilar } from "./usb.js";
@@ -24,9 +23,9 @@ if (process.platform === "win32") {
 const yaz = (metin) => console.log(`${new Date().toLocaleTimeString("tr-TR")}  ${metin}`);
 
 async function calis() {
-  // İlk açılış: ayar dosyası yoksa program hata verip kapanmıyor, bilgileri
-  // soruyor. Kasadaki kişinin dosya düzenlemesi gerekmiyor.
-  if (!existsSync(ayarYolu())) await ayarlariSor();
+  // İlk açılış: köprü bağlı değilse program hata verip kapanmıyor, kod
+  // gösterip eşleşmeyi bekliyor.
+  if (!dosyaOku().eposta) await ayarlariSor();
 
   const ayar = ayarlariOku();
   let sonKayit = null;

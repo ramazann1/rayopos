@@ -6,8 +6,6 @@ import {
   ChefHat,
   ChevronDown,
   ChevronUp,
-  Copy,
-  KeyRound,
   Network,
   Pencil,
   Plus,
@@ -19,7 +17,13 @@ import {
   Zap,
 } from "lucide-react";
 import { yetkiVar } from "../oturum";
-import { yaziciHesabiKur, yaziciHesabiniGetir } from "../yaziciHesabi";
+import {
+  kopruEslestir,
+  kopruHesaplariniGetir,
+  kopruKaldir,
+  type KopruHesabi,
+} from "../yaziciHesabi";
+import Ipucu from "../components/Ipucu";
 import { koprulariGetir, type KopruCihazi } from "../kopru";
 import AyarBasligi from "../components/AyarBasligi";
 import Anahtar from "../components/Anahtar";
@@ -422,109 +426,141 @@ function IstasyonPaneli({
 }
 
 /**
- * Kasa köprüsünün giriş hesabı.
- *
- * Köprü, kasadaki yazıcılara basabilmek için RayoPOS'a giriş yapıyor. Bunun
- * için işletmecinin kendi hesabı kullanılmıyor: şifre kasadaki bilgisayarda
- * duruyor ve o makineye ulaşan biri yönetici olurdu. Buradaki hesabın hiçbir
- * yetkisi yok.
- *
- * Şifre üretildiği an bir kez gösteriliyor, saklanmıyor. Saklasaydık "şifre
- * kasada duruyor" sorununu ekranın içine taşımış olurduk.
+ * Kasa köprüleri. Köprü ilk açılışta 6 haneli bir kod gösteriyor; kod buraya
+ * yazılınca köprüye kendi yetkisiz hesabı açılıyor ve bir daha giriş
+ * sorulmuyor. Kimsenin şifresi kasadaki bilgisayarda durmuyor.
  */
-function KopruHesabi({ onHata }: { onHata: (metin: string) => void }) {
-  const [telefon, setTelefon] = useState("");
-  const [kurulu, setKurulu] = useState(false);
-  const [sifre, setSifre] = useState("");
-  const [kopyalandi, setKopyalandi] = useState(false);
+function KopruHesaplari({
+  onHata,
+  onBildirim,
+}: {
+  onHata: (metin: string) => void;
+  onBildirim: (metin: string) => void;
+}) {
+  const [hesaplar, setHesaplar] = useState<KopruHesabi[]>([]);
+  const [ekleAcik, setEkleAcik] = useState(false);
+  const [kod, setKod] = useState("");
   const [bekliyor, setBekliyor] = useState(false);
+  const [kaldirilacak, setKaldirilacak] = useState<KopruHesabi | null>(null);
 
   const yetkili = yetkiVar("yazici.hesap");
 
+  const tazele = () => kopruHesaplariniGetir().then(setHesaplar);
   useEffect(() => {
-    yaziciHesabiniGetir().then((h) => {
-      if (!h) return;
-      setTelefon(h.telefon);
-      setKurulu(h.kurulu);
-    });
+    tazele();
   }, []);
 
-  const numaraTamam = telefon.replace(/\D/g, "").length >= 10;
+  const pencereyiKapat = () => {
+    setEkleAcik(false);
+    setKod("");
+  };
 
-  const uret = async () => {
+  const eslestir = async () => {
     setBekliyor(true);
-    setSifre("");
-    setKopyalandi(false);
     try {
-      const yeni = await yaziciHesabiKur(telefon);
-      setSifre(yeni);
-      setKurulu(true);
+      const cihaz = await kopruEslestir(kod);
+      pencereyiKapat();
+      onBildirim(cihaz ? `${cihaz} bağlandı` : "Köprü bağlandı");
+      tazele();
     } catch (e: any) {
       onHata(e.message);
     }
     setBekliyor(false);
   };
 
-  const kopyala = () => {
-    navigator.clipboard.writeText(sifre);
-    setKopyalandi(true);
+  const kaldir = async () => {
+    if (!kaldirilacak) return;
+    try {
+      await kopruKaldir(kaldirilacak.id);
+      tazele();
+    } catch (e: any) {
+      onHata(e.message);
+    }
+    setKaldirilacak(null);
   };
 
   return (
     <section className="ayar-bolum">
       <div className="ayar-bolum-ust">
-        <h2><KeyRound size={17} /> Kasa köprüsü hesabı</h2>
-      </div>
-
-      <Bilgi>
-        Kasa köprüsü fiş basabilmek için RayoPOS'a girer. Kendi hesabınızla
-        değil, buradaki yetkisiz hesapla girmesi gerekir: şifresi kasadaki
-        bilgisayarda saklandığı için, sizin şifreniz orada durmamalıdır.
-      </Bilgi>
-
-      <div className="kopru-hesap">
-        <div className="alan">
-          <label>Telefon</label>
-          <input
-            value={telefon}
-            onChange={(e) => setTelefon(e.target.value)}
-            placeholder="0500 000 00 00"
-            inputMode="tel"
-            disabled={!yetkili}
-          />
-        </div>
-
-        <button
-          className="ayar-ekle"
-          onClick={uret}
-          disabled={!yetkili || !numaraTamam || bekliyor}
-          title={yetkili ? undefined : "Bu işlem için yetkin yok"}
-        >
-          <KeyRound size={15} />
-          {kurulu ? "Şifreyi yenile" : "Şifre oluştur"}
-        </button>
-      </div>
-
-      {sifre && (
-        <div className="kopru-sifre">
-          <code>{sifre}</code>
-          <button onClick={kopyala}>
-            {kopyalandi ? <Check size={15} /> : <Copy size={15} />}
-            {kopyalandi ? "Kopyalandı" : "Kopyala"}
+        <h2>
+          <Server size={17} /> Kasa köprüleri
+          <Ipucu>Köprüyü kurduğunuz bilgisayarda gördüğünüz 6 haneli kodu buraya yazın; köprü bir daha giriş sormaz.</Ipucu>
+        </h2>
+        {yetkili && (
+          <button className="ayar-ekle" onClick={() => setEkleAcik(true)}>
+            <Plus size={15} /> Köprü ekle
           </button>
-          <p>
-            Bu şifre bir daha gösterilmeyecek. Köprünün giriş ekranına
-            yukarıdaki telefon ve bu şifreyle girin. Kaybederseniz yenisini
-            oluşturabilirsiniz.
-          </p>
+        )}
+      </div>
+
+      {hesaplar.length === 0 ? (
+        <div className="ayar-bos">
+          <Server size={30} />
+          <p>Bağlı köprü yok.</p>
+        </div>
+      ) : (
+        <div className="odeme-tip-liste">
+          {hesaplar.map((h) => {
+            const [ad, cihaz] = h.ad.split(" · ");
+            return (
+            <div key={h.id} className="odeme-tip-satir">
+              <span className="yazici-ad">
+                <Server size={16} /> {ad}
+              </span>
+              <span className="odeme-tip-etiket">{cihaz ?? "Eski telefonlu hesap"}</span>
+              <span className="odeme-tip-islem">
+                {yetkili && (
+                  <button onClick={() => setKaldirilacak(h)} title="Bağlantıyı kaldır">
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </span>
+            </div>
+            );
+          })}
         </div>
       )}
 
-      {!sifre && kurulu && (
-        <p className="kopru-hesap-not">
-          Hesap kurulu. Şifreyi unuttuysanız yenisini oluşturun — köprüye
-          yeniden girmeniz gerekir.
-        </p>
+      {ekleAcik && (
+        <OrtaPencere
+          ikon={Server}
+          baslik="Köprü ekle"
+          aciklama="Köprünün ekranındaki 6 haneli kod"
+          genislik="dar"
+          onKapat={pencereyiKapat}
+          alt={
+            <>
+              <button className="pnc-vazgec" onClick={pencereyiKapat}>Vazgeç</button>
+              <button
+                className="pnc-kaydet"
+                disabled={kod.replace(/\D/g, "").length !== 6 || bekliyor}
+                onClick={eslestir}
+              >
+                Bağla
+              </button>
+            </>
+          }
+        >
+          <input
+            className="kopru-kod"
+            value={kod}
+            onChange={(e) => setKod(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            onKeyDown={(e) => e.key === "Enter" && kod.length === 6 && eslestir()}
+            placeholder="000000"
+            inputMode="numeric"
+            autoFocus
+          />
+        </OrtaPencere>
+      )}
+
+      {kaldirilacak && (
+        <OnayModal
+          mesaj={`"${kaldirilacak.ad}" bağlantısı kaldırılsın mı? O bilgisayar fiş basmayı bırakır; yeniden bağlamak için köprüde yeni kod alınır.`}
+          tehlikeli
+          onayMetni="Evet, kaldır"
+          onOnay={kaldir}
+          onKapat={() => setKaldirilacak(null)}
+        />
       )}
     </section>
   );
@@ -717,7 +753,7 @@ export default function Yazicilar() {
             )}
           </section>
 
-          <KopruHesabi onHata={setHata} />
+          <KopruHesaplari onHata={setHata} onBildirim={setBildirim} />
           </>
         )}
       </div>

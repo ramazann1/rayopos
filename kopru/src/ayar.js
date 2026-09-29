@@ -48,7 +48,7 @@ export function ayarlariTamamla(ayar) {
   const tam = {
     sunucu: ayar.sunucu || gomulu.sunucu,
     anahtar: ayar.anahtar || gomulu.anahtar,
-    telefon: ayar.telefon,
+    eposta: ayar.eposta,
     sifre: ayar.sifre,
     yoklamaSaniye: Math.max(Number(ayar.yoklamaSaniye) || 3, 1),
     // Kasanın kendi ekranından gelen fişlerin dinlendiği yerel port. Başka bir
@@ -56,7 +56,7 @@ export function ayarlariTamamla(ayar) {
     yerelPort: Number(ayar.yerelPort) || VARSAYILAN_PORT,
   };
 
-  for (const alan of ["telefon", "sifre"]) {
+  for (const alan of ["eposta", "sifre"]) {
     if (!tam[alan]) throw new Error(`Giriş bilgisi eksik: "${alan}" boş.`);
   }
   return tam;
@@ -101,9 +101,4 @@ export function dosyaYaz(kayit) {
   } catch {
     /* salt okunur klasör; kimlik bu açılışta hesaplanmış hâliyle kullanılır */
   }
-}
-
-/** Telefondan hesap adresi — programın giriş ekranıyla aynı kural. */
-export function hesapEpostasi(telefon) {
-  return `${String(telefon).replace(/\D/g, "")}@rayopos.com.tr`;
 }

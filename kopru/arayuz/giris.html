@@ -18,21 +18,14 @@
     <div class="giris">
       <h2>Bu kasayı bağlayın</h2>
       <p class="aciklama">
-        RayoPOS'ta açtığınız teknik personelin telefonu ve şifresi. Bilgiler bu
-        bilgisayarda saklanır, bir daha sorulmaz.
+        RayoPOS'ta Ayarlar → Yazıcılar → Köprü ekle'ye bu kodu yazın. Bir kez
+        yapılır, köprü bir daha giriş sormaz.
       </p>
 
       <div class="uyari" id="uyari"></div>
 
-      <form id="form">
-        <label for="telefon">Telefon</label>
-        <input id="telefon" type="tel" inputmode="tel" autocomplete="off" placeholder="0500 000 00 00" />
-
-        <label for="sifre">Şifre</label>
-        <input id="sifre" type="password" autocomplete="off" />
-
-        <button class="ana" id="dugme" type="submit">Bağlan</button>
-      </form>
+      <div class="kod" id="kod">— — —</div>
+      <p class="kod-bekliyor">Onay bekleniyor...</p>
     </div>
 
     <div class="kunye">

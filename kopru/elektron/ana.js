@@ -37,7 +37,7 @@ const ayarKlasoru = join(app.getPath("appData"), "RayoPOS Kasa Köprüsü");
 app.setPath("userData", ayarKlasoru);
 
 // Program eskiden Garso adıyla kuruluyordu. Eski klasördeki ayar dosyası
-// taşınmazsa kasada telefon ve şifre yeniden sorulur.
+// taşınmazsa kasa yeniden eşleştirilmek zorunda kalır.
 const eskiAyar = join(app.getPath("appData"), "Garso Kasa Köprüsü", "ayarlar.json");
 const yeniAyar = join(ayarKlasoru, "ayarlar.json");
 if (!existsSync(yeniAyar) && existsSync(eskiAyar)) {
@@ -79,7 +79,7 @@ const pencereAyari = (genislik, yukseklik) => ({
   },
 });
 
-/** Giriş penceresi — kurulumun elle yapılan tek adımı. */
+/** Giriş penceresi: bağlantı kodunu gösteriyor, kurulumun elle yapılan tek adımı. */
 function girisPenceresiAc(hata = "") {
   if (pencere && !pencere.isDestroyed()) {
     pencere.show();
@@ -97,6 +97,7 @@ function girisPenceresiAc(hata = "") {
     query: hata ? { hata } : {},
   });
   pencere.once("ready-to-show", () => pencere.show());
+  eslesmeyiBaslat();
 
   // Kapat düğmesi girişteyken programı gerçekten kapatıyor: henüz çalışan bir
   // köprü yok, tepsiye inecek bir şey de yok.
@@ -156,7 +157,7 @@ function tepsiyiKur() {
  * sunucu yoksa yazıcıların durumu zaten anlamsız, önce o söyleniyor.
  */
 function nabiz() {
-  if (!motor) return { isik: "soluk", cumle: "Giriş yapılmadı" };
+  if (!motor) return { isik: "soluk", cumle: "Bağlı değil" };
   if (sonDurum?.bulut !== "bagli") return { isik: "kirmizi", cumle: "Sunucuya ulaşılamıyor" };
 
   const basanlar = (sonDurum.yazicilar ?? []).filter((y) => y.durum !== "webusb");
@@ -228,19 +229,42 @@ app.on("before-quit", (olay) => {
   cik();
 });
 
-// Giriş penceresinden gelen denemeler. Bilgiler ancak giriş gerçekten
-// başarılıysa kaydediliyor — yanlış şifre diskte kalmıyor.
-ipcMain.handle("giris", async (_olay, { telefon, sifre }) => {
+/**
+ * Eşleşme: giriş penceresi açıkken köprü kod alıp gösteriyor ve RayoPOS'tan
+ * onay bekliyor. Onay gelince hesabın bilgileri kaydediliyor ve pencere
+ * kendiliğinden kapanıyor; kasadaki kişinin burada bir şeye basması gerekmiyor.
+ */
+let eslesmeSuruyor = false;
+let sonKod = { kod: null, hata: "" };
+
+async function eslesmeyiBaslat() {
+  if (eslesmeSuruyor) return;
+  eslesmeSuruyor = true;
+
+  const { eslestir } = await import("../src/eslesme.js");
+  const bilgi = await eslestir({
+    kodGeldi: (kod, hata) => {
+      sonKod = { kod, hata: hata ?? "" };
+      if (pencere && !pencere.isDestroyed()) pencere.webContents.send("kod", sonKod);
+    },
+    durduMu: () => cikiliyor || Boolean(motor),
+  });
+  eslesmeSuruyor = false;
+  if (!bilgi) return;
+
   try {
-    await kopruyuBaslat({ telefon, sifre, yoklamaSaniye: 3 });
-    kimlikYaz(AYAR_YOLU, { telefon, sifre });
-    return { tamam: true, oturum: motor.oturum };
+    await kopruyuBaslat({ ...bilgi, yoklamaSaniye: 3 });
+    kimlikYaz(AYAR_YOLU, bilgi);
+    pencere?.close();
   } catch (e) {
     motor?.durdur();
     motor = null;
-    return { tamam: false, hata: e.message };
+    sonKod = { kod: null, hata: e.message };
+    eslesmeyiBaslat();
   }
-});
+}
+
+ipcMain.handle("kod", () => sonKod);
 
 ipcMain.handle("durum", () => sonDurum);
 
@@ -257,8 +281,6 @@ ipcMain.handle("kunye", async () => {
   return { cihaz: cihazKimligi(), surum: SURUM };
 });
 
-// Giriş bitince pencere kapanıyor; program tepsiden çalışmaya devam ediyor.
-ipcMain.handle("pencereyi-kapat", () => pencere?.close());
 ipcMain.handle("kopyala", (_olay, metin) => clipboard.writeText(String(metin)));
 
 // İkinci kez çalıştırılırsa yeni program açılmıyor, olan program kendini
@@ -290,10 +312,24 @@ app.whenReady().then(async () => {
     girisPenceresiAc();
     return;
   }
+  acilistaBaglan(kimlik);
+});
 
+/**
+ * Bilgisayar açılırken ağ çoğu zaman köprüden sonra geliyor. Sunucuya
+ * ulaşılamadı diye kod ekranına düşülmüyor, yarım dakikada bir yeniden
+ * deneniyor. Yalnız hesap RayoPOS'tan kaldırılmışsa yeniden eşleşme isteniyor.
+ */
+async function acilistaBaglan(kimlik) {
   try {
     await kopruyuBaslat(kimlik);
   } catch (e) {
-    girisPenceresiAc(e.message);
+    motor = null;
+    if (e.kaldirildi) {
+      kimlikSil(AYAR_YOLU);
+      girisPenceresiAc(e.message);
+      return;
+    }
+    setTimeout(() => acilistaBaglan(kimlik), 30_000);
   }
-});
+}

@@ -1,30 +1,25 @@
 import { writeFile } from "node:fs/promises";
-import { createInterface } from "node:readline/promises";
-import { ayarYolu } from "./ayar.js";
+import { ayarYolu, dosyaOku } from "./ayar.js";
+import { eslestir } from "./eslesme.js";
 
 /**
  * Terminal sürümünün ilk açılışı.
  *
  * Kasaya giden pencereli sürümde bu iş giriş penceresinde yapılıyor; burası
- * geliştirirken köprüyü çıplak Node ile çalıştırmak için duruyor. Sunucu adresi
- * ve anahtarı sorulmuyor: ikisi de programa gömülü (bkz. sunucu.js).
+ * geliştirirken köprüyü çıplak Node ile çalıştırmak için duruyor. Aynı kodla
+ * eşleşiyor: ekrana yazılan kodu RayoPOS'ta Yazıcılar → Köprü ekle'ye yazın.
  */
 export async function ayarlariSor() {
-  const soru = createInterface({ input: process.stdin, output: process.stdout });
+  console.log("\nRayoPOS Kasa Köprüsü ilk kez açılıyor.\n");
 
-  console.log("\nRayoPOS Kasa Köprüsü ilk kez açılıyor. Giriş bilgileri bir kez isteniyor.\n");
+  const bilgi = await eslestir({
+    kodGeldi: (kod, hata) =>
+      console.log(hata ?? `Bağlantı kodu: ${kod}  —  RayoPOS'ta Yazıcılar → Köprü ekle'ye yazın.`),
+  });
 
-  const ayar = {
-    telefon: (await soru.question("Personel telefonu: ")).trim(),
-    sifre: (await soru.question("Personel şifresi : ")).trim(),
-    yoklamaSaniye: 3,
-  };
-  soru.close();
-
-  for (const [alan, deger] of Object.entries(ayar)) {
-    if (!deger) throw new Error(`"${alan}" boş bırakıldı, kurulum yarım kaldı.`);
-  }
-
+  // Bu sürümde şifre düz yazılıyor: Windows'un şifreleme servisi yalnız
+  // pencereli sürümden (Electron) kullanılabiliyor.
+  const ayar = { ...dosyaOku(), eposta: bilgi.eposta, sifre: bilgi.sifre, yoklamaSaniye: 3 };
   await writeFile(ayarYolu(), `${JSON.stringify(ayar, null, 2)}\n`, "utf8");
-  console.log(`\nBilgiler kaydedildi: ${ayarYolu()}\n`);
+  console.log(`\nKöprü bağlandı. Bilgiler kaydedildi: ${ayarYolu()}\n`);
 }

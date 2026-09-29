@@ -7,11 +7,11 @@ const { contextBridge, ipcRenderer } = require("electron");
  * Bu dosya CommonJS: ön yükleyici modül sözdizimini kabul etmiyor.
  */
 contextBridge.exposeInMainWorld("kopru", {
-  giris: (bilgi) => ipcRenderer.invoke("giris", bilgi),
+  kodAl: () => ipcRenderer.invoke("kod"),
+  kodDinle: (isle) => ipcRenderer.on("kod", (_olay, bilgi) => isle(bilgi)),
   durumAl: () => ipcRenderer.invoke("durum"),
   kunye: () => ipcRenderer.invoke("kunye"),
   yazicilariYokla: () => ipcRenderer.invoke("yazicilari-yokla"),
   kopyala: (metin) => ipcRenderer.invoke("kopyala", metin),
-  pencereyiKapat: () => ipcRenderer.invoke("pencereyi-kapat"),
   durumDinle: (isle) => ipcRenderer.on("durum", (_olay, durum) => isle(durum)),
 });

@@ -5,16 +5,11 @@
  * Yayın yeri ya da alan adı değişirse tek satır güncelleniyor, ekranlara
  * dokunulmuyor.
  *
- * Sürüm elle değiştirilmiyor — `npm.cmd run surum` bütün dosyalardaki numarayı
- * birlikte artırıyor.
+ * Dosya GitHub'da "Release" olarak duruyor. Adres sürümsüz ve hep en son
+ * yayınlananı veriyor: yeni köprü yüklendiğinde burada bir şey değişmiyor.
  */
 export const KOPRU_INDIRME = {
-  surum: "1.3.60",
-  /** Dosyanın yayınlandığı adres. Sürüm numarası dosya adına giriyor. */
-  adres: "https://indir.rayopos.com.tr/rayopos-kopru-kurulum-1.3.60.exe",
-  /**
-   * Dosya adreste duruyor mu. Alan adı alınıp dosya yüklenince `true` yapılır;
-   * o ana kadar düğme sönük ve tıklanınca hiçbir yere gitmiyor.
-   */
-  yayinda: false,
+  adres: "https://github.com/ramazann1/rayopos/releases/latest/download/rayopos-kopru-kurulum.exe",
+  /** Dosya adreste duruyor mu; değilse kart sönük ve tıklanmıyor. */
+  yayinda: true,
 };

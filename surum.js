@@ -37,7 +37,5 @@ degistir("package.json", /"version": "[\d.]+"/, `"version": "${yeni}"`);
 degistir("kopru/package.json", /"version": "[\d.]+"/, `"version": "${yeni}"`);
 degistir("kopru/src/surum.js", /export const SURUM = "[\d.]+";/, `export const SURUM = "${yeni}";`);
 degistir("src/surum.ts", /export const RAYOPOS_SURUM = "[\d.]+";/, `export const RAYOPOS_SURUM = "${yeni}";`);
-degistir("src/kopruIndirme.ts", /surum: "[\d.]+"/, `surum: "${yeni}"`);
-degistir("src/kopruIndirme.ts", /rayopos-kopru-kurulum-[\d.]+\.exe/, `rayopos-kopru-kurulum-${yeni}.exe`);
 
 console.log(`Sürüm ${koprununPaketi.version} → ${yeni}`);

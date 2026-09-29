@@ -192,7 +192,7 @@ begin
     -- Yazıcı ve istasyon ----------------------------------------------------------
     -- Tablo 21 Ağustos'ta `mutfak_gruplari`dan `istasyonlar`a çevrilmişti.
     ('yazici.yonet',          'yaz', 'insert into istasyonlar (ad) values (''~prova istasyon'')'),
-    ('yazici.hesap',          'yaz', 'select yazici_hesabi_kur('''')'),
+    ('yazici.hesap',          'yaz', 'select kopru_eslestir('''')'),
     -- İstasyon ekranı siparişi görüp "hazır" diyor; ölçü istasyon listesini
     -- okumak değil, mutfağa düşmüş kalemin durumunu değiştirebilmek.
     ('mutfak.ekran',          'yaz', 'update adisyon_kalemleri set hazir_at = now() where id = @KALEM@'),
@@ -222,11 +222,11 @@ begin
   update prova_liste set beklenti = 'odeme.indirim'
    where kod = 'odeme.indirim_tanimli';
 
-  -- Yetki kapısını geçtiğini gösteren mesaj. `yazici_hesabi_kur` önce yetkiye
-  -- bakıyor, sonra telefona; boş telefonla çağırınca telefon hatası görüyorsak
+  -- Yetki kapısını geçtiğini gösteren mesaj. `kopru_eslestir` önce yetkiye
+  -- bakıyor, sonra koda; boş kodla çağırınca kod hatası görüyorsak
   -- yetki kapısı açılmış demektir. Gerçekten hesap kurup auth kaydı açmamak
   -- için deneme bilerek burada durduruluyor.
-  update prova_liste set gecti = 'Telefon numarası' where kod = 'yazici.hesap';
+  update prova_liste set gecti = 'Kod bulunamadı' where kod = 'yazici.hesap';
 
   -- 2.3) Deneme zemini -------------------------------------------------------
   --
@@ -465,7 +465,7 @@ begin
             v_durum := format('yapabildi (%s satır)', v_satir);
           end if;
         elsif sqlerrm ilike '%yetki%' then
-          -- Her kilit 42501 kullanmıyor; `yazici_hesabi_kur` düz hata
+          -- Her kilit 42501 kullanmıyor; `kopru_eslestir` düz hata
           -- fırlatıyor. Mesajda yetki geçiyorsa bu da bir rettir.
           v_durum := 'reddedildi: ' || left(sqlerrm, 48);
         else

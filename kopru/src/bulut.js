@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { hesapEpostasi } from "./ayar.js";
 
 let istemci = null;
 
@@ -9,10 +8,20 @@ export async function girisYap(ayar) {
   });
 
   const { error } = await istemci.auth.signInWithPassword({
-    email: hesapEpostasi(ayar.telefon),
+    email: ayar.eposta,
     password: ayar.sifre,
   });
-  if (error) throw new Error("Girilemedi — telefon ya da şifre doğru değil.");
+  if (error) {
+    // Hesap yoksa köprünün bağlantısı RayoPOS'tan kaldırılmış demektir; ağ
+    // hatasında ise bilgiler doğru, yalnız biraz sonra yeniden denenmeli.
+    const hata = new Error(
+      error.status === 400
+        ? "Bu köprünün bağlantısı kaldırılmış. Yeniden bağlamak için kodu RayoPOS'a yazın."
+        : "Sunucuya ulaşılamıyor."
+    );
+    hata.kaldirildi = error.status === 400;
+    throw hata;
+  }
 
   const { data } = await istemci
     .from("personel")

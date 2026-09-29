@@ -1,39 +1,32 @@
 import { supabase } from "./supabase";
 
 /**
- * Kasa köprüsünün giriş hesabı.
+ * Kasa köprülerinin giriş hesapları.
  *
- * Köprü fiş basmak için RayoPOS'a giriş yapıyor. Bunu işletmecinin kendi
- * hesabıyla yapmıyor: şifre kasadaki bilgisayarda duruyor ve o makineye
- * ulaşan biri yönetici olurdu. Ayrıca işletmeci şifresini değiştirdiği gün
- * köprü sessizce susardı.
- *
- * Hesabın yetkisi yok — yazıcı listesini okuyup kuyruktan iş almaktan başka
- * bir şey yapamıyor.
+ * Köprü kimsenin şifresiyle girmiyor: ilk açılışta 6 haneli bir kod
+ * gösteriyor, yetkili kişi o kodu buraya yazınca köprüye kendi yetkisiz
+ * hesabı açılıyor. Her köprünün ayrı hesabı var; biri kaldırılınca öteki
+ * çalışmaya devam ediyor.
  */
 
-export type YaziciHesabi = {
-  telefon: string;
-  kurulu: boolean;
+export type KopruHesabi = {
+  id: number;
+  ad: string;
 };
 
-export async function yaziciHesabiniGetir(): Promise<YaziciHesabi | null> {
-  const { data } = await supabase.rpc("yazici_hesabi_durumu");
-  const satir = (data as any[])?.[0];
-  if (!satir) return null;
-  return { telefon: satir.telefon ?? "", kurulu: !!satir.kurulu };
+export async function kopruHesaplariniGetir(): Promise<KopruHesabi[]> {
+  const { data } = await supabase.rpc("kopru_hesaplari");
+  return ((data as any[]) ?? []).map((s) => ({ id: s.id, ad: s.ad }));
 }
 
-/**
- * Hesabı kurar ya da şifresini yeniler; ikisi de aynı düğmeden çıkıyor.
- *
- * Dönen şifre bir daha okunamıyor — hiçbir yerde saklanmıyor. Ekran onu bir
- * kez gösteriyor, işletmeci köprüye yazıyor. Kaybolursa yenisi üretiliyor.
- */
-export async function yaziciHesabiKur(telefon: string): Promise<string> {
-  const { data, error } = await supabase.rpc("yazici_hesabi_kur", {
-    p_telefon: telefon,
-  });
+/** Kodu onaylar; köprünün bilgisayar adını döner (varsa). */
+export async function kopruEslestir(kod: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc("kopru_eslestir", { p_kod: kod });
   if (error) throw new Error(error.message);
-  return data as string;
+  return (data as string | null) ?? null;
+}
+
+export async function kopruKaldir(id: number): Promise<void> {
+  const { error } = await supabase.rpc("kopru_kaldir", { p_id: id });
+  if (error) throw new Error(error.message);
 }

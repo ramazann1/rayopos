@@ -142,49 +142,25 @@ body {
   margin-bottom: 20px;
 }
 
-label {
-  display: block;
-  font-size: 13px;
-  color: var(--soluk);
-  margin-bottom: 6px;
-}
-
-input {
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 15px;
+/* Bağlantı kodu. Kasadaki kişi bunu okuyup RayoPOS'a yazıyor; uzaktan da
+   okunsun diye iri ve üçerli gruplanmış. */
+.kod {
+  font-size: 52px;
+  font-weight: 600;
+  letter-spacing: 6px;
+  text-align: center;
   color: var(--metin);
   background: var(--kart);
-  border: 1px solid var(--cizgi);
-  border-radius: 11px;
-  margin-bottom: 16px;
-  user-select: text;
+  border: 1.5px solid var(--mercan);
+  border-radius: 14px;
+  padding: 18px 0;
+  margin-bottom: 14px;
 }
 
-input::placeholder {
-  color: #6d7482;
-}
-
-input:focus {
-  outline: none;
-  border-color: var(--mercan);
-}
-
-button.ana {
-  width: 100%;
-  padding: 13px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
-  background: linear-gradient(120deg, #ff8a6b, #e85f3c);
-  border: none;
-  border-radius: 11px;
-  cursor: pointer;
-}
-
-button.ana:disabled {
-  opacity: 0.6;
-  cursor: default;
+.kod-bekliyor {
+  font-size: 14px;
+  text-align: center;
+  color: var(--soluk);
 }
 
 .uyari {
