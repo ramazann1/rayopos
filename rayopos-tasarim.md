@@ -1,33 +1,39 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — canlıya geçiş seansı)
+## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — köprü kodla eşleşme + yeni arayüz seansı)
 
-> **YENİ SEANSIN BAŞI: KÖPRÜ ARAYÜZÜ YENİDEN (29 Eyl 2026, taslak onaylı).**
-> Köprü pencereleri açık renge geçiyor (koyu zemin "çok koyu, demode" bulundu).
-> - **Durum paneli = "B · yan menülü":** solda ince ikon şeridi (logo, Durum,
->   Yazıcılar, altta Ayarlar); sağda beyaz alan: üstte işletme adı küçük,
->   yeşil halkalı nokta + "Her şey yolunda" (sorunda mercan + hangi yazıcı);
->   altında kenarlıklı yazıcı satırları (tür ikonu mercan, ad, USB/Ağ, durum
->   noktası); en altta "Sunucuya bağlı · sürüm". Bağlantıyı kes ve bilgileri
->   kopyala Ayarlar sekmesinde. Son fişler akışı, sayı kutuları REDDEDİLDİ.
-> - **Bağlantı penceresi:** onaylı düzen (hane hane 3+3 kod kutuları, kalan
->   süre, numaralı 3 adım, altta yalnız bilgisayar adı) ama açık renkte.
-> - **Tepsi menüsü 4 satır:** durum + işletme adı / Durum panelini aç /
->   Yazıcıları yokla / Köprüyü kapat. İşletme kodu, kasa kişisi, tarayıcıda
->   aç, bağlantıyı kes menüden çıkıyor.
-> - İkonlar lucide (köprüye svg olarak gömülür, internetten çekilmez).
-> - Kurulum sihirbazı düzeltildi (keskin yazı, sözleşme sayfası yok, görseller
->   2x) — "B · VS Code gibi" seçildi, Squirrel reddedildi.
+> **YENİ SEANSIN BAŞI: eGZOZ KASASINI YENİ KÖPRÜYE GEÇİR.** Kasada hâlâ eski
+> (telefonlu hesapla giren) köprü çalışıyor. Ramazan indirme kartından yeni
+> köprüyü kurar, çıkan 6 haneli kodu Yazıcılar → Köprü ekle'ye yazar, fiş
+> denenir; sorunsuzsa listedeki "Eski telefonlu hesap" çöp kutusuyla silinir.
+> Aynı seansta bakılacak: KASA (USB) yazıcısı takılıyken "Yazıcıları yokla"
+> "Hazır" diyor mu? (Kablo çıkıkken Windows `WorkOffline=true` bildiriyor;
+> takılıyken ölçülmedi. Yanlışsa `usb.js`'te USB girişinde aygıt var mı
+> kontrolü hazır fikir: `Win32_PnPEntity` `USBPRINT%<PortName>` — kablo
+> çıkıkken doğru sonuç verdiği ölçüldü.)
 >
-> **BİTTİ (29 Eyl 2026): KÖPRÜ KODLA EŞLEŞİYOR.** Telefon/şifre ve
-> "Köprü rolü" fikri bırakıldı. Köprü ilk açılışta 6 haneli kod gösterir;
-> yetkili (`yazici.hesap`) RayoPOS'ta Yazıcılar → Kasa köprüleri → Köprü
-> ekle'ye yazar; köprüye kendi yetkisiz sistem hesabı açılır, bir daha giriş
-> sormaz. Her köprünün ayrı hesabı var, listeden tek tek kaldırılır. Geçiş
-> doğrudan: eski telefonlu köprü yeniden kodla bağlanacak.
-> Kod yazıldı (`sql/2026-09-29-kopru-eslestirme.sql`, `kopru/src/eslesme.js`);
-> kalan: SQL'i çalıştırmak, köprüyü paketleyip eGZOZ kasasında denemek.
+> **BİTTİ (29 Eyl 2026): KÖPRÜ KODLA EŞLEŞİYOR + YENİ ARAYÜZ.**
+> - Telefon/şifre ve "Köprü rolü" fikri bırakıldı. Köprü 6 haneli kod gösterir;
+>   yetkili (`yazici.hesap`) Yazıcılar → Kasa köprüleri → Köprü ekle'ye yazar;
+>   köprüye kendi yetkisiz sistem hesabı açılır. Her köprünün ayrı hesabı var
+>   (`sql/2026-09-29-kopru-eslestirme.sql`, `kopru/src/eslesme.js`).
+>   Köprüde "Bağlantıyı kes" hesabı da siliyor (`sql/2026-09-29-kopru-kendini-kaldir.sql`).
+> - İndirme: GitHub Release, sürümsüz sabit adres
+>   `releases/latest/download/rayopos-kopru-kurulum.exe` (`src/kopruIndirme.ts`).
+>   Yükleme `gh release upload kopru-<sürüm> ... --clobber` ile Claude yapar
+>   (`gh` kurulu, ramazann1 hesabıyla giriş yapıldı). Kart sürüm göstermiyor.
+> - Kurulum sihirbazı: DPI uyumlu (keskin yazı), sözleşme sayfası yok,
+>   görseller 2x çiziliyor. Squirrel reddedildi.
+> - Köprü arayüzü açık renk (koyu "demode" bulundu). Kod ekranı hane hane
+>   3+3, sayaç, 3 adım. Durum paneli: sol ince şerit (Durum, Ayarlar), ortada
+>   işletme adı + dükkan ikonu, büyük tek cümle ("KASA yazıcısı kapalı" —
+>   "KASA kapalı" köprü sanılıyordu), yazıcılar kare kart. Ayarlar'da
+>   işletme/bilgisayar/sürüm, kopyala, bağlantıyı kes (kendi onay penceresi).
+>   Tepsi menüsü 4 satır. REDDEDİLENLER: son fişler akışı, sayı kutuları,
+>   koyu tema, "internetsiz yazdırma" satırı.
+> - İleride POS/ÖKC entegrasyonu gelirse durum panelinde kendi başlığıyla
+>   aynı kare kartlardan ikinci sıra olarak eklenir (Ramazan fikri).
 >
 > Sonrakiler:
 > 1. **Köprü işletme uyuşmazlığı:** köprü tek işletmeye bağlı; başka

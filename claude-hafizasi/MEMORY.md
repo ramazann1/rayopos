@@ -42,3 +42,4 @@
 - [Pencere dili](rayopos-pencere-dili.md) — form pencereleri OrtaPencere; mercan yalnız Kaydet, kaydırmadan sığdır, uzun liste tek sütun.
 - [Canlıda test yok](rayopos-canlida-test-yok.md) — 28 Eyl'den sonra gerçek cafe ayrı işletme; testler yalnız deneme işletmesinde (15003).
 - [Testte menü önbelleği](rayopos-testte-menu-onbellegi.md) — veritabanına doğrudan yazılan reçeteyi sipariş ekranı görmez; önbelleği temizle.
+- [Köprü yayını GitHub Release](rayopos-kopru-yayini-github-release.md) — gh ile Claude yükler, sabit indirme adresi; paketi kurulum-dosyasi/'na kopyala.
