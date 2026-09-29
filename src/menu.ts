@@ -214,7 +214,7 @@ export function receteleriIsle(
   }));
 }
 
-async function menuOku() {
+export async function menuOku() {
   const [kat, urn, grp, brm, kdv] = await Promise.all([
     supabase
       .from("kategoriler")
@@ -578,7 +578,7 @@ async function urunuYaz(u: MenuUrun) {
       u.kategoriIdler.map(async (k) => ({
         urun_id: urunId,
         kategori_id: k,
-        sira: eskiSira.get(k) ?? (await kategoriSonSira(k)) + 1,
+        sira: eskiSira.get(k) ?? u.kategoriSira[k] ?? (await kategoriSonSira(k)) + 1,
       }))
     );
 
@@ -717,6 +717,12 @@ export async function urunKopyala(kaynak: MenuUrun, hepsi: MenuUrun[]) {
 export async function urunSil(id: number) {
   const sonuc = await supabase.from("urunler").delete().eq("id", id).select("id");
   satirDenetle(sonuc, "Ürün silinemedi.");
+}
+
+export async function urunleriSil(idler: number[]) {
+  if (!idler.length) return;
+  const sonuc = await supabase.from("urunler").delete().in("id", idler).select("id");
+  satirDenetle(sonuc, "Ürünler silinemedi.");
 }
 
 /**

@@ -312,15 +312,20 @@ function sureSayaci(yapilan: number | null, bitti: boolean) {
 
   useEffect(() => {
     sonAdim.current = Date.now();
-    if (yapilan === null || bitti) return; // biten işte süre olduğu yerde donuyor
     if (yapilan === 0) basi.current = Date.now();
+  }, [yapilan]);
 
+  // Sayaç her adımda yeniden kurulmuyor: adımlar saniyeden sık gelince hiç
+  // tetiklenmiyor, ekran "0 sn"de kalıyordu.
+  const calisiyor = yapilan !== null && !bitti;
+  useEffect(() => {
+    if (!calisiyor) return; // biten işte süre olduğu yerde donuyor
     const sayac = setInterval(() => {
       setGecen(Math.floor((Date.now() - basi.current) / 1000));
       setBekleyen(Math.floor((Date.now() - sonAdim.current) / 1000));
     }, 1000);
     return () => clearInterval(sayac);
-  }, [yapilan, bitti]);
+  }, [calisiyor]);
 
   return yapilan === null ? { gecen: 0, bekleyen: 0 } : { gecen, bekleyen };
 }

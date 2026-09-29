@@ -42,6 +42,8 @@ import {
   kategoriEkle,
   kategoriGuncelle,
   kategoriSil,
+  urunleriSil,
+  menuOku,
   kategoriSirala,
   kategoriUrunleri,
   altKategoriler,
@@ -817,20 +819,40 @@ export default function MenuStudyosu() {
   };
 
   const kategoriyiSil = (k: MenuKategori) => {
-    if (altKategoriler(kategoriler, k.id).length > 0) {
-      setUyari("Bu kategorinin altında kategori var. Önce alt kategorileri taşı veya sil.");
-      return;
-    }
-    if (sayac(k.id) > 0) {
-      setUyari("Bu kategoride ürün var. Önce ürünleri başka kategoriye taşı veya sil.");
-      return;
-    }
+    // Başka bir kategoride de duran ürün silinmez, yalnız bu kategoriden çıkar.
+    const altlar = altKategoriler(kategoriler, k.id);
+    const gidenler = new Set([k.id, ...altlar.map((a) => a.id)]);
+    const icindekiler = urunler.filter((u) => u.kategoriIdler.some((id) => gidenler.has(id)));
+    const silinecekler = icindekiler.filter((u) => u.kategoriIdler.every((id) => gidenler.has(id)));
+    const kalanlar = icindekiler.length - silinecekler.length;
+
+    const parcalar = [
+      altlar.length && `${altlar.length} alt kategori`,
+      silinecekler.length && `${silinecekler.length} ürün`,
+    ].filter(Boolean);
+    const mesaj = [
+      parcalar.length
+        ? `*"${k.ad}"* kategorisi ile içindeki *${parcalar.join(" ve ")}* silinecek.`
+        : `*"${k.ad}"* kategorisi silinsin mi?`,
+      kalanlar ? `${kalanlar} ürün başka kategoride de olduğu için silinmeyecek, yalnız bu kategoriden çıkacak.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     setOnaySor({
-      mesaj: `"${k.ad}" kategorisi silinsin mi?`,
+      mesaj,
       devam: async () => {
-        if (!(await dene(() => kategoriSil(k.id), "Kategori silinemedi."))) return;
+        const oldu = await dene(async () => {
+          await urunleriSil(silinecekler.map((u) => u.id!));
+          for (const a of altlar) await kategoriSil(a.id);
+          await kategoriSil(k.id);
+        }, "Kategori silinemedi.");
+        if (!oldu) {
+          yukle();
+          return;
+        }
         setBildirim(`${k.ad} silindi`);
-        if (seciliId === k.id) setSeciliId(k.ustId ?? null);
+        if (seciliId != null && gidenler.has(seciliId)) setSeciliId(k.ustId ?? null);
         yukle();
       },
     });
@@ -988,8 +1010,10 @@ export default function MenuStudyosu() {
     // Önizleme dosya seçilirken kurulmuştu; o günden bu yana menü değişmiş
     // olabilir — aynı ekranda silinen bir ürün, başka bir cihazda eklenen bir
     // kategori. Eşleştirme yazmadan hemen önce menünün son hâliyle baştan
-    // yapılıyor, yoksa program olmayan ürünü güncellemeye çalışır.
-    const [taze, maliyetler] = await Promise.all([menuGetir(), maliyetleriGetir()]);
+    // yapılıyor, yoksa program olmayan ürünü güncellemeye çalışır. Menü
+    // cihazdaki kopyadan değil sunucudan okunuyor: kopya az önce açılan
+    // kategorileri bilmiyor, ürünler kategorisiz yazılıyordu.
+    const [taze, maliyetler] = await Promise.all([menuOku(), maliyetleriGetir()]);
     const plan = planHazirla(onizleme.satirlar, {
       ...taze,
       urunler: maliyetleriIsle(taze.urunler, maliyetler),
@@ -1023,7 +1047,7 @@ export default function MenuStudyosu() {
     }
 
     if (yeniAltlar.length) {
-      const ara = await menuGetir();
+      const ara = await menuOku();
       for (const [i, y] of yeniAltlar.entries()) {
         const ust = ara.kategoriler.find((k) => !k.ustId && k.ad === y.ana);
         await yeniKategori(y.alt, yeniAnalar.length + i, ust?.id);
@@ -1031,21 +1055,45 @@ export default function MenuStudyosu() {
       }
     }
 
-    const guncel = await menuGetir();
+    const guncel = await menuOku();
     const kategoriId = (ana: string, alt: string) => {
       const ust = guncel.kategoriler.find((k) => !k.ustId && k.ad === ana);
       if (!alt) return ust?.id;
       return guncel.kategoriler.find((k) => k.ustId === ust?.id && k.ad === alt)?.id;
     };
 
-    for (const { urun, yerler } of plan.urunler) {
+    // Ürünler aynı anda birkaç tane yazılıyor; kategorideki sıra da bu yüzden
+    // burada dağıtılıyor, yoksa aynı anda yazılan iki ürün aynı sırayı alırdı.
+    const sonSira = new Map<number, number>();
+    for (const u of guncel.urunler)
+      for (const [k, s] of Object.entries(u.kategoriSira))
+        sonSira.set(Number(k), Math.max(sonSira.get(Number(k)) ?? 0, s));
+
+    const yazilacaklar = plan.urunler.map(({ urun, yerler }) => {
       const idler = yerler.map((y) => kategoriId(y.ana, y.alt)).filter((id) => id != null);
-      const hata = await urunKaydet({ ...urun, kategoriIdler: idler });
-      if (hata) {
-        await yukle();
-        return hata;
+      const kategoriSira = { ...urun.kategoriSira };
+      for (const k of idler) {
+        if (kategoriSira[k] != null) continue;
+        const s = (sonSira.get(k) ?? 0) + 1;
+        sonSira.set(k, s);
+        kategoriSira[k] = s;
       }
-      adim();
+      return { ...urun, kategoriIdler: idler, kategoriSira };
+    });
+
+    let sradaki = 0;
+    let ilkHata: string | undefined;
+    const yazici = async () => {
+      while (!ilkHata && sradaki < yazilacaklar.length) {
+        const hata = await urunKaydet(yazilacaklar[sradaki++]);
+        if (hata) ilkHata ??= hata;
+        else adim();
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, yazici));
+    if (ilkHata) {
+      await yukle();
+      return ilkHata;
     }
 
     await yukle();

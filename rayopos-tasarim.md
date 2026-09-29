@@ -1,17 +1,22 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — köprü kodla eşleşme + yeni arayüz seansı)
+## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — kategori silme + aktarım hızı seansı)
 
-> **YENİ SEANSIN BAŞI: eGZOZ KASASINI YENİ KÖPRÜYE GEÇİR.** Kasada hâlâ eski
-> (telefonlu hesapla giren) köprü çalışıyor. Ramazan indirme kartından yeni
-> köprüyü kurar, çıkan 6 haneli kodu Yazıcılar → Köprü ekle'ye yazar, fiş
-> denenir; sorunsuzsa listedeki "Eski telefonlu hesap" çöp kutusuyla silinir.
-> Aynı seansta bakılacak: KASA (USB) yazıcısı takılıyken "Yazıcıları yokla"
-> "Hazır" diyor mu? (Kablo çıkıkken Windows `WorkOffline=true` bildiriyor;
-> takılıyken ölçülmedi. Yanlışsa `usb.js`'te USB girişinde aygıt var mı
-> kontrolü hazır fikir: `Win32_PnPEntity` `USBPRINT%<PortName>` — kablo
-> çıkıkken doğru sonuç verdiği ölçüldü.)
+> **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" listesinin 1. maddesi.**
+>
+> **BİTTİ (29 Eyl 2026, ikinci seans): eGZOZ KASASI YENİ KÖPRÜDE + MENÜ İŞLERİ.**
+> - eGZOZ kasası yeni (kodla eşleşen) köprüye geçti.
+> - Kategori silme: içinde ürün/alt kategori varsa engel yok, sayıları söyleyen
+>   onay çıkıyor. Yalnız bu kategoride (ve alt kategorilerinde) duran ürünler
+>   silinir; başka kategoride de duran ürün yalnız bu kategoriden çıkar
+>   (`urunleriSil`, tek istek).
+> - Excel aktarımı: ürünler 6'şar paralel yazılıyor (230 ürün ~25 sn, önce
+>   dakikalar). Kategori sırası yazmadan önce dağıtılıyor. Süre sayacı "0 sn"de
+>   takılmıyor.
+> - HATA DÜZELDİ: aktarım menüyü cihaz kopyasından (`menuGetir`) okuyordu, az
+>   önce açılan kategorileri bilmiyordu → ilk aktarımda ürünler kategorisiz
+>   yazılıyordu. Artık `menuOku` ile sunucudan okuyor.
 >
 > **BİTTİ (29 Eyl 2026): KÖPRÜ KODLA EŞLEŞİYOR + YENİ ARAYÜZ.**
 > - Telefon/şifre ve "Köprü rolü" fikri bırakıldı. Köprü 6 haneli kod gösterir;
