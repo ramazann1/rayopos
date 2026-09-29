@@ -3,7 +3,24 @@
 
 ## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — canlıya geçiş seansı)
 
-> **SÜRÜYOR: KÖPRÜ KODLA EŞLEŞİYOR (29 Eyl 2026 kararı).** Telefon/şifre ve
+> **YENİ SEANSIN BAŞI: KÖPRÜ ARAYÜZÜ YENİDEN (29 Eyl 2026, taslak onaylı).**
+> Köprü pencereleri açık renge geçiyor (koyu zemin "çok koyu, demode" bulundu).
+> - **Durum paneli = "B · yan menülü":** solda ince ikon şeridi (logo, Durum,
+>   Yazıcılar, altta Ayarlar); sağda beyaz alan: üstte işletme adı küçük,
+>   yeşil halkalı nokta + "Her şey yolunda" (sorunda mercan + hangi yazıcı);
+>   altında kenarlıklı yazıcı satırları (tür ikonu mercan, ad, USB/Ağ, durum
+>   noktası); en altta "Sunucuya bağlı · sürüm". Bağlantıyı kes ve bilgileri
+>   kopyala Ayarlar sekmesinde. Son fişler akışı, sayı kutuları REDDEDİLDİ.
+> - **Bağlantı penceresi:** onaylı düzen (hane hane 3+3 kod kutuları, kalan
+>   süre, numaralı 3 adım, altta yalnız bilgisayar adı) ama açık renkte.
+> - **Tepsi menüsü 4 satır:** durum + işletme adı / Durum panelini aç /
+>   Yazıcıları yokla / Köprüyü kapat. İşletme kodu, kasa kişisi, tarayıcıda
+>   aç, bağlantıyı kes menüden çıkıyor.
+> - İkonlar lucide (köprüye svg olarak gömülür, internetten çekilmez).
+> - Kurulum sihirbazı düzeltildi (keskin yazı, sözleşme sayfası yok, görseller
+>   2x) — "B · VS Code gibi" seçildi, Squirrel reddedildi.
+>
+> **BİTTİ (29 Eyl 2026): KÖPRÜ KODLA EŞLEŞİYOR.** Telefon/şifre ve
 > "Köprü rolü" fikri bırakıldı. Köprü ilk açılışta 6 haneli kod gösterir;
 > yetkili (`yazici.hesap`) RayoPOS'ta Yazıcılar → Kasa köprüleri → Köprü
 > ekle'ye yazar; köprüye kendi yetkisiz sistem hesabı açılır, bir daha giriş

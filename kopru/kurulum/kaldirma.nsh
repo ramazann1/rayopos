@@ -1,3 +1,9 @@
+; Kurulum penceresi ekran büyütmesini bildiğini söylüyor. Söylemezse Windows
+; %125-%150 büyütmede pencereyi resim gibi büyütüyor ve yazılar bulanıklaşıyor.
+!macro customHeader
+  ManifestDPIAware true
+!macroend
+
 ; Kaldırma sırasında ayar dosyasının akıbeti soruluyor. Program silinince
 ; giriş bilgileri ve yazıcı seçimi de gitsin isteniyorsa evet; yeni sürüm
 ; kurmak için kaldırılıyorsa hayır — kasa yeniden eşleştirilmek zorunda kalmaz.

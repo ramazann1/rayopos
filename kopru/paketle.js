@@ -77,9 +77,15 @@ async function kurulumGorselleri() {
     writeFileSync(join(kok, "kurulum", ad), Buffer.concat([baslik, govde]));
   };
 
+  // Görseller iki kat büyük çiziliyor: kurulum penceresi ekran büyütmesine
+  // uyuyor (%125-%200) ve normal boydaki resmi büyütünce pikselleşiyordu.
+  // Büyük resim küçültülünce keskin kalıyor.
+  const K = 2;
+
   // Kenar görseli: mercan zemin, ortada simge, altında ürün adı.
-  const kenar = createCanvas(164, 314);
+  const kenar = createCanvas(164 * K, 314 * K);
   const kc = kenar.getContext("2d");
+  kc.scale(K, K);
   const gecis = kc.createLinearGradient(0, 0, 164, 314);
   gecis.addColorStop(0, "#ff8a6b");
   gecis.addColorStop(1, "#e85f3c");
@@ -104,8 +110,9 @@ async function kurulumGorselleri() {
   yaz(kenar, "kenar.bmp");
 
   // Üst şerit: beyaz zemin, solda simge ve ürün adı.
-  const serit = createCanvas(150, 57);
+  const serit = createCanvas(150 * K, 57 * K);
   const sc = serit.getContext("2d");
+  sc.scale(K, K);
   sc.fillStyle = "#ffffff";
   sc.fillRect(0, 0, 150, 57);
   sc.drawImage(simge, 104, 11, 34, 34);

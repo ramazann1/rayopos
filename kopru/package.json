@@ -41,7 +41,6 @@
       "artifactName": "rayopos-kopru-kurulum-${version}.${ext}",
       "shortcutName": "RayoPOS Kasa Köprüsü",
       "uninstallDisplayName": "RayoPOS Kasa Köprüsü ${version}",
-      "license": "kurulum/lisans.txt",
       "installerSidebar": "kurulum/kenar.bmp",
       "uninstallerSidebar": "kurulum/kenar.bmp",
       "installerHeader": "kurulum/serit.bmp",
