@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, CircleMinus, CirclePlus, ListChecks, Ruler, X } from "lucide-react";
+import { Check, CircleMinus, CirclePlus, ListChecks, Ruler, UtensilsCrossed, X } from "lucide-react";
 import { paraGoster } from "../para";
 import { porsiyonFiyat } from "../menu";
 import { cikanMetni, eklenenMetni } from "../recete";
@@ -113,14 +113,17 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
   };
 
   return (
-    <div className="us-fon" onClick={onKapat}>
-      <div className="us-pencere" onClick={(e) => e.stopPropagation()}>
-        <header className="us-ust">
-          <div>
+    <div className="up-fon" onClick={onKapat}>
+      <div className="up-modal us-pencere" onClick={(e) => e.stopPropagation()}>
+        <header className="up-ust">
+          <span className="us-simge">
+            <UtensilsCrossed size={18} />
+          </span>
+          <div className="us-baslik">
             <h3>{urun.ad}</h3>
             {porsiyon && <span>{paraGoster(porsiyonFiyat(porsiyon, tur))}</span>}
           </div>
-          <button className="us-kapat" aria-label="Kapat" onClick={onKapat}>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}>
             <X size={19} />
           </button>
         </header>

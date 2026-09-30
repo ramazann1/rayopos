@@ -16,6 +16,7 @@ import {
   SlidersHorizontal,
   Star,
   StickyNote,
+  TriangleAlert,
   Users,
   Wallet,
   X,
@@ -53,6 +54,7 @@ import AdisyonBilgi from "../components/AdisyonBilgi";
 import MisafirSayisi from "../components/MisafirSayisi";
 import type { AdisyonBilgisi } from "../components/AdisyonBilgi";
 import { kilitKaldir, kilitKur } from "../cikisKilidi";
+import { useGeriKilidi } from "../geriKilidi";
 import { baglantiHatasi, baglantiVar, hataMesaji } from "../baglanti";
 import { bekleyenKayit, kuyrugaEkle } from "../kuyruk";
 import { hesapKopyasiOku, hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
@@ -534,6 +536,8 @@ export default function Siparis() {
     kilitKur(() => kirli);
     return kilitKaldir;
   }, [kirli]);
+
+  useGeriKilidi(kirli, () => setCikisSorusu(true));
 
   // Adisyonu tazeleyip kirli imzayı da sıfırlar; taşıma gibi doğrudan diske
   // yazan işlemlerden sonra ekran veritabanıyla aynı hizaya geliyor.
@@ -1154,8 +1158,11 @@ export default function Siparis() {
 
       {cikisSorusu && (
         <OnayModal
-          mesaj="Adisyonda kaydedilmemiş değişiklik var. Kaydetmeden çıkılsın mı?"
           tehlikeli
+          baslik="Kaydedilmemiş değişiklik var"
+          ikon={<TriangleAlert size={22} />}
+          mesaj="Bu adisyonda yaptığın değişiklikler henüz kaydedilmedi. Çıkarsan kaybolacak."
+          iptalMetni="Adisyonda kal"
           onayMetni="Kaydetmeden çık"
           onOnay={() => { kilitKaldir(); navigate("/"); }}
           onKapat={() => setCikisSorusu(false)}

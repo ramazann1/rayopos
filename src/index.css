@@ -1333,14 +1333,6 @@ body {
   display: flex; align-items: center; justify-content: center;
   z-index: 30;
 }
-.indirim-modal {
-  background: var(--kart);
-  border-radius: 16px;
-  padding: 24px;
-  width: 340px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-}
-.indirim-modal h3 { margin: 0 0 16px; font-size: 18px; }
 .mod-sec { display: flex; gap: 8px; margin-bottom: 16px; }
 .mod-sec button {
   flex: 1; padding: 10px;
@@ -2149,7 +2141,6 @@ body {
   border-radius: var(--r-or);
   background: var(--kart);
   box-shadow: var(--g3);
-  animation: up-gir var(--gecis);
 }
 
 .th-bolme-liste p {
@@ -3054,7 +3045,6 @@ body {
   border-radius: var(--r-bk);
   background: var(--kart);
   box-shadow: var(--g3);
-  animation: up-gir var(--gecis-yavas);
 }
 
 .onay-modal p {
@@ -10787,7 +10777,6 @@ body {
   background: var(--zemin);
   box-shadow: var(--g3);
   overflow: hidden;
-  animation: up-gir var(--gecis-yavas);
 }
 
 .fr-modal-ust {
@@ -14306,101 +14295,6 @@ body {
   color: var(--soluk);
   cursor: default;
 }
-
-/* Alttan açılan sayfa: sepet ve misafir sayısı aynı düzeni kullanıyor. */
-.m-perde {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: flex-end;
-  background: rgba(0, 0, 0, 0.35);
-  animation: m-perde-ac 0.18s ease-out;
-}
-
-/* Alttan açılan sayfa yukarı doğru kayarak geliyor: nereden çıktığı görünsün,
-   ekran birden değişmiş gibi olmasın. */
-@keyframes m-perde-ac {
-  from {
-    background: rgba(0, 0, 0, 0);
-  }
-}
-
-@keyframes m-sayfa-ac {
-  from {
-    transform: translateY(14%);
-  }
-}
-
-/* Kapanış: pencere aşağı iniyor, perde açılıyor. Süre AltSayfa.tsx'teki
-   bekleme süresiyle aynı olmalı — orası biterken burası da bitiyor. */
-.m-perde.kapaniyor {
-  animation: m-perde-kapa 0.2s ease-in forwards;
-}
-
-.m-perde.kapaniyor .m-sayfa {
-  animation: m-sayfa-kapa 0.2s ease-in forwards;
-}
-
-@keyframes m-perde-kapa {
-  to {
-    background: rgba(0, 0, 0, 0);
-  }
-}
-
-@keyframes m-sayfa-kapa {
-  to {
-    transform: translateY(102%);
-  }
-}
-
-/* Hareketi rahatsız edici bulan kişide açılış anlık: işletim sisteminin
-   ayarına uyuluyor, ayrıca bir seçenek koymaya gerek yok. */
-@media (prefers-reduced-motion: reduce) {
-  .m-perde,
-  .m-perde .m-sayfa,
-  .m-perde.kapaniyor,
-  .m-perde.kapaniyor .m-sayfa {
-    animation: none;
-  }
-}
-
-.m-sayfa {
-  width: 100%;
-  max-height: 82vh;
-  max-height: 82dvh;
-  animation: m-sayfa-ac 0.24s cubic-bezier(0.22, 0.9, 0.3, 1);
-  display: flex;
-  flex-direction: column;
-  border-radius: 18px 18px 0 0;
-  background: var(--zemin);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* İşlem menüsü sekme çubuğunun üstünde duruyor, onu örtmüyor: garson menü
-   açıkken de hangi sekmede olduğunu görüyor, kapatmak için menüden çıkması
-   gerekmiyor. */
-.m-sayfa.kisa {
-  margin-bottom: calc(74px + env(safe-area-inset-bottom));
-  border-radius: 20px;
-  width: calc(100% - 20px);
-  margin-left: 10px;
-  margin-right: 10px;
-  box-shadow: 0 12px 34px rgba(20, 32, 48, 0.28);
-}
-
-/* Kısa pencere içeriği kadar yer kaplıyor ama ekranı aşmıyor: satır sayısı
-   kişinin yetkisine göre değiştiği için taşma ihtimali her zaman var, taşarsa
-   son satır sessizce kesiliyordu.
-
-   Ölçü dvh: telefon tarayıcısında vh, adres çubuğunun kapladığı yeri saymıyor.
-   Bilgisayarın telefon görünümünde sorun çıkmayıp gerçek telefonda son satırın
-   kaybolmasının sebebi buydu. */
-.m-sayfa.kisa {
-  max-height: 88vh;
-  max-height: 88dvh;
-}
-
 .m-sayfa-ust {
   display: flex;
   align-items: center;
@@ -15365,10 +15259,11 @@ body {
   font-weight: 600;
 }
 
+/* Dokunma alanı parmak boyunda, eksi boşlukla kartın düzenini itmiyor. */
 .m-masa-menu {
-  width: 22px;
-  height: 22px;
-  margin: -2px -4px -2px 0;
+  width: 44px;
+  height: 44px;
+  margin: -13px -15px -13px -10px;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -15529,70 +15424,6 @@ body {
 }
 
 /* İşlem listesi: ikon + ad, açıklama yok. */
-
-/* Sayfanın tepesindeki tutamak: alttan gelen pencerenin bittiği yeri gösteren
-   küçük çizgi. Süs değil — parmağın nereden tutacağını söylüyor. */
-.m-tutamak {
-  flex-shrink: 0;
-  width: 38px;
-  height: 4px;
-  margin: 9px auto 2px;
-  border-radius: 999px;
-  background: #c8d1dc;
-}
-
-/* İşlem menüsünün başlığı: masa adı ekranın kahramanı, altında hesabın o anki
-   özeti. Çizgi yok — başlıkla işlemler arasındaki boşluk zaten ayırıyor. */
-.m-islem-ust {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 14px 10px;
-}
-
-.m-islem-masa {
-  display: block;
-  font-size: 23px;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-  line-height: 1.25;
-}
-
-.m-islem-ozet {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 3px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--soluk);
-}
-
-.m-islem-ozet strong {
-  font-weight: 600;
-  color: var(--mercan);
-}
-
-/* Kapatma düğmesi başlıkla yarışmıyor: masa adı büyük, bu sade ve yuvarlak. */
-.m-islem-kapat {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border: none;
-  border-radius: 50%;
-  background: #e5ebf3;
-  color: var(--metin);
-  cursor: pointer;
-}
-
-/* Menü uzarsa kaydırılıyor: satır sayısı kişinin yetkisine göre değişiyor. */
-.m-sayfa.kisa .m-islemler {
-  overflow-y: auto;
-}
-
 .m-islemler {
   display: flex;
   flex-direction: column;
@@ -15654,6 +15485,79 @@ body {
   height: 1px;
   margin: 6px 12px;
   background: #dde4ed;
+}
+
+/* Masa ve sipariş işlem menüleri: ortak kabukta ortada kart. Mercan yalnız
+   başlıktaki simgede; satırlar tek renkte kalıyor. */
+.up-modal.ip-modal {
+  max-width: 420px;
+  max-height: calc(100dvh - 32px);
+}
+
+.ip-fon {
+  align-items: center;
+}
+
+.ip-ust {
+  padding: 14px 12px 14px 16px;
+}
+
+.ip-simge {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--mercan-sis);
+  color: var(--mercan);
+}
+
+.ip-baslik {
+  flex: 1;
+  min-width: 0;
+}
+
+.ip-baslik h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ip-ozet {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--soluk);
+}
+
+.ip-ozet strong {
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.ip-islemler {
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.ip-islemler .m-islem {
+  padding: 8px 10px;
+  font-size: 15px;
+  transition: background var(--gecis);
+}
+
+.ip-islemler .m-islem:hover {
+  background: var(--zemin);
+}
+
+.ip-islemler .m-islem-ikon {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
 }
 
 /* Kategoriler tek sırada, yana kayıyor: üç sütunlu ızgara ekranın üçte birini
@@ -16589,8 +16493,14 @@ body {
   padding: 32px;
 }
 
+/* Perdenin yalnız rengi açılıyor. opacity ile bütün perde saydamlaşınca
+   içindeki pencere de onunla birlikte ayrı katmanda çiziliyordu; telefonda
+   yazı açılışta bir an başka görünüp sonra yerine oturuyordu. */
 @keyframes up-fon-gir {
-  from { opacity: 0; }
+  from {
+    background-color: transparent;
+    backdrop-filter: none;
+  }
 }
 
 .up-modal {
@@ -16604,16 +16514,6 @@ body {
   border: 1px solid var(--cizgi);
   border-radius: var(--r-bk);
   box-shadow: var(--g3);
-  animation: up-gir var(--gecis-yavas);
-}
-
-/* Açılış hareketi büyüterek değil kaydırarak yapılıyor. scale(0.97) ile
-   pencere büyürken tarayıcı içindeki yazıyı önce küçük ölçekte çiziyor,
-   animasyon bitince yeniden çiziyordu: harfler bir an başka bir yazı tipi
-   gibi görünüp sonra yerine oturuyordu. Ölçek değişmeyince yazı tek seferde
-   doğru çiziliyor. Beş modal da bu kareyi kullanıyor. */
-@keyframes up-gir {
-  from { opacity: 0; transform: translateY(6px); }
 }
 
 .up-ust {
@@ -17215,7 +17115,6 @@ body {
   border: 1px solid var(--cizgi);
   border-radius: var(--r-bk);
   box-shadow: var(--g3);
-  animation: up-gir var(--gecis-yavas);
 }
 
 .up-grup-govde {
@@ -17398,7 +17297,6 @@ body {
   border: 1px solid var(--cizgi);
   border-radius: var(--r-bk);
   box-shadow: var(--g3);
-  animation: up-gir var(--gecis-yavas);
   cursor: default;
 }
 
@@ -22783,7 +22681,6 @@ body:has(.up-fon, .menu-perde) {
   border: 1px solid var(--cizgi);
   border-radius: var(--r-bk);
   box-shadow: var(--g3);
-  animation: up-gir var(--gecis-yavas);
 }
 
 /* Reçetenin kendisi solda, malzeme seçimi sağda kalıcı duruyor: arka arkaya
@@ -23742,73 +23639,36 @@ body:has(.up-fon, .menu-perde) {
 }
 
 /* Ürün seçim penceresi (porsiyon, seçenek, olmasın, ekstra). Masaüstü ve
-   telefon aynı bileşeni açıyor; ortak .perde/.pencere/.secim sınıflarına
-   dokunulmadı, başka ekranlar da onları kullanıyor. */
-.us-fon {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
+   telefon aynı bileşeni açıyor; kabuk ortak (.up-fon / .up-modal), burada
+   yalnız boyu ve başlıktaki simge. */
+.up-modal.us-pencere {
+  max-width: 520px;
+  max-height: min(720px, calc(100dvh - 32px));
+}
+
+.us-simge {
+  flex: none;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
-  padding: 16px;
-  background: rgba(16, 24, 40, 0.5);
-  animation: us-belir var(--gecis);
+  border-radius: 10px;
+  background: var(--mercan-sis);
+  color: var(--mercan);
 }
 
-/* Yalnız saydamlık: ölçek ve kaydırma telefonda yazıyı ilk karelerde
-   bulanık çizip sonra netleştiriyordu, pencere "başka stille gelip
-   düzeliyor" gibi görünüyordu. */
-@keyframes us-belir {
-  from { opacity: 0; }
+.us-baslik {
+  flex: 1;
+  min-width: 0;
 }
 
-.us-pencere {
-  display: flex;
-  flex-direction: column;
-  width: min(520px, 100%);
-  max-height: min(720px, calc(100vh - 32px));
-  border-radius: var(--r-bk);
-  background: var(--kart);
-  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.22);
-  overflow: hidden;
-}
-
-.us-ust {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 22px 16px;
-  border-bottom: 1px solid var(--cizgi);
-}
-
-.us-ust h3 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 600;
-  color: var(--metin);
-}
-
-.us-ust span {
+.us-baslik span {
   display: block;
-  margin-top: 2px;
+  margin-top: 1px;
   font-size: 14px;
   font-weight: 500;
   color: var(--soluk);
   font-variant-numeric: tabular-nums;
-}
-
-.us-kapat {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: var(--r-kk);
-  background: var(--zemin);
-  color: var(--metin);
-  cursor: pointer;
 }
 
 .us-govde {
@@ -24000,15 +23860,7 @@ body:has(.up-fon, .menu-perde) {
 }
 
 @media (max-width: 640px) {
-  .us-fon {
-    padding: 16px;
-  }
-
-  .us-pencere {
-    max-height: calc(100vh - 32px);
-  }
-
-  .us-ust,
+  .us-pencere .up-ust,
   .us-govde,
   .us-alt {
     padding-left: 16px;
@@ -24035,7 +23887,7 @@ body:has(.up-fon, .menu-perde) {
   place-items: center;
   padding: 16px;
   background: rgba(16, 24, 40, 0.5);
-  animation: us-belir var(--gecis);
+  animation: up-fon-gir var(--gecis);
 }
 
 .pnc-pencere {
@@ -24557,4 +24409,241 @@ body:has(.up-fon, .menu-perde) {
   margin-top: 0;
   margin-bottom: -6px;
   transform: rotate(-135deg);
+}
+
+/* ============================================================
+   İNDİRİM PENCERESİ (1 Eki 2026) — ortak kabukta.
+   Kalem, ödeme ve Hızlı Öde penceresinden açılıyor; masaüstü ve
+   telefon aynı bileşen. Mercan yalnız başlık simgesinde ve Uygula'da.
+   ============================================================ */
+.up-modal.ind-modal {
+  max-width: 380px;
+  max-height: calc(100dvh - 32px);
+}
+
+.ind-simge {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--mercan-sis);
+  color: var(--mercan);
+}
+
+.ind-govde {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px 18px 18px;
+  overflow-y: auto;
+}
+
+.ind-etiket {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--soluk);
+}
+
+.ind-tanimlar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ind-tanim {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--gecis), background var(--gecis);
+}
+
+.ind-tanim:hover {
+  border-color: var(--cizgi-koyu);
+  background: var(--kart-ust);
+}
+
+.ind-tanim-ikon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--zemin);
+  color: var(--soluk);
+}
+
+.ind-tanim-yazi {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ind-tanim-yazi strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--metin);
+}
+
+.ind-tanim-yazi span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--soluk);
+}
+
+/* Tutar / Yüzde: gri zeminde seçili olan beyaz kart gibi kalkıyor. */
+.ind-mod {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-or);
+  background: var(--zemin);
+}
+
+.ind-mod button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--soluk);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--gecis), color var(--gecis);
+}
+
+.ind-mod button.secili {
+  background: var(--kart);
+  color: var(--metin);
+  font-weight: 600;
+  box-shadow: var(--g1);
+}
+
+.ind-gosterge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart-ust);
+}
+
+.ind-toplam,
+.ind-sonuc {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--soluk);
+  font-variant-numeric: tabular-nums;
+}
+
+.ind-gosterge strong {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  color: var(--metin);
+  font-variant-numeric: tabular-nums;
+}
+
+.ind-gosterge strong.bos {
+  color: var(--soluk);
+}
+
+.ind-tuslar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.ind-tuslar button {
+  display: grid;
+  place-items: center;
+  height: 50px;
+  border: 1px solid var(--cizgi);
+  border-radius: var(--r-or);
+  background: var(--kart);
+  color: var(--metin);
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--gecis);
+}
+
+.ind-tuslar button:hover {
+  background: var(--zemin);
+}
+
+.ind-tuslar button:active {
+  background: var(--cizgi);
+}
+
+.ind-alt {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--cizgi);
+}
+
+.ind-vazgec,
+.ind-uygula {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px;
+  border-radius: var(--r-kk);
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background var(--gecis);
+}
+
+.ind-vazgec {
+  flex: 1;
+  border: 1px solid var(--cizgi-koyu);
+  background: var(--kart);
+  color: var(--metin);
+  font-weight: 500;
+}
+
+.ind-vazgec:hover {
+  background: var(--kart-ust);
+}
+
+.ind-uygula {
+  flex: 2;
+  border: none;
+  background: var(--mercan);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: var(--g1);
+}
+
+@media (max-width: 860px) {
+  .ind-tuslar button { height: 46px; }
+  .ind-gosterge strong { font-size: 26px; }
 }

@@ -1,9 +1,36 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (30 Eyl 2026 güncellendi — garsonun kendi satışı seansı)
+## 0. SIRADAKİ İŞ (1 Eki 2026 güncellendi — mobil pencereler seansı)
 
 > **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" listesinin 1. maddesi.**
+>
+> **BİTTİ (1 Eki 2026): MOBİL PENCERELER, SEKME GÜVENLİĞİ, ÇIKIŞ UYARISI.**
+> - Ortak kabuğa geçti: masa ⋮ menüsü ve sipariş işlemleri (`AltSayfa`
+>   silindi, yerine `mobil/IslemPenceresi.tsx`), İndirim penceresi (yeniden
+>   tasarlandı: hazır indirim kartları, Tutar/Yüzde gri sekme, göstergede
+>   toplam ve kalan, virgüllü tuş takımı, en çok 2 kuruş hanesi,
+>   `paraGoster`), Ürün seçimi (başlıkta ikon). Onay ve Eksik Kapat onay
+>   ailesinde kaldı (Ramazan onayı).
+> - **Açılışta yazının "başka stille gelip düzelmesi" kökten çözüldü.**
+>   Chrome'da ölçüldü: pencere 0,15 sn yarım piksel kayıp saydamlaşırken
+>   yazı geçici çiziliyor. `up-gir` (7 aile) ve `us-belir` kaldırıldı;
+>   pencere yerinde açılıyor, yalnız perdenin rengi koyulaşıyor
+>   (`up-fon-gir` artık opacity değil background-color). **KURAL: pencere
+>   kartına transform/opacity animasyonu konmaz.**
+> - Masa kartındaki ⋮ dokunma alanı 44px (eksi boşlukla, düzen kaymıyor).
+> - **GÜVENLİK: sekmeler arası kişi.** Aynı tarayıcıdaki sekmeler tek bilet
+>   paylaşıyor ama ekrandaki kişi sekmeye özeldi — bir sekmede hesap/PIN
+>   değişince öteki eski kişinin menüsünü gösteriyordu (sunucu yeni kişiye
+>   göre çalışırken). Artık `storage` olayıyla kişi değişince bütün sekmeler
+>   sunucuya yeniden soruyor; kilit de ortak. Açılışta cihaz kopyası yalnız
+>   biletin sahibine aitse gösteriliyor. `oturum.ts`.
+> - **Çıkış uyarısı:** mobil sipariş geri oku gönderilmemiş değişiklikte
+>   soruyor (önce ürünler sessizce kayboluyordu). Tarayıcı/telefon geri
+>   hareketi de yakalanıyor — `geriKilidi.ts` (geçmişe aynı adreste bir adım;
+>   kendi geri adımını kullanıcı basışı saymıyor). Masaüstü sipariş de
+>   kullanıyor. Mobilde `kirli` yükleme bitmeden false (yoksa girişte soru
+>   çıkıyordu).
 >
 > **BİTTİ (30 Eyl 2026, ikinci seans): GARSONUN KENDİ SATIŞI + ÜRÜN TAŞIMA.**
 > - Adisyo turu: tek anahtar ("Satış raporlarını mobil uygulamadan
@@ -95,13 +122,29 @@
 >   aynı kare kartlardan ikinci sıra olarak eklenir (Ramazan fikri).
 >
 > Sonrakiler:
-> 1. **Mobilde ortak kabuğu kullanmayan pencereler (30 Eyl Ramazan kararı):**
->    Claude mobil ekranları tarar (`AltSayfa`, kendi perdesi olan modallar,
->    telefonda tam ekrana yayılan `.up-modal.tam`), bağımsız olanların
->    listesini Ramazan'a sunar; hangilerinin ortak kabuğa (.up-fon /
->    .up-modal, telefonda boşluklu kart) alınacağına birlikte karar verilir.
->    Kod değişikliği listeden sonra, tek tek.
-> 2. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
+> 1. **Uyarı/onay pencerelerinde standart (1 Eki Ramazan: "standardı yok").**
+>    Sayım: 65 `OnayModal` — ~40'ı düz cümle (başlık/ikon yok), 25'i başlıklı
+>    + ikonlu; stok uyarısı (`urt-uyari`) ortada büyük ikonlu; Kasa ve Menü
+>    Stüdyosu'nda eski `modal-fon` kabuğu. Öneri: `OnayModal`'a `tur`
+>    (bilgi / uyarı / tehlike / başarılı) — ikon ve renk türden gelir, her
+>    uyarıya kısa başlık. Ramazan bu pencerelerdeki yazının görünümünü de
+>    beğenmiyor (Poppins mi, boyut/kalınlık mı — taslakta netleşecek).
+>    **Önce taslak** (dört tür yan yana), onaydan sonra 65 kullanım tek tek.
+> 2. **Masa taşıma / birleştirme / ürün taşıma akışı (masaüstü + mobil,
+>    1 Eki Ramazan ekran görüntüleriyle):**
+>    - Masaüstündeki "B 6 taşınıyor" şeridi (sol mercan çizgi, "130 masa
+>      uygun", Vazgeç) çirkin ve birden beliriyor; mobilde alttaki kart çok
+>      büyük, en alt sıradaki masaları kapatıyor. Sade, küçük gösterge.
+>    - Birleştirme onayı "…B 2 masasının adisyonuna eklenecek." ile bitsin;
+>      "B 1 boşalacak, iki hesap… Onaylıyor musunuz?" çıkar.
+>    - "Kalemi taşı" penceresi (mercan çerçeveli masa ızgarası) kalkar:
+>      ürün taşımada da salona dönülür, masa orada seçilir.
+>    - "Başka masaya taşı" ara penceresi (satır toplamı, pembe kutu, "Masa
+>      seç") kalkar; masaya basınca kısa "taşınsın mı?" onayı. Açık soru:
+>      çok adetli kalemde adet seçimi — öneri: son onayda küçük adet seçici.
+>    - Mobil de aynı YENİ akışa geçer. Uyarı standardı (1) bitince yapılır,
+>      onay pencerelerini o kullanıyor. Önce taslak.
+> 3. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
 >    "Özet ve adisyon listesi" olmayan kişi müşterinin geçmiş adisyonunu
 >    açamayabilir — `adisyon_okunur` kapanmışta `cari.gor`'a bakmıyor. Doğrula.
 > ÖKC konuşuldu, "zamanı gelince": firma yazışması gerekiyor; o güne kadar

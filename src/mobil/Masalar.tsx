@@ -46,7 +46,7 @@ import { adisyonFisiYaz } from "../yazicilar";
 import { yetkiVar } from "../oturum";
 import OnayModal from "../components/OnayModal";
 import SiparisGecmisi from "../components/SiparisGecmisi";
-import AltSayfa from "./AltSayfa";
+import IslemPenceresi from "./IslemPenceresi";
 import HizliOde from "../components/HizliOde";
 import { bekleyenMasalar, cevrimdisiHesap, kopyaMasalari, kuyrugaEkle, useKuyruk } from "../kuyruk";
 import { hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
@@ -461,7 +461,7 @@ export default function MobilMasalar() {
                         setIslemMasasi(m);
                       }}
                     >
-                      <EllipsisVertical size={16} />
+                      <EllipsisVertical size={22} />
                     </span>
                   )}
                   {/* Seçilemeyen masa silikleşmiyor; nedenini köşedeki kilit
@@ -819,40 +819,28 @@ function MasaIslemleri({
   );
 
   return (
-    <AltSayfa kisa onKapat={onKapat}>
-      {(kapat) => (
-        <>
-          <span className="m-tutamak" />
-
-          <header className="m-islem-ust">
-            <span>
-              <strong className="m-islem-masa">{masa.ad}</strong>
-              {ozet && (
-                <span className="m-islem-ozet">
-                  <strong>{paraGoster(ozet.kalan || ozet.tutar)}</strong>
-                  {!!ozet.kisiSayisi && (
-                    <>
-                      ·
-                      <Users size={13} />
-                      {ozet.kisiSayisi}
-                    </>
-                  )}
-                  {ozet.garson && <>· {ozet.garson}</>}
-                </span>
-              )}
-            </span>
-            <button className="m-islem-kapat" onClick={kapat} aria-label="Kapat">
-              <X size={19} />
-            </button>
-          </header>
-
-          <div className="m-islemler">
-            {satirlar.map(satir)}
-            {agirlar.length > 0 && <span className="m-islem-ayirici" />}
-            {agirlar.map(satir)}
-          </div>
-        </>
-      )}
-    </AltSayfa>
+    <IslemPenceresi
+      baslik={masa.ad}
+      onKapat={onKapat}
+      ozet={
+        ozet && (
+          <>
+            <strong>{paraGoster(ozet.kalan || ozet.tutar)}</strong>
+            {!!ozet.kisiSayisi && (
+              <>
+                ·
+                <Users size={13} />
+                {ozet.kisiSayisi}
+              </>
+            )}
+            {ozet.garson && <>· {ozet.garson}</>}
+          </>
+        )
+      }
+    >
+      {satirlar.map(satir)}
+      {agirlar.length > 0 && <span className="m-islem-ayirici" />}
+      {agirlar.map(satir)}
+    </IslemPenceresi>
   );
 }

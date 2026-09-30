@@ -137,8 +137,10 @@ async function oturumuOku() {
   // tazeleme isteği bağlantı yokken saniyelerce asılı kalıyor) ekran giriş
   // ekranında bekliyordu. Cihazdaki kopya varsa oturum hemen kuruluyor,
   // doğrulama arkada sürüyor: yanlışsa aşağıda düzeltiliyor.
+  // Kopyayı başka hesabın sekmesi yazmış olabilir: bilet kimdeyse kopya da
+  // onun değilse sunucunun cevabı bekleniyor, ekrana bir an bile basılmıyor.
   const hatirlanan = onbellekOku<HatirlananOturum>(OTURUM_ANAHTARI);
-  if (hatirlanan) {
+  if (hatirlanan && hatirlanan.veri.authId === biletSahibi(localStorage.getItem(biletAnahtari()))) {
     acik = hatirlanan.veri.kisi;
     kilitli = localStorage.getItem(KILIT_ANAHTARI) === "1";
     duyur();
@@ -408,6 +410,51 @@ export function bekleyenPinIzle() {
       duyur();
     } catch {
       // Bağlantı yine düştüyse bekleyen PIN duruyor, sonraki denemede gider.
+    }
+  });
+}
+
+// Kimlik biletini Supabase tarayıcıda "sb-<proje>-auth-token" anahtarında
+// tutuyor; aynı tarayıcıdaki bütün sekmeler bu tek bileti paylaşıyor.
+function biletAnahtari() {
+  return Object.keys(localStorage).find((k) => k.startsWith("sb-") && k.endsWith("-auth-token")) ?? "";
+}
+
+function biletSahibi(ham: string | null) {
+  try {
+    return (JSON.parse(ham ?? "null")?.user?.id as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function kopyadakiKisi(ham: string | null) {
+  try {
+    return (JSON.parse(ham ?? "null")?.veri?.kisi?.id as number | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Sekmeler bilet ortak, ekrandaki kişi ayrı: bir sekmede giriş, çıkış ya da
+// PIN'le geçiş olunca öteki sekme eski kişinin menüsünü göstermeye devam
+// ediyordu, oysa sunucu artık yeni kişiye göre çalışıyordu. Kişi değişince
+// bütün sekmeler sunucuya "şu an kim" diye yeniden soruyor.
+// Bilet saatlik tazelenirken ve kopya aynı kişiyle yeniden yazılırken de olay
+// geliyor; yalnız kişi gerçekten değiştiyse okunuyor, yoksa sekmeler birbirini
+// sonsuza dek tetiklerdi.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === null) {
+      oturumuYukle();
+    } else if (e.key.startsWith("sb-") && e.key.endsWith("-auth-token")) {
+      if (biletSahibi(e.oldValue) !== biletSahibi(e.newValue)) oturumuYukle();
+    } else if (e.key === "rayopos-onbellek-" + OTURUM_ANAHTARI) {
+      const kisi = kopyadakiKisi(e.newValue);
+      if (kisi !== null && kisi !== acik?.id) oturumuYukle();
+    } else if (e.key === KILIT_ANAHTARI) {
+      kilitli = e.newValue === "1";
+      duyur();
     }
   });
 }

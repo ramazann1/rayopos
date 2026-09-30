@@ -21,6 +21,7 @@ import {
   Send,
   ShoppingBag,
   StickyNote,
+  TriangleAlert,
   Users,
   Wallet,
   X,
@@ -35,7 +36,7 @@ import MisafirSayisi from "../components/MisafirSayisi";
 import MasaSecim from "../components/MasaSecim";
 import { kalemiUygula } from "./KalemIslemleri";
 import OnayModal from "../components/OnayModal";
-import AltSayfa from "./AltSayfa";
+import IslemPenceresi from "./IslemPenceresi";
 import { MENU_ANAHTAR, agacUrunleri, menuGetir, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
 import { useTanimEtkisi } from "../tanimAbonelik";
 import { bolgeleriGetir, hedefOnayMesaji, masaGetir } from "../masalar";
@@ -63,6 +64,7 @@ import { useMasayiTut } from "../mesguliyet";
 import { SINYAL, useCanli } from "../canli";
 import { baglantiHatasi, baglantiVar } from "../baglanti";
 import { kilitKaldir, kilitKur } from "../cikisKilidi";
+import { useGeriKilidi } from "../geriKilidi";
 import { ayarlar } from "../isletmeAyarlari";
 import { yetkiVar } from "../oturum";
 import { adetGoster, paraGoster } from "../para";
@@ -157,6 +159,7 @@ export default function MobilSiparis() {
   const [acikAdisyonId, setAcikAdisyonId] = useState<number | undefined>();
   const [gecmisAcik, setGecmisAcik] = useState(false);
   const [uyari, setUyari] = useState<string | null>(null);
+  const [cikisSorusu, setCikisSorusu] = useState(false);
   const [gonderiliyor, setGonderiliyor] = useState(false);
 
   // Ekran açık kaldığı sürece masa bu kişide görünüyor. Başkası devraldıysa
@@ -185,14 +188,21 @@ export default function MobilSiparis() {
   // Sunucuya yazılmamış kalem var mı — Gönder düğmesi ve çıkış uyarısı buna bakıyor.
   const baslangicImza = useRef("");
   const bilgiImza = useRef("");
+  // Adisyon okunmadan karşılaştırılacak ilk hâl yok: o arada değişiklik sayılmıyor.
   const kirli =
-    JSON.stringify(sepet) !== baslangicImza.current ||
-    JSON.stringify(bilgi) !== bilgiImza.current;
+    !yukleniyor &&
+    (JSON.stringify(sepet) !== baslangicImza.current ||
+      JSON.stringify(bilgi) !== bilgiImza.current);
 
   useEffect(() => {
     kilitKur(() => kirli);
     return kilitKaldir;
   }, [kirli]);
+
+  // Gönderilmemiş ürünle masadan çıkılırsa ürünler kayboluyordu: geri ok da
+  // telefonun geri hareketi de önce soruyor.
+  useGeriKilidi(kirli, () => setCikisSorusu(true));
+  const geriDon = () => (kirli ? setCikisSorusu(true) : git("/mobil/masalar"));
 
   // Menü başka cihazda düzenlenince kopya tazeleniyor; ekran o haberi burada
   // alıyor. Seçili kategori hâlâ duruyorsa korunuyor, silinmişse başa dönülüyor.
@@ -572,7 +582,7 @@ export default function MobilSiparis() {
   return (
     <div className="m-siparis" ref={ekran}>
       <header className="m-siparis-ust">
-        <button className="m-ikon-dugme" onClick={() => git("/mobil/masalar")} aria-label="Geri">
+        <button className="m-ikon-dugme" onClick={geriDon} aria-label="Geri">
           <ArrowLeft size={20} />
         </button>
         {aramaAcik ? (
@@ -932,155 +942,143 @@ export default function MobilSiparis() {
       {/* Siparişin kendi işlemleri: masaya girdikten sonra da misafir sayısı
           değişebiliyor, hesap fişi istenebiliyor. */}
       {islemlerAcik && (
-        <AltSayfa kisa onKapat={() => setIslemlerAcik(false)}>
-          {(kapat) => (
+        <IslemPenceresi
+          baslik={masaAdi}
+          onKapat={() => setIslemlerAcik(false)}
+          ozet={
             <>
-              <span className="m-tutamak" />
-
-              <header className="m-islem-ust">
-                <span>
-                  <strong className="m-islem-masa">{masaAdi}</strong>
-                  <span className="m-islem-ozet">
-                    <strong>{paraGoster(ozet.toplam)}</strong>
-                    {!!kisiSayisi && (
-                      <>
-                        ·
-                        <Users size={13} />
-                        {kisiSayisi}
-                      </>
-                  )}
-                    {sepet.length > 0 && <>· {sepet.length} kalem</>}
-                  </span>
-                </span>
-                <button className="m-islem-kapat" onClick={kapat} aria-label="Kapat">
-                  <X size={19} />
-                </button>
-              </header>
-
-              <div className="m-islemler">
-                <button
-                  className="m-islem m-islem-kisi"
-                  onClick={() => {
-                    setIslemlerAcik(false);
-                    setKisiSorusu(true);
-                  }}
-                >
-                  <span className="m-islem-ikon">
-                    <Users size={19} />
-                  </span>
-                  Misafir sayısı{kisiSayisi ? ` · ${kisiSayisi}` : ""}
-                </button>
-                <button
-                  className="m-islem m-islem-not"
-                  onClick={() => {
-                    setIslemlerAcik(false);
-                    setBilgiAcik(true);
-                  }}
-                >
-                  <span className="m-islem-ikon">
-                    <StickyNote size={19} />
-                  </span>
-                  Adisyon bilgileri
-                  {bilgi.ad || bilgi.musteriAd ? <em>{bilgi.ad || bilgi.musteriAd}</em> : null}
-                </button>
-                <button
-                  className="m-islem m-islem-not"
-                  onClick={() => {
-                    setIslemlerAcik(false);
-                    setSepetAcik(true);
-                  }}
-                >
-                  <span className="m-islem-ikon">
-                    <ReceiptText size={19} />
-                  </span>
-                  Adisyonu gör
-                </button>
-                {acikAdisyonId && yetkiVar("siparis.gecmis") && (
-                  <button
-                    className="m-islem m-islem-gecmis"
-                    onClick={() => {
-                      setIslemlerAcik(false);
-                      setGecmisAcik(true);
-                    }}
-                  >
-                    <span className="m-islem-ikon">
-                      <History size={19} />
-                    </span>
-                    Sipariş geçmişi
-                  </button>
-                )}
-                {odemeAlabilir && (
-                <button
-                  className="m-islem m-islem-ode"
-                  onClick={() => {
-                    if (kirli) {
-                      setIslemlerAcik(false);
-                      setUyari("Önce siparişi gönder, sonra hesabı kapat.");
-                      return;
-                    }
-                    setIslemlerAcik(false);
-                    setTahsilatAcik(true);
-                  }}
-                >
-                  <span className="m-islem-ikon">
-                    <Wallet size={19} />
-                  </span>
-                  Öde
-                </button>
-                )}
-
-                {yetkiVar("siparis.fis_yazdir") && (
-                  <button className="m-islem m-islem-yazdir" onClick={fisYazdir}>
-                    <span className="m-islem-ikon">
-                      <Printer size={19} />
-                    </span>
-                    Hesap fişi yazdır
-                  </button>
-                )}
-
-                {/* Taşıma ve birleştirme sunucu işi: ekranda bekleyen sipariş
-                    varsa önce o gitmeli, yoksa taşınan masada görünmez. */}
-                {yetkiVar("siparis.tasi") && (
-                  <>
-                    <button
-                      className="m-islem m-islem-tasi"
-                      onClick={() => masaIslemi("tasi")}
-                    >
-                      <span className="m-islem-ikon">
-                        <ArrowRightLeft size={19} />
-                      </span>
-                      Masayı taşı
-                    </button>
-                    <button
-                      className="m-islem m-islem-tasi"
-                      onClick={() => masaIslemi("birlestir")}
-                    >
-                      <span className="m-islem-ikon">
-                        <Merge size={19} />
-                      </span>
-                      Masaları birleştir
-                    </button>
-                  </>
+              <strong>{paraGoster(ozet.toplam)}</strong>
+              {!!kisiSayisi && (
+                <>
+                  ·
+                  <Users size={13} />
+                  {kisiSayisi}
+                </>
               )}
+              {sepet.length > 0 && <>· {sepet.length} kalem</>}
+            </>
+          }
+        >
+          <button
+            className="m-islem m-islem-kisi"
+            onClick={() => {
+              setIslemlerAcik(false);
+              setKisiSorusu(true);
+            }}
+          >
+            <span className="m-islem-ikon">
+              <Users size={19} />
+            </span>
+            Misafir sayısı{kisiSayisi ? ` · ${kisiSayisi}` : ""}
+          </button>
+          <button
+            className="m-islem m-islem-not"
+            onClick={() => {
+              setIslemlerAcik(false);
+              setBilgiAcik(true);
+            }}
+          >
+            <span className="m-islem-ikon">
+              <StickyNote size={19} />
+            </span>
+            Adisyon bilgileri
+            {bilgi.ad || bilgi.musteriAd ? <em>{bilgi.ad || bilgi.musteriAd}</em> : null}
+          </button>
+          <button
+            className="m-islem m-islem-not"
+            onClick={() => {
+              setIslemlerAcik(false);
+              setSepetAcik(true);
+            }}
+          >
+            <span className="m-islem-ikon">
+              <ReceiptText size={19} />
+            </span>
+            Adisyonu gör
+          </button>
+          {acikAdisyonId && yetkiVar("siparis.gecmis") && (
+            <button
+              className="m-islem m-islem-gecmis"
+              onClick={() => {
+                setIslemlerAcik(false);
+                setGecmisAcik(true);
+              }}
+            >
+              <span className="m-islem-ikon">
+                <History size={19} />
+              </span>
+              Sipariş geçmişi
+            </button>
+          )}
+          {odemeAlabilir && (
+          <button
+            className="m-islem m-islem-ode"
+            onClick={() => {
+              if (kirli) {
+                setIslemlerAcik(false);
+                setUyari("Önce siparişi gönder, sonra hesabı kapat.");
+                return;
+              }
+              setIslemlerAcik(false);
+              setTahsilatAcik(true);
+            }}
+          >
+            <span className="m-islem-ikon">
+              <Wallet size={19} />
+            </span>
+            Öde
+          </button>
+          )}
 
-                {yetkiVar("siparis.iptal") && sepet.some((k) => k.turSira != null) && (
-                  <>
-                    <span className="m-islem-ayirici" />
-                    <button
-                      className="m-islem m-islem-iptal"
-                      onClick={() => setIptalSorusu(true)}
-                    >
-                      <span className="m-islem-ikon">
-                        <Ban size={19} />
-                      </span>
-                      Adisyonu iptal et
-                    </button>
-                  </>
-                )}
-              </div>
+          {yetkiVar("siparis.fis_yazdir") && (
+            <button className="m-islem m-islem-yazdir" onClick={fisYazdir}>
+              <span className="m-islem-ikon">
+                <Printer size={19} />
+              </span>
+              Hesap fişi yazdır
+            </button>
+          )}
+
+          {/* Taşıma ve birleştirme sunucu işi: ekranda bekleyen sipariş
+              varsa önce o gitmeli, yoksa taşınan masada görünmez. */}
+          {yetkiVar("siparis.tasi") && (
+            <>
+              <button
+                className="m-islem m-islem-tasi"
+                onClick={() => masaIslemi("tasi")}
+              >
+                <span className="m-islem-ikon">
+                  <ArrowRightLeft size={19} />
+                </span>
+                Masayı taşı
+              </button>
+              <button
+                className="m-islem m-islem-tasi"
+                onClick={() => masaIslemi("birlestir")}
+              >
+                <span className="m-islem-ikon">
+                  <Merge size={19} />
+                </span>
+                Masaları birleştir
+              </button>
+            </>
+        )}
+
+          {yetkiVar("siparis.iptal") && sepet.some((k) => k.turSira != null) && (
+            <>
+              <span className="m-islem-ayirici" />
+              <button
+                className="m-islem m-islem-iptal"
+                onClick={() => setIptalSorusu(true)}
+              >
+                <span className="m-islem-ikon">
+                  <Ban size={19} />
+                </span>
+                Adisyonu iptal et
+              </button>
             </>
           )}
-        </AltSayfa>
+        </IslemPenceresi>
       )}
 
       {/* Adisyonun kendi bilgileri. Kaydedilen değer ekranda duruyor, diske
@@ -1276,6 +1274,22 @@ export default function MobilSiparis() {
             kilitKaldir();
             git("/mobil/masalar");
           }}
+        />
+      )}
+
+      {cikisSorusu && (
+        <OnayModal
+          tehlikeli
+          baslik="Gönderilmemiş değişiklik var"
+          ikon={<TriangleAlert size={22} />}
+          mesaj="Bu masada yaptığın değişiklikler henüz gönderilmedi. Çıkarsan kaybolacak."
+          iptalMetni="Masada kal"
+          onayMetni="Göndermeden çık"
+          onOnay={() => {
+            kilitKaldir();
+            git("/mobil/masalar");
+          }}
+          onKapat={() => setCikisSorusu(false)}
         />
       )}
 
