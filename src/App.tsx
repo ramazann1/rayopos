@@ -32,6 +32,9 @@ import Ben from "./mobil/Ben";
 import { useGorunum } from "./mobil/mobilTercih";
 import KilitEkrani from "./components/KilitEkrani";
 import CevrimdisiSerit from "./components/CevrimdisiSerit";
+import Bildirim from "./components/Bildirim";
+import { kopruUyusmazliginiDinle } from "./yerelYazdirma";
+import { istasyonHaritasiniUnut, yaziciOnbelleginiUnut } from "./yazicilar";
 import { baglantiyiIzle, sureSinirli, useBaglanti } from "./baglanti";
 import { tanimlariIzle } from "./tanimAbonelik";
 import { kuyruguIzle } from "./kuyruk";
@@ -87,6 +90,10 @@ function App() {
   const [ayarTik, setAyarTik] = useState(0);
   useEffect(() => {
     if (!oturum) return;
+    // Yazıcılar ve ürün–istasyon eşlemesi bellekte tutuluyor; başka işletmeye
+    // geçilince eskisiyle kalırsa hiçbir ürün tezgâhını bulamıyor, fiş çıkmıyor.
+    yaziciOnbelleginiUnut();
+    istasyonHaritasiniUnut();
     // Ekranların yeniden kurulması yalnız ayar gerçekten değiştiyse gerekiyor.
     // Koşulsuz kurulduğunda program her açılışta arayüzü iki kez çiziyordu:
     // ekran bir kuruluyor, hemen ardından sökülüp yeniden kuruluyordu.
@@ -199,7 +206,27 @@ function Ekran({ children }: { children: React.ReactNode }) {
     <>
       <CevrimdisiSerit />
       {children}
+      <KopruUyarisi />
     </>
+  );
+}
+
+function KopruUyarisi() {
+  // Her fişte yeniden gösteriliyor; sıra numarası açıkken gelen fişte süreyi baştan başlatıyor.
+  const [uyari, setUyari] = useState<{ mesaj: string; no: number } | null>(null);
+  useEffect(
+    () => kopruUyusmazliginiDinle((mesaj) => setUyari((u) => ({ mesaj, no: (u?.no ?? 0) + 1 }))),
+    []
+  );
+  if (!uyari) return null;
+  return (
+    <Bildirim
+      key={uyari.no}
+      mesaj={uyari.mesaj}
+      tur="uyari"
+      sure={9000}
+      onKapat={() => setUyari(null)}
+    />
   );
 }
 

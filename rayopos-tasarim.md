@@ -1,9 +1,35 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (29 Eyl 2026 güncellendi — kategori silme + aktarım hızı seansı)
+## 0. SIRADAKİ İŞ (30 Eyl 2026 güncellendi — köprü uyuşmazlığı + rol şablonu seansı)
 
 > **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" listesinin 1. maddesi.**
+>
+> **BİTTİ (30 Eyl 2026): KÖPRÜ UYUŞMAZLIĞI, MUTFAK ANAHTARI, ROL ŞABLONU.**
+> - Köprü başka işletmeye bağlıysa (`/durum` → `kod`) fiş köprüye verilmiyor,
+>   buluta gidiyor; **her fişte** sağ altta sarı uyarı: "Bu bilgisayardaki köprü
+>   "X" işletmesine bağlı. Y fişleri bu bilgisayardan basılmaz." Karşılaştırma
+>   yoklamadan ayrı, her fişte (sayfa açılırken işletme kimliği henüz
+>   okunmamış olabiliyor). `src/yerelYazdirma.ts`, `KopruUyarisi` (App.tsx).
+> - HATA DÜZELDİ: işletme değişince yazıcı listesi, fiş şablonu ve
+>   ürün–istasyon eşlemesi bellekte eski işletmeninki kalıyordu → hiç fiş
+>   üretilmiyordu. Oturumun işletmesi değişince temizleniyor (App.tsx).
+> - **"Mutfak ekranında" anahtarı artık çalışıyor** (önce yalnız kaydediliyordu):
+>   kapalı ürün mutfak fişine yazılmıyor, istasyon ekranında görünmüyor. Kategori
+>   istasyonu tanımlıyken tek ürünü dışarıda bırakmanın yolu bu (Ramazan kararı).
+>   Kategorinin anahtarı kapalıysa istasyonunu ürünlerine devretmiyor.
+>   `sql/2026-09-30-mutfakta-gorunmeyen-urun.sql` (`urunun_istasyonu`) +
+>   `urunIstasyonlari` (yazicilar.ts) aynı kural.
+> - **Hazır rol şablonu yenilendi** (Ramazan tabloyla işaretledi):
+>   `hazir_rol_yetkilerini_kur`, `isletme_kur` dış kapısı çağırıyor. Yönetici
+>   ve Müdür her şey; Kasa tanım ekranları (masa/menü/ayar/ödenmez/personel)
+>   hariç her şey; Garson 7 sipariş yetkisi, **ödeme almaz** (nakit tek elde —
+>   tahsilatta "kimin aldığı" yazılmıyor); İstasyon yalnız `mutfak.ekran`;
+>   Kurye paket + ödeme. Mevcut işletmelere dokunulmadı.
+>   `sql/2026-09-30-hazir-rol-sablonu.sql`.
+> - "Miktar değiştirme" → **"Miktar artırma"** (azaltma "Üründen çıkarma"da).
+> - **"Kapanmış adisyonu görme" silindi:** tek başına ekran açmıyordu; listeyi
+>   gören ("Özet ve adisyon listesi") içini de görüyor.
 >
 > **BİTTİ (29 Eyl 2026, ikinci seans): eGZOZ KASASI YENİ KÖPRÜDE + MENÜ İŞLERİ.**
 > - eGZOZ kasası yeni (kodla eşleşen) köprüye geçti.
@@ -42,14 +68,15 @@
 >   aynı kare kartlardan ikinci sıra olarak eklenir (Ramazan fikri).
 >
 > Sonrakiler:
-> 1. **Köprü işletme uyuşmazlığı:** köprü tek işletmeye bağlı; başka
->    işletmenin sekmesinden fiş gelince yazıcı bulunamıyor, sessizce basılmıyor.
->    Program köprünün `/bilgi` cevabındaki işletme kodunu kendi oturumuyla
->    karşılaştırsın, farklıysa açıkça söylesin (`src/yerelYazdirma.ts`).
-> 2. **Hazır rol yetkileri eski:** `isletme_kur_uygula` içindeki Kasa/Garson/
->    İstasyon/Kurye şablonu 19 Ağu'dan; sonra eklenen yetkiler (stok, gider...)
->    yeni işletmede bu rollere işaretsiz geliyor. Şablon güncellenmeli
->    (Ramazan henüz "ekle" demedi, öneri olarak duruyor).
+> 1. **Garsonun o gün yaptığı satışı görmesi (yeni yetki, 30 Eyl Ramazan
+>    kararı):** bazı işletmeler garsona kendi satışını göstermek istiyor.
+>    ÖNCE Adisyo'da beraber tur, sonra taslak. Açık sorular: "kendi satışı" =
+>    açtığı masa mı, girdiği tur mu (kalabalık masada birden çok garson tur
+>    giriyor); yer (mobil Satış'ın "yalnız benim" hâli öneri); dönem (bugünkü
+>    kasa günü). Veritabanında yalnız kendi adisyonunu okuma kuralı gerekiyor.
+> 2. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
+>    "Özet ve adisyon listesi" olmayan kişi müşterinin geçmiş adisyonunu
+>    açamayabilir — `adisyon_okunur` kapanmışta `cari.gor`'a bakmıyor. Doğrula.
 > ÖKC konuşuldu, "zamanı gelince": firma yazışması gerekiyor; o güne kadar
 > sahte ÖKC ile akış kurulabilir.
 >

@@ -48,8 +48,6 @@ import Bilgi from "../components/Bilgi";
 import Ipucu from "../components/Ipucu";
 import AdisyonDetay from "../components/AdisyonDetay";
 import { yolaGirebilir } from "../rotaYetkileri";
-import { yetkiVar } from "../oturum";
-import OnayModal from "../components/OnayModal";
 import { paraGoster } from "../para";
 import { ayarlar } from "../isletmeAyarlari";
 import {
@@ -112,7 +110,6 @@ export default function Analiz() {
   const [mutfak, setMutfak] = useState<MutfakSuresiOzeti | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [secili, setSecili] = useState<number | null>(null);
-  const [uyari, setUyari] = useState<string | null>(null);
   // Adisyon yeniden açılınca liste eskiyor; sayaç değişince sorgu tekrarlanıyor.
   const [tazele, setTazele] = useState(0);
   // Canlı haberle gelen tazelemede dönen halka gösterilmiyor: rakam yerinde
@@ -237,16 +234,7 @@ export default function Analiz() {
         ) : bolum === "adisyonlar" ? (
           <Adisyonlar
             adisyonlar={adisyonlar}
-            onSec={(id) => {
-              // Kapanmış adisyonun içini görmek ayrı bir yetki: geçmiş hesabın
-              // kalemleri, indirimi ve tahsilatı orada duruyor.
-              const a = adisyonlar.find((x) => x.id === id);
-              if (a && a.durum !== "acik" && !yetkiVar("siparis.kapali_gor")) {
-                setUyari("Kapanmış adisyonu görüntüleme yetkiniz yok.");
-                return;
-              }
-              setSecili(id);
-            }}
+            onSec={setSecili}
             sadeceEksik={sadeceEksik}
             // Bu daralma yalnız Özet'teki eksik tahsilat satırından gelince
             // oluşuyor; çip kapanınca listede kalmak değil, geldiği yere dönmek
@@ -278,7 +266,6 @@ export default function Analiz() {
         )}
       </div>
 
-      {uyari && <OnayModal tekTus mesaj={uyari} onKapat={() => setUyari(null)} />}
 
       {secili && (
         <AdisyonDetay

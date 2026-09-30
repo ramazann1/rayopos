@@ -434,16 +434,20 @@ export async function urunIstasyonlari() {
   const [urn, kat] = await Promise.all([
     supabase
       .from("urunler")
-      .select("id, istasyon_id, urun_kategorileri (kategori_id)"),
-    supabase.from("kategoriler").select("id, istasyon_id"),
+      .select("id, istasyon_id, mutfakta_gorunur, urun_kategorileri (kategori_id)"),
+    supabase.from("kategoriler").select("id, istasyon_id, mutfakta_gorunur"),
   ]);
 
+  // "Mutfak ekranında" kapalıysa ürün hiçbir tezgâha gitmiyor; kategorinin
+  // anahtarı kapalıysa istasyonunu ürünlerine devretmiyor. Veritabanındaki
+  // `urunun_istasyonu` ile aynı kural — fiş ile ekran ayrışmasın.
   const kategoriIstasyonu = new Map<number, number>();
   for (const k of ((kat.data as any[]) ?? []))
-    if (k.istasyon_id) kategoriIstasyonu.set(k.id, k.istasyon_id);
+    if (k.istasyon_id && k.mutfakta_gorunur !== false) kategoriIstasyonu.set(k.id, k.istasyon_id);
 
   const harita = new Map<number, number>();
   for (const u of ((urn.data as any[]) ?? [])) {
+    if (u.mutfakta_gorunur === false) continue;
     // Ürün birden çok kategoride durabiliyor; istasyonu tanımlı ilk kategori
     // devralınıyor — Menü Stüdyosu'ndaki "Kategorisine göre" ile aynı kural.
     const kategoriden = (u.urun_kategorileri ?? [])

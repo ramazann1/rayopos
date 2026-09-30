@@ -152,7 +152,6 @@ begin
     ('siparis.kalem_tasi',    'yaz', 'update adisyon_kalemleri set tur_id = @TUR2@ where id = @KALEM@'),
     ('siparis.servis',        'yaz', 'update adisyonlar set kuver_uygula = false, kuver_tutar = 0 where id = @ADISYON@'),
     ('siparis.adisyon_ikram', 'yaz', 'select adisyon_ikram_et(@ADISYON@, null)'),
-    ('siparis.kapali_gor',    'oku', 'select count(*) from adisyonlar where durum = ''kapali'' and isletme_id = @ISLETME@'),
     ('siparis.gecmis',        'oku', 'select count(*) from turlar where isletme_id = @ISLETME@'),
     ('siparis.fis_yazdir',    'yaz', 'insert into yazdirma_kuyrugu (tip, adisyon_id, icerik) values (''adisyon'', @ADISYON@, '''')'),
     -- Gerçek devralma yolu silmek değil üstüne yazmak: isaretiKoy upsert
