@@ -42,6 +42,7 @@ export default function AdisyonBilgi({
     <div className="up-fon" onClick={onKapat}>
       <div className="up-modal ab-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
+          <StickyNote size={18} className="ab-simge" />
           <h3>{baslik}</h3>
           {no ? <span className="ab-no">Adisyon #{no}</span> : null}
           <button className="up-kapat" onClick={onKapat} aria-label="Kapat">

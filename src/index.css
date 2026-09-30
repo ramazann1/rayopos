@@ -2045,6 +2045,20 @@ body {
   }
 }
 
+/* Telefonda tam ekran değil, Hızlı Öde gibi kenarlardan boşluklu kart.
+   Seçiciler yukarıdaki .th-modal ve ortak kabuğun .up-modal.tam kuralını
+   aşacak kadar özgül. */
+@media (max-width: 600px) {
+  .up-fon:has(> .up-modal.th-modal) { padding: 12px; }
+  .up-modal.tam.th-modal {
+    max-width: 440px;
+    height: auto;
+    max-height: calc(100dvh - 24px);
+    border: 1px solid var(--cizgi);
+    border-radius: 20px;
+  }
+}
+
 .numpad-ekran {
   width: 100%;
   background: var(--zemin);
@@ -5537,6 +5551,24 @@ body {
 
 .kp-modal {
   max-width: 720px;
+}
+
+/* Telefonda tam ekran değil, kenarlardan boşluklu ortada kart. Seçiciler
+   ortak kabuğun dar ekran kuralını (.up-fon:has(> .tam), .up-modal.tam)
+   bir sınıf farkla aşıyor. */
+@media (max-width: 860px) {
+  .up-fon:has(> .tam.kp-modal) {
+    padding: 16px;
+  }
+
+  .up-modal.tam.kp-modal {
+    width: 100%;
+    max-width: 440px;
+    height: auto;
+    max-height: calc(100dvh - 32px);
+    border: 1px solid var(--cizgi);
+    border-radius: 20px;
+  }
 }
 
 .kp-geri {
@@ -14884,6 +14916,45 @@ body {
   background: #8a9bb3;
 }
 
+/* Mobil adisyon penceresi: ortak kabuk (.up-fon / .up-modal), Hızlı Öde ve
+   kalem penceresiyle aynı aile. Burada yalnız boyu ve başlıktaki sayaç. */
+.up-modal.ma-pencere {
+  max-width: 440px;
+  max-height: calc(100dvh - 32px);
+}
+
+.ma-simge {
+  flex: none;
+  color: var(--mercan);
+}
+
+.ma-sayac {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-tam);
+  background: var(--kart-ust);
+  border: 1px solid var(--cizgi);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--soluk);
+}
+
+.ma-pencere .up-ust {
+  padding: 14px 14px 14px 18px;
+}
+
+.ma-pencere .m-sayfa-icerik {
+  padding: 8px 16px 12px;
+}
+
+.ma-pencere .m-dokum,
+.ma-pencere .m-sayfa-alt {
+  border-top-color: var(--cizgi);
+}
+
 .ks-bos {
   display: grid;
   justify-items: center;
@@ -17405,6 +17476,11 @@ body {
 
 .ab-modal {
   max-width: 560px;
+}
+
+.ab-simge {
+  flex: none;
+  color: var(--mercan);
 }
 
 .ab-no {

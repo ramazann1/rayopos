@@ -19,6 +19,7 @@ import {
   ReceiptText,
   Search,
   Send,
+  ShoppingBag,
   StickyNote,
   Users,
   Wallet,
@@ -726,14 +727,20 @@ export default function MobilSiparis() {
       </div>
 
       {sepetAcik && (
-        <AltSayfa ek="m-adisyon-sayfa" onKapat={() => setSepetAcik(false)}>
-          {(kapat) => (
-            <>
-              <header className="m-sayfa-ust">
-                <h2>
-                  <ReceiptText size={18} /> Adisyon
-                </h2>
-                <button className="m-ikon-dugme" onClick={kapat} aria-label="Kapat">
+        <div className="up-fon" onClick={() => setSepetAcik(false)}>
+          <div className="up-modal ma-pencere" onClick={(e) => e.stopPropagation()}>
+              <header className="up-ust">
+                <ReceiptText size={18} className="ma-simge" />
+                <h3>{masaBasligi}</h3>
+                <span className="ma-sayac">
+                  <ShoppingBag size={14} />
+                  {sepet.length > 0 ? `${sepet.length} kalem` : "Boş"}
+                </span>
+                <button
+                  className="up-kapat"
+                  onClick={() => setSepetAcik(false)}
+                  aria-label="Kapat"
+                >
                   <X size={20} />
                 </button>
               </header>
@@ -918,9 +925,8 @@ export default function MobilSiparis() {
                   )
                 )}
               </div>
-            </>
-          )}
-        </AltSayfa>
+          </div>
+        </div>
       )}
 
       {/* Siparişin kendi işlemleri: masaya girdikten sonra da misafir sayısı

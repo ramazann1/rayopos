@@ -25,6 +25,12 @@
 >   artık `tasinan_kalemi_kaynaktan_dus` yapıyor — yalnız taşıma kopyası
 >   kadar, bir kez. `sql/2026-09-30-urun-tasima-yetkisi.sql`. Chrome'da
 >   Nuri/Mert ile denendi, tuttu.
+> - **Mobil pencereler ortak kabukta (.up-fon / .up-modal):** Adisyon
+>   (alttan kayan AltSayfa yerine ortada kart, başlıkta masa adı + kalem
+>   sayacı), kalem penceresi ve ödeme penceresi telefonda artık tam ekran
+>   değil — kenardan boşluklu, 440px'lik yuvarlak kart (Hızlı Öde gibi).
+>   Adisyon bilgileri zaten kabuktaydı, başlığına ikon eklendi. Mercan yalnız
+>   başlık ikonunda ve ana düğmede (Ramazan: "mercana boğma").
 >
 > **BİTTİ (30 Eyl 2026): KÖPRÜ UYUŞMAZLIĞI, MUTFAK ANAHTARI, ROL ŞABLONU.**
 > - Köprü başka işletmeye bağlıysa (`/durum` → `kod`) fiş köprüye verilmiyor,
@@ -89,7 +95,13 @@
 >   aynı kare kartlardan ikinci sıra olarak eklenir (Ramazan fikri).
 >
 > Sonrakiler:
-> 1. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
+> 1. **Mobilde ortak kabuğu kullanmayan pencereler (30 Eyl Ramazan kararı):**
+>    Claude mobil ekranları tarar (`AltSayfa`, kendi perdesi olan modallar,
+>    telefonda tam ekrana yayılan `.up-modal.tam`), bağımsız olanların
+>    listesini Ramazan'a sunar; hangilerinin ortak kabuğa (.up-fon /
+>    .up-modal, telefonda boşluklu kart) alınacağına birlikte karar verilir.
+>    Kod değişikliği listeden sonra, tek tek.
+> 2. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
 >    "Özet ve adisyon listesi" olmayan kişi müşterinin geçmiş adisyonunu
 >    açamayabilir — `adisyon_okunur` kapanmışta `cari.gor`'a bakmıyor. Doğrula.
 > ÖKC konuşuldu, "zamanı gelince": firma yazışması gerekiyor; o güne kadar
