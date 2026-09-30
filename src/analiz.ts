@@ -288,7 +288,7 @@ const alanlar = () => `id, adisyon_no, tip, durum, iptal_sebep, acilis, kapanis,
        masa:masalar (ad, bolge_id, bolgeler (ad)),
        acan:personel!adisyonlar_acan_id_fkey (id, ad),
        turlar (garson:personel!turlar_garson_id_fkey (id, ad),
-               adisyon_kalemleri (id, urun_id, ad, kategori_ad, adet, fiyat, kdv_oran, durum, indirim,
+               adisyon_kalemleri (id, urun_id, ad, satan:personel!adisyon_kalemleri_satan_id_fkey (id, ad), kategori_ad, adet, fiyat, kdv_oran, durum, indirim,
                                    odenmez:odenmez_id (ad)
                                    ${yetkiVar("stok.yonet") ? ", kalem_maliyetleri (maliyet, eksik)" : ""})),
        tahsilatlar (tip, tutar, bahsis)`;
@@ -312,10 +312,10 @@ function satiraCevir(s: any, varsayilanKdv?: number): AnalizAdisyon {
         maliyetEksik: mal?.eksik || undefined,
         id: k.id,
         urunId: k.urun_id ?? undefined,
-        // Kalem, ürünü adisyona yazan garsonu taşıyor: ciro masayı açana değil
-        // satışı yapana yazılıyor.
-        turGarsonId: tur.garson?.id ?? undefined,
-        turGarson: tur.garson?.ad ? kisaAd(tur.garson.ad) : undefined,
+        // Ciro masayı açana değil satışı yapana yazılıyor. Taşınan kalem
+        // kendi satanını taşıyor; eski kalemlerde o boş, turu yazan geçerli.
+        turGarsonId: (k.satan ?? tur.garson)?.id ?? undefined,
+        turGarson: (k.satan ?? tur.garson)?.ad ? kisaAd((k.satan ?? tur.garson).ad) : undefined,
         ad: k.ad,
         kategoriAd: k.kategori_ad ?? undefined,
         adet: Number(k.adet),

@@ -1,9 +1,30 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (30 Eyl 2026 güncellendi — köprü uyuşmazlığı + rol şablonu seansı)
+## 0. SIRADAKİ İŞ (30 Eyl 2026 güncellendi — garsonun kendi satışı seansı)
 
 > **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" listesinin 1. maddesi.**
+>
+> **BİTTİ (30 Eyl 2026, ikinci seans): GARSONUN KENDİ SATIŞI + ÜRÜN TAŞIMA.**
+> - Adisyo turu: tek anahtar ("Satış raporlarını mobil uygulamadan
+>   görebilir"), "yalnız kendi" ayrımı yok.
+> - **Yeni yetki "Kendi satışını görme"** (`rapor.kendi_satis`, Rapor 503).
+>   Mobil Satış sekmesi gün sonu YA DA bu yetkiyle açılıyor; ikisi de yoksa
+>   sekme yok. Gün sonu/tüm analiz yetkisi olan işletme ekranını görür
+>   (geçiş düğmesi reddedildi, Ramazan). Yalnız bu yetkisi olan "Satışım"
+>   görür: bugünkü kasa günü, kendi girdiği ürünler (masayı açan değil),
+>   ikram/iptal ayrı kartta, ürün listesi. Tahsilat yok. Açık masa da sayılır,
+>   ikram/iptal anında düşer. Sunucu fonksiyonu `kendi_satisim` — garsona
+>   kapanmış adisyon okuma izni verilmedi. `sql/2026-09-30-kendi-satisi.sql`.
+> - **Taşınan ürünün satışı satanda kalır:** kalemde `satan_id` (sunucuda
+>   imzalanıyor; taşımada `tasindigi_kalem_id` ile kaynaktan kopyalanıyor).
+>   Personel raporu ve Satışım `satan ?? tur.garson`.
+>   `sql/2026-09-30-tasinan-urunun-satani.sql`.
+> - HATA DÜZELDİ: "Üründen çıkarma" yetkisi olmayan garson ürün taşıyınca
+>   ürün hedefe yazılıp kaynakta kalıyordu (iki masada). Kaynaktan düşmeyi
+>   artık `tasinan_kalemi_kaynaktan_dus` yapıyor — yalnız taşıma kopyası
+>   kadar, bir kez. `sql/2026-09-30-urun-tasima-yetkisi.sql`. Chrome'da
+>   Nuri/Mert ile denendi, tuttu.
 >
 > **BİTTİ (30 Eyl 2026): KÖPRÜ UYUŞMAZLIĞI, MUTFAK ANAHTARI, ROL ŞABLONU.**
 > - Köprü başka işletmeye bağlıysa (`/durum` → `kod`) fiş köprüye verilmiyor,
@@ -68,13 +89,7 @@
 >   aynı kare kartlardan ikinci sıra olarak eklenir (Ramazan fikri).
 >
 > Sonrakiler:
-> 1. **Garsonun o gün yaptığı satışı görmesi (yeni yetki, 30 Eyl Ramazan
->    kararı):** bazı işletmeler garsona kendi satışını göstermek istiyor.
->    ÖNCE Adisyo'da beraber tur, sonra taslak. Açık sorular: "kendi satışı" =
->    açtığı masa mı, girdiği tur mu (kalabalık masada birden çok garson tur
->    giriyor); yer (mobil Satış'ın "yalnız benim" hâli öneri); dönem (bugünkü
->    kasa günü). Veritabanında yalnız kendi adisyonunu okuma kuralı gerekiyor.
-> 2. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
+> 1. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
 >    "Özet ve adisyon listesi" olmayan kişi müşterinin geçmiş adisyonunu
 >    açamayabilir — `adisyon_okunur` kapanmışta `cari.gor`'a bakmıyor. Doğrula.
 > ÖKC konuşuldu, "zamanı gelince": firma yazışması gerekiyor; o güne kadar

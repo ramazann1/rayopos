@@ -1697,6 +1697,8 @@ export async function kalemTasi(
   const k = kalem as any;
   const ekleme = await supabase.from("adisyon_kalemleri").insert({
     tur_id: (tur as any).id,
+    // Satış taşıyana geçmesin: sunucu satanı bu kalemden okuyor.
+    tasindigi_kalem_id: kalemId,
     urun_id: k.urun_id,
     porsiyon_id: k.porsiyon_id,
     ad: k.ad,
@@ -1712,24 +1714,15 @@ export async function kalemTasi(
     kdv_oran: k.kdv_oran,
     durum: k.durum,
     not_metni: k.not_metni,
-  });
+  }).select("id").single();
   yazmayiDenetle(ekleme, "Ürün hedef masaya yazılamadı.");
 
-  if (tasinan < mevcutAdet) {
-    const kalan = await supabase
-      .from("adisyon_kalemleri")
-      .update({ adet: mevcutAdet - tasinan })
-      .eq("id", kalemId)
-      .select("id");
-    satirDenetle(kalan, "Kaynak masadaki adet düşülemedi.");
-  } else {
-    const silme = await supabase
-      .from("adisyon_kalemleri")
-      .delete()
-      .eq("id", kalemId)
-      .select("id");
-    satirDenetle(silme, "Ürün kaynak masadan silinemedi.");
-  }
+  // Kaynaktan düşmeyi sunucu yapıyor: taşıma yetkisi "üründen çıkarma"
+  // istemesin, ama yalnız az önce yazılan kopya kadar düşülebilsin.
+  const { error: dusmeHatasi } = await supabase.rpc("tasinan_kalemi_kaynaktan_dus", {
+    p_kopya: (ekleme.data as any).id,
+  });
+  if (dusmeHatasi) throw new Error(dusmeHatasi.message || "Ürün kaynak masadan düşülemedi.");
 
   await bosAdisyonuTemizle(kaynak.id);
   await Promise.all([servisiTazele(kaynak.id), servisiTazele(hedef.id)]);

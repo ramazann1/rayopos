@@ -78,6 +78,9 @@ export function yolaGirebilir(yol: string) {
   // üstüne stok yönetme yetkisi de isteniyor, malzemenin kaça alındığını
   // ciroyu gören herkes görmesin.
   if (yol.startsWith("/analiz/karlilik") && !yetkiVar("stok.yonet")) return false;
+  // Satış sekmesi iki kapıdan açılıyor: gün sonu yetkisi işletmenin tamamını,
+  // kendi satışı yetkisi yalnız kişinin girdiği ürünleri gösteriyor.
+  if (yol.startsWith("/mobil/satis") && yetkiVar("rapor.kendi_satis")) return true;
   const kod = yolYetkisi(yol);
   return !kod || yetkiVar(kod);
 }
