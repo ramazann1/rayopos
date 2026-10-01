@@ -1,9 +1,36 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (1 Eki 2026 güncellendi — uyarı standardı ve taşıma seansı)
+## 0. SIRADAKİ İŞ (2 Eki 2026 güncellendi — küçük işler bitti)
 
-> **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" listesinin 1. maddesi.**
+> **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" bölümü — önce bütün kalanları say.**
+>
+> **BİTTİ (1 Eki 2026, üçüncü seans):**
+> - Telefonda ürün taşıma hızı Ramazan'ca yeterli bulundu; iyimser güncellemeye gerek yok.
+> - **Müşteri yetkisiyle geçmiş adisyon:** `cari.gor` olan kişi, müşteriye bağlı
+>   (adisyonda `musteri_id` ya da açık hesap hareketinde `adisyon_id`) kapanmış
+>   adisyonları okuyabiliyor; ötekiler yine rapor yetkisinde.
+>   `sql/2026-10-01-cari-kapali-adisyon(-2).sql`. Mert Bey'le Chrome'da denendi.
+> - Okunamayan adisyonda `AdisyonDetay` sonsuz dönmüyor, "görme yetkiniz yok" diyor.
+> - Kasa penceresi ve Menü Stüdyosu kategori formu `OrtaPencere`'de; `modal-fon`,
+>   `kasa-pencere`, `kategori-modal` stilleri silindi. Esc ile kapanmaması kabul (Ramazan).
+>   Kasa penceresinde "Kasayı kapat" alt şeritte, yan işler kutucuk. `.salon-sekme button`
+>   kuralı pencereye sızıyordu, `:where(:not(.pnc-fon *))` ile dışarıda bırakıldı.
+> - Kasa düğmesi son bilinen durumla açılıyor (`onbellek` "kasa-durumu"); yenilemede ve
+>   çevrimdışıyken "Kasa kapalı"ya dönmüyor.
+> - **Masasız adisyon çevrimdışı açılıyor (offline'ın son ucu kapandı).** Bağlantı yoksa
+>   gel al / paket eksi işaretli geçici kimlikle açılıyor (`masasizCevrimdisiAc`), kuyruk
+>   kaydında `acilis` (tip + müşteri) taşınıyor. Gönderimde önce `masasizAc`, geçici→gerçek
+>   eşleşmesi `rayopos-gecici-kimlik`'e yazılıp kuyruk çevriliyor, sonra sepet. `hedef()`
+>   ve sipariş ekranı `kimlikCoz` ile açık ekranı gerçek kimliğe bağlıyor. Salonda
+>   "Gönderilmedi" kartı (düzenle/sil gizli). Chrome'da çevrimdışı taklitle denendi:
+>   aç → ürün → nakit öde → kapat → bağlantı gelince 1,5 sn'de kendiliğinden gitti.
+> - **Gel al / paket günlük numarası** (`sql/2026-10-01-gunluk-no.sql`): `adisyonlar.gunluk_no`,
+>   tetikleyici kasa günü başında 1'e dönüyor (İstanbul saati, `kasa_gunu_baslangic`);
+>   gel al ve paket tek sayaç. Kalıcı `adisyon_no` raporda/aramada kalıyor. Yazı tek
+>   yerden: `masasizEtiketi` → "Gel Al 12". Görünür: salon kartı, sipariş başlığı, mutfak
+>   fişinin en üstü (büyük), hesap fişi üst satırı, istasyon kartı (`mutfak.ts`, masaüstü +
+>   mobil), adisyon detay başlığı. Eski adisyonlarda numara yok, #3200 kalıyor.
 >
 > **BİTTİ (1 Eki 2026, ikinci seans): MASA/ÜRÜN TAŞIMA AKIŞI.**
 > - Büyük şerit (masaüstü) ve alt kart (mobil) kalktı; yerine `SecimHapi`:
@@ -159,19 +186,25 @@
 >   aynı kare kartlardan ikinci sıra olarak eklenir (Ramazan fikri).
 >
 > Sonrakiler:
-> 1. **Telefonda ürün taşıma hızı (Ramazan denesin):** taşıma artık tek
->    sunucu isteği (`kalem_tasi`). Kasada 1,4 sn → 1,0 sn; kalan süre
->    kuver/garsoniye tazeleme (iki ardışık istek) ve salon yenilemesi.
->    Hâlâ yavaşsa seçenek: hedef masayı ekranda hemen dolu göster (iyimser
->    güncelleme), sunucuyu arkadan bekle.
-> 2. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
->    "Özet ve adisyon listesi" olmayan kişi müşterinin geçmiş adisyonunu
->    açamayabilir — `adisyon_okunur` kapanmışta `cari.gor`'a bakmıyor. Doğrula.
-> 3. **Eski `modal-fon` kabuğundaki form pencereleri** (Kasa penceresi,
->    Menü Stüdyosu kategori formu) ortak `OrtaPencere`'ye taşınmalı mı —
->    Ramazan'a sor.
-> ÖKC konuşuldu, "zamanı gelince": firma yazışması gerekiyor; o güne kadar
-> sahte ÖKC ile akış kurulabilir.
+> **YENİ SEANSTA İLK İŞ (Ramazan'ın isteği):** aşağıdaki kalan işlerin TAMAMINI
+> Ramazan'a say (gruplu, kısa), sonra 1. maddeyle başla. Küçük işler bitti.
+>
+> 1. **İkon boyut standardı** — 14/16/20/24; bütün ekranlar tek tek gezilecek
+>    (ayrıntı `pos-yol-haritasi.md` Faz 3).
+> 2. **Gelişmiş raporların eksiği** — Personel/Kârlılık/Mutfak var; saatlik ciro ve
+>    dönem karşılaştırması var mı bakılacak, eksikse yapılacak.
+> 3. **QR menünün kalanı** — kategori/kapak görselleri, masadan sipariş, garson
+>    çağırma, masa başına karekod.
+> 4. **Kurye atama ve teslimat takibi** — önce Adisyo'da canlı tur.
+> 5. **Sadakat programı** (puan, kampanya) — önce Adisyo'da canlı tur.
+> 6. **Çoklu şube** — merkezi menü, şube karşılaştırma.
+> Satıştan önce: kayıt ekranına CAPTCHA (durumu belirsiz, Ramazan hesap açacak),
+> köprü exe imzası, GitHub deposu gizliye, mağaza paketlemesi (Capacitor),
+> abonelik/ödeme sistemi.
+> Dış firmaya bağlı: ÖKC ("zamanı gelince", firma yazışması; o güne kadar sahte ÖKC
+> ile akış kurulabilir), e-Fatura/e-Arşiv/e-Adisyon, Yemeksepeti/Getir/Trendyol,
+> muhasebe ve açık API.
+> Açık soru: gel al ve paket tek günlük sayaç mı (şu an tek), ayrı mı — Ramazan'a sor.
 >
 > **BİTTİ (29 Eyl 2026): canlıya geçiş.**
 > - 15000-15002 deneme işletmeleri silindi (`sql/2026-09-29-diger-isletmeleri-sil.sql`).

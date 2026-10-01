@@ -22,7 +22,15 @@ import {
   Trash2,
   Zap,
 } from "lucide-react";
-import { bekleyenMasalar, cevrimdisiHesap, kopyaMasalari, kuyrugaEkle, useKuyruk } from "../kuyruk";
+import {
+  bekleyenMasalar,
+  bekleyenMasasizlar,
+  cevrimdisiHesap,
+  kopyaMasalari,
+  kuyrugaEkle,
+  masasizCevrimdisiAc,
+  useKuyruk,
+} from "../kuyruk";
 import { hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
 import MasaKarti from "../components/MasaKarti";
 import MasaPlani, { yerlesimiVar } from "../components/MasaPlani";
@@ -50,6 +58,7 @@ import {
   masaBirlestir,
   masaTasi,
   masasizAc,
+  masasizEtiketi,
   masasizAdisyonlar,
   masasizGuncelle,
   masasizSil,
@@ -112,8 +121,8 @@ function MasasizKart({
       <button className="masasiz-govde" onClick={onAc}>
         <span className="masasiz-tip">
           {paket ? <Bike size={15} /> : <ShoppingBag size={15} />}
-          {paket ? "Paket" : "Gel Al"}
-          <em>#{adisyon.no}</em>
+          {masasizEtiketi(adisyon.tip, adisyon.gunlukNo)}
+          {adisyon.bekliyor ? <em>Gönderilmedi</em> : !adisyon.gunlukNo && <em>#{adisyon.no}</em>}
         </span>
 
         <strong className="masasiz-ad">{adisyon.ad || (paket ? "Adres yok" : "Müşteri yok")}</strong>
@@ -132,14 +141,17 @@ function MasasizKart({
         </span>
       </button>
 
-      <span className="masasiz-islem">
-        <button onClick={onDuzenle} title="Sipariş bilgileri">
-          <Pencil size={14} />
-        </button>
-        <button onClick={onSil} title="Siparişi iptal et">
-          <Trash2 size={14} />
-        </button>
-      </span>
+      {/* Sunucuda henüz yok: bilgi düzenleme ve silme bağlantı gelince açılıyor. */}
+      {!adisyon.bekliyor && (
+        <span className="masasiz-islem">
+          <button onClick={onDuzenle} title="Sipariş bilgileri">
+            <Pencil size={14} />
+          </button>
+          <button onClick={onSil} title="Siparişi iptal et">
+            <Trash2 size={14} />
+          </button>
+        </span>
+      )}
     </div>
   );
 }
@@ -300,7 +312,7 @@ export default function Salon() {
     // görünsün, garson aynı masaya ikinci hesap açmasın. Gönderilmiş kayıt
     // kuyruktan düştüğü için burada kendiliğinden sunucununki geçerli oluyor.
     setAdisyonlar({ ...(baglantiVar() ? {} : kopyaMasalari()), ...(a ?? {}), ...bekleyenMasalar() });
-    setMasasizlar(m ?? []);
+    setMasasizlar([...(m ?? []), ...bekleyenMasasizlar()]);
     // Kayıtlı bölge silinmiş olabilir; öyleyse ilk bölgeye dönülüyor.
     setSeciliId((s) =>
       s === "tumu" || s === "masasiz" || b.some((x) => x.id === s) ? s : b[0]?.id ?? "tumu"
@@ -891,7 +903,15 @@ export default function Salon() {
                   await yenile();
                   return;
                 }
-                const id = await masasizAc(tip, musteri);
+                // Bağlantı yoksa sipariş geçici kimlikle açılıyor; sunucuya
+                // bağlantı gelince kuyruktan gidiyor.
+                let id: number;
+                try {
+                  id = baglantiVar() ? await masasizAc(tip, musteri) : masasizCevrimdisiAc(tip, musteri);
+                } catch (e) {
+                  if (!baglantiHatasi(e) && baglantiVar()) throw e;
+                  id = masasizCevrimdisiAc(tip, musteri);
+                }
                 setYeniSiparis(false);
                 navigate(`/adisyon/${id}`);
               } catch (e) {

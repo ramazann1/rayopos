@@ -43,4 +43,5 @@
 - [Canlıda test yok](rayopos-canlida-test-yok.md) — 28 Eyl'den sonra gerçek cafe ayrı işletme; testler yalnız deneme işletmesinde (15003).
 - [Testte menü önbelleği](rayopos-testte-menu-onbellegi.md) — veritabanına doğrudan yazılan reçeteyi sipariş ekranı görmez; önbelleği temizle.
 - [Köprü yayını GitHub Release](rayopos-kopru-yayini-github-release.md) — gh ile Claude yükler, sabit indirme adresi; paketi kurulum-dosyasi/'na kopyala.
+- [Vite son düzenlemeyi kaçırır](rayopos-vite-son-duzenlemeyi-kacirir.md) — beyaz sayfa/eski görünüm: sunulan metne bak, dosyaya dokun.
 - [Tarayıcıda önce hesabı söyle](rayopos-tarayicida-once-hesabi-soyle.md) — Chrome'da işlemden önce açık hesap/işletmeyi yaz; tıklama sepete yazabilir.

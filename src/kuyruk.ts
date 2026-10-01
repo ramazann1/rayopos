@@ -1,7 +1,20 @@
 import { durumluModul } from "./sicakGuncelleme";
 import { useEffect, useState } from "react";
-import { adisyonKaydet, adisyonOzeti, gecKalanSiparis, masasizKaydet } from "./adisyonlar";
-import type { AdisyonVerisi, MasaOzeti } from "./adisyonlar";
+import {
+  CEVRIMDISI_ADISYON,
+  adisyonKaydet,
+  adisyonOzeti,
+  gecKalanSiparis,
+  masasizAc,
+  masasizKaydet,
+} from "./adisyonlar";
+import type {
+  AdisyonTipi,
+  AdisyonVerisi,
+  MasaOzeti,
+  MasasizAdisyon,
+  MusteriBilgisi,
+} from "./adisyonlar";
 import { baglantiDinle, baglantiHatasi, baglantiVar, kopukBildir } from "./baglanti";
 import { hesapKopyalari, hesapKopyasiOku, hesapKopyasiSil, salonKopyasiOku } from "./hesapKopyasi";
 import type { HesapHedefi } from "./hesapKopyasi";
@@ -28,15 +41,33 @@ import type { HesapHedefi } from "./hesapKopyasi";
 
 const ANAHTAR = "rayopos-kuyruk";
 
+/**
+ * Bağlantı yokken açılan gel al / paket adisyonu. Sunucu numara veremediği
+ * için adisyon eksi işaretli geçici bir kimlikle açılıyor; kuyruk sırası
+ * gelince önce sunucuda açılıyor, geçici kimlik gerçeğiyle değiştiriliyor.
+ */
+export type MasasizAcilis = {
+  tip: Exclude<AdisyonTipi, "masa">;
+  musteri: MusteriBilgisi;
+};
+
 export type KuyrukIsi =
   | { tip: "masa"; masaId: number; masaAdi?: string; veri: AdisyonVerisi; kapat?: boolean }
-  | { tip: "masasiz"; adisyonId: number; veri: AdisyonVerisi; kapat?: boolean };
+  | {
+      tip: "masasiz";
+      adisyonId: number;
+      veri: AdisyonVerisi;
+      kapat?: boolean;
+      acilis?: MasasizAcilis;
+    };
 
 export type KuyrukKaydi = KuyrukIsi & { zaman: number };
 
 /** Aynı masanın/adisyonun kayıtları tek satırda toplansın diye. */
 function hedef(is: KuyrukIsi) {
-  return is.tip === "masa" ? `masa-${is.masaId}` : `adisyon-${is.adisyonId}`;
+  // Geçici kimlikle açık kalan ekran, adisyon sunucuya vardıktan sonra da
+  // kendi kaydını bulsun.
+  return is.tip === "masa" ? `masa-${is.masaId}` : `adisyon-${kimlikCoz(is.adisyonId)}`;
 }
 
 let kuyruk: KuyrukKaydi[] = oku();
@@ -61,6 +92,14 @@ function yaz() {
 }
 
 export function kuyrugaEkle(is: KuyrukIsi) {
+  // Geçici kimlikli adisyon bu arada sunucuya varmışsa kayıt gerçeğine yazılıyor.
+  if (is.tip === "masasiz") is = { ...is, adisyonId: kimlikCoz(is.adisyonId) };
+  // Açılış bilgisi ilk kayıtta duruyor; sipariş ekranının sonraki kayıtları
+  // onu taşımıyor, üstüne yazılınca adisyon sunucuda hiç açılamazdı.
+  const onceki = kuyruk.find((k) => !k.kapat && hedef(k) === hedef(is));
+  if (is.tip === "masasiz" && onceki?.tip === "masasiz" && onceki.acilis && !is.acilis) {
+    is = { ...is, acilis: onceki.acilis };
+  }
   // Kapatma kaydı yerinde kalıyor: üstüne yazılırsa hesabın kapandığı bilgisi
   // kaybolur ve masa sunucuda açık kalırdı. Aynı masaya sonra girilen sipariş
   // kuyruğun arkasına ekleniyor — sırayla gidince yeni hesap olarak açılıyor.
@@ -69,6 +108,62 @@ export function kuyrugaEkle(is: KuyrukIsi) {
     { ...is, zaman: Date.now() },
   ];
   yaz();
+}
+
+const KIMLIK_ANAHTAR = "rayopos-gecici-kimlik";
+
+function kimlikleriOku(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(KIMLIK_ANAHTAR) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+/** Geçici kimlik sunucuya varmışsa gerçek kimliği; değilse kendisi. */
+export function kimlikCoz(adisyonId: number) {
+  return adisyonId < 0 ? kimlikleriOku()[adisyonId] ?? adisyonId : adisyonId;
+}
+
+/** Bağlantı yokken gel al / paket açar; sipariş ekranı geçici kimlikle açılıyor. */
+export function masasizCevrimdisiAc(tip: MasasizAcilis["tip"], musteri: MusteriBilgisi) {
+  const adisyonId = -Date.now();
+  kuyrugaEkle({
+    tip: "masasiz",
+    adisyonId,
+    acilis: { tip, musteri },
+    veri: {
+      ...CEVRIMDISI_ADISYON,
+      tip,
+      musteri,
+      acilis: new Date().toISOString(),
+    },
+  });
+  return adisyonId;
+}
+
+/** Salon için: kuyrukta bekleyen, sunucuya henüz varmamış gel al / paketler. */
+export function bekleyenMasasizlar(): MasasizAdisyon[] {
+  const sonuc: MasasizAdisyon[] = [];
+  for (const k of kuyruk) {
+    if (k.tip !== "masasiz" || k.kapat || !k.acilis) continue;
+    const ozet = adisyonOzeti(k.veri);
+    sonuc.push({
+      id: k.adisyonId,
+      no: 0,
+      tip: k.acilis.tip,
+      tutar: ozet.toplam,
+      odenen: ozet.odenen,
+      kalan: ozet.kalan,
+      adet: k.veri.sepet
+        .filter((s) => (s.durum ?? "normal") !== "iptal")
+        .reduce((t, s) => t + s.adet, 0),
+      acilis: k.veri.acilis ?? new Date(k.zaman).toISOString(),
+      ...k.acilis.musteri,
+      bekliyor: true,
+    });
+  }
+  return sonuc;
 }
 
 export function bekleyenSayisi() {
@@ -223,6 +318,30 @@ function yenidenDene() {
 }
 
 /**
+ * Geçici kimlikli adisyonu sunucuda açar ve kuyruktaki bütün kayıtlarını
+ * gerçek kimliğe çevirir. Çeviri sepet yazılmadan yapılıyor: sepet yazılırken
+ * bağlantı düşerse sonraki denemede adisyon ikinci kez açılmasın.
+ */
+async function sunucudaAc(kayit: Extract<KuyrukKaydi, { tip: "masasiz" }>) {
+  const bilinen = kimlikCoz(kayit.adisyonId);
+  if (bilinen > 0) return bilinen;
+  if (!kayit.acilis) throw new Error("Çevrimdışı açılan sipariş sunucuda açılamadı.");
+
+  const gecici = kayit.adisyonId;
+  const gercek = await masasizAc(kayit.acilis.tip, kayit.acilis.musteri);
+  try {
+    localStorage.setItem(KIMLIK_ANAHTAR, JSON.stringify({ ...kimlikleriOku(), [gecici]: gercek }));
+  } catch {
+    // Yer yoksa eşleşme yalnız bu kuyruk için geçerli; sipariş yine gidiyor.
+  }
+  kuyruk = kuyruk.map((k) =>
+    k.tip === "masasiz" && k.adisyonId === gecici ? { ...k, adisyonId: gercek, acilis: undefined } : k
+  );
+  yaz();
+  return gercek;
+}
+
+/**
  * Kuyruğu sırayla sunucuya gönderir. Sıra korunuyor: kayıtlar aynı anda
  * gitseydi iki masanın turları birbirine karışabilirdi. Bir kayıt bağlantı
  * yüzünden düşerse kuyruk olduğu yerde duruyor, sonraki denemeyi bekliyor.
@@ -256,7 +375,10 @@ export async function kuyruguGonder() {
               ? `${masa} için çevrimdışı alınan ödeme, hesap (#${no}) kapandıktan sonra yazıldı. Aynı hesap iki kez tahsil edilmiş olabilir — kasa hareketlerinden kontrol edin.`
               : `${masa} için bekleyen sipariş, hesap (#${no}) kapandıktan sonra yazıldı. Ürünler yeni bir hesapta duruyor, parası alınmadı.`;
           }
-        } else await masasizKaydet(kayit.adisyonId, kayit.veri, kayit.kapat ?? false);
+        } else {
+          const adisyonId = await sunucudaAc(kayit);
+          await masasizKaydet(adisyonId, kayit.veri, kayit.kapat ?? false);
+        }
         // Hesap kapandı: cihazdaki kopya artık yanlış bilgi.
         if (kayit.kapat) {
           hesapKopyasiSil(

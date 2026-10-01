@@ -318,7 +318,9 @@ body {
   background: var(--zemin);
 }
 
-.salon-sekme button {
+/* Kasa penceresi bu satırın içinde açılıyor; sekme kuralları pencereye
+   sızmasın diye dışarıda bırakılıyor (`:where` özgüllüğü değiştirmiyor). */
+.salon-sekme button:where(:not(.pnc-fon *)) {
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -335,7 +337,7 @@ body {
   transition: color 0.15s ease;
 }
 
-.salon-sekme button:hover {
+.salon-sekme button:where(:not(.pnc-fon *)):hover {
   color: var(--metin);
 }
 
@@ -345,7 +347,7 @@ body {
   border-bottom-color: var(--mercan);
 }
 
-.salon-sekme em {
+.salon-sekme em:where(:not(.pnc-fon *)) {
   font-style: normal;
   font-size: 12.5px;
   font-weight: 600;
@@ -1335,12 +1337,6 @@ body {
   font-size: 12.5px;
   font-style: normal;
   font-weight: 600;
-}
-.modal-fon {
-  position: fixed; inset: 0;
-  background: rgba(20, 32, 48,0.35);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 30;
 }
 .mod-sec { display: flex; gap: 8px; margin-bottom: 16px; }
 .mod-sec button {
@@ -3132,19 +3128,6 @@ body {
   color: var(--soluk);
 }
 
-.kategori-modal {
-  background: var(--kart);
-  border-radius: 16px;
-  padding: 24px;
-  width: 360px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
-.kategori-modal h3 {
-  font-size: 18px;
-  margin-bottom: 18px;
-}
-
 .alan {
   margin-bottom: 18px;
 }
@@ -3348,10 +3331,6 @@ body {
   background: var(--kart);
   border-color: var(--mercan);
   box-shadow: 0 0 0 3px rgba(255, 107, 69, 0.16);
-}
-
-.kategori-modal {
-  animation: pencere-gir 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 @keyframes pencere-gir {
@@ -8492,43 +8471,6 @@ body {
   color: #c4573a;
 }
 
-.kasa-pencere {
-  background: var(--kart);
-  border-radius: 18px;
-  padding: 22px 24px 24px;
-  width: 420px;
-  max-height: 88vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
-}
-
-.kasa-pencere header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.kasa-pencere h3 {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.kasa-cik {
-  border: none;
-  background: none;
-  color: var(--soluk);
-  cursor: pointer;
-  display: flex;
-  padding: 4px;
-  border-radius: 8px;
-}
-
-.kasa-cik:hover {
-  background: var(--zemin);
-  color: var(--metin);
-}
-
 .kasa-kim {
   font-size: 14px;
   color: var(--soluk);
@@ -8685,6 +8627,11 @@ body {
   background: var(--kart);
 }
 
+.kasa-dokum + .kasa-form,
+.kasa-hareket + .kasa-form {
+  margin-top: 20px;
+}
+
 .kasa-form .kasa-dokum {
   margin-top: 2px;
 }
@@ -8734,6 +8681,21 @@ body {
 .kasa-ikincil:hover {
   border-color: #bec8d6;
   background: var(--zemin);
+}
+
+/* Kasayı kapat alt şeritte; gövdede kalan yan işler eşit kutucuk, ikon
+   yazının üstünde — dar pencerede yazı kırılmasın. */
+.pnc-govde .kasa-aksiyon:not(:has(.kasa-birincil)) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+
+.pnc-govde .kasa-aksiyon:not(:has(.kasa-birincil)) .kasa-ikincil {
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 8px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 /* Fark kaydetmeden önce, rengiyle konuşuyor: tutuyorsa yeşil onay, eksikse
@@ -19621,7 +19583,6 @@ body {
 .istasyon-panel,
 .ka-govde,
 .kalem-detay,
-.kasa-pencere,
 .kat-pencere-govde,
 .kat-pencere-sag,
 .kategori-serit,

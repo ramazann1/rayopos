@@ -1,4 +1,4 @@
-import { adisyonOzeti, kalemTutari, servisGirdisi } from "./adisyonlar";
+import { adisyonOzeti, kalemTutari, masasizEtiketi, servisGirdisi } from "./adisyonlar";
 import { servisSatirlari } from "./servis";
 import type { AdisyonVerisi } from "./adisyonlar";
 import { ayarlar, isletmeAdi } from "./isletmeAyarlari";
@@ -129,13 +129,28 @@ export function fisIcerigi(
   // İptal başlığı fişin en üstünde: tezgâhtaki kişi kâğıdı eline alır almaz
   // bunun yeni sipariş olmadığını görmeli, ürün listesine bakmadan.
   if (iptal) s.push({ t: "orta", m: "XXX İPTAL XXX", alan: "iptal_basligi", kalin: true });
+  // Gel al / pakette tezgâhın çağıracağı numara her şeyden önce okunmalı.
+  if (mutfak && adisyon.gunlukNo)
+    s.push({
+      t: "orta",
+      m: masasizEtiketi(adisyon.tip, adisyon.gunlukNo).toLocaleUpperCase("tr-TR"),
+      alan: "siparis_no",
+      kalin: true,
+    });
   if (mutfak && p.siparis_no && siparisNo && !iptal)
     s.push({ t: "orta", m: `Sipariş ${siparisNo}`, alan: "siparis_no", kalin: true });
   if (sablon.ustMetin) s.push({ t: "orta", m: sablon.ustMetin, alan: "alt_metin" });
 
   s.push({
     t: "ikiUc",
-    sol: adisyon.ad ?? "Masa",
+    // Numara mutfak fişinde zaten en üstte büyük yazıyor.
+    sol:
+      mutfak && adisyon.gunlukNo
+        ? ""
+        : adisyon.ad ||
+          (adisyon.tip && adisyon.tip !== "masa"
+            ? masasizEtiketi(adisyon.tip, adisyon.gunlukNo)
+            : "Masa"),
     sag: saatMetni(adisyon.acilis),
     alan: "genel",
     kalin: true,

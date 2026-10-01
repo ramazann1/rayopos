@@ -26,6 +26,7 @@ import { MENU_ANAHTAR, menuGetir, agacUrunleri, altKategoriler, porsiyonFiyat, p
 import { useTanimEtkisi } from "../tanimAbonelik";
 import {
   CEVRIMDISI_ADISYON,
+  masasizEtiketi,
   adisyonGetir,
   adisyonKaydet,
   kalemTutari,
@@ -56,7 +57,7 @@ import { kilitKaldir, kilitKur } from "../cikisKilidi";
 import { useGeriKilidi } from "../geriKilidi";
 import { salonaSecimle } from "../salonSecimi";
 import { baglantiHatasi, baglantiVar, hataMesaji } from "../baglanti";
-import { bekleyenKayit, kuyrugaEkle } from "../kuyruk";
+import { bekleyenKayit, kimlikCoz, kuyrugaEkle, kuyruguGonder } from "../kuyruk";
 import { hesapKopyasiOku, hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
 import type { KuyrukIsi } from "../kuyruk";
 import { kdvDokumu } from "../kdv";
@@ -185,7 +186,7 @@ export default function Siparis() {
       return kopya?.veri ?? CEVRIMDISI_ADISYON;
     }
     setKopyaZamani(null);
-    return masasiz ? masasizGetir(adisyonId) : adisyonGetir(masaId);
+    return masasiz ? masasizGetir(kimlikCoz(adisyonId)) : adisyonGetir(masaId);
   };
   const navigate = useNavigate();
   const [kategoriler, setKategoriler] = useState<MenuKategori[]>([]);
@@ -290,10 +291,17 @@ export default function Siparis() {
     };
 
     if (!baglantiVar()) return kuyruga();
+    // Çevrimdışı açılan adisyon henüz sunucuda yoksa kayıt kuyruğun arkasına
+    // giriyor; kuyruk önce adisyonu açıp sonra bunu yazıyor.
+    if (masasiz && kimlikCoz(adisyonId) < 0) {
+      kuyruga();
+      void kuyruguGonder();
+      return tam;
+    }
 
     try {
       const kayitli = masasiz
-        ? await masasizKaydet(adisyonId, tam, kapat)
+        ? await masasizKaydet(kimlikCoz(adisyonId), tam, kapat)
         : await adisyonKaydet(masaId, tam, kapat);
       // Yeni alınan ödemeler kayıtta kimlik kazanıyor; ekran bu kimlikleri geri
       // almazsa aynı sayfada yapılan ikinci kayıt onları bir daha yazardı.
@@ -367,7 +375,8 @@ export default function Siparis() {
   // sunucudakinden yeni.
   useCanli(["masa_degisim"], () => {
     if (!baglantiVar() || bekleyenKayit(hedef)) return;
-    (masasiz ? masasizGetir(adisyonId) : adisyonGetir(masaId)).then((veri) => {
+    if (masasiz && kimlikCoz(adisyonId) < 0) return;
+    (masasiz ? masasizGetir(kimlikCoz(adisyonId)) : adisyonGetir(masaId)).then((veri) => {
       setSepet((s) => {
         const yerelDegisiklik =
           adisyonImzasi(s, indirim, kayitliTahsilatlar, bilgi, servis) !== kayitliImza;
@@ -637,8 +646,8 @@ export default function Siparis() {
           {masasiz ? (
             <>
               {masasizBilgi?.tip === "paket" ? <Bike size={19} /> : <ShoppingBag size={19} />}
-              {masasizBilgi?.tip === "paket" ? "Paket" : "Gel Al"}
-              {adisyonNo ? ` #${adisyonNo}` : ""}
+              {masasizEtiketi(masasizBilgi?.tip, masasizBilgi?.gunlukNo)}
+              {adisyonNo && !masasizBilgi?.gunlukNo ? ` #${adisyonNo}` : ""}
               {bilgi.musteriAd ? ` · ${bilgi.musteriAd}` : ""}
             </>
           ) : (
@@ -1112,7 +1121,7 @@ export default function Siparis() {
 
       {bilgiAcik && (
         <AdisyonBilgi
-          baslik={masasiz ? (masasizBilgi?.tip === "paket" ? "Paket" : "Gel Al") : masaAdi}
+          baslik={masasiz ? masasizEtiketi(masasizBilgi?.tip, masasizBilgi?.gunlukNo) : masaAdi}
           no={adisyonNo}
           bilgi={bilgi}
           onKapat={() => setBilgiAcik(false)}

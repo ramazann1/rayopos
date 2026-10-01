@@ -10,6 +10,7 @@
 // kez hesaplanıyor: ekran menüyü indirip her açılışta yeniden çıkarmıyor.
 
 import { supabase } from "./supabase";
+import { masasizEtiketi } from "./adisyonlar";
 import type { AdisyonTipi } from "./adisyonlar";
 
 /**
@@ -86,6 +87,8 @@ export type MutfakKarti = {
   masa: string;
   tip: AdisyonTipi;
   adisyonNo?: number;
+  /** Gel al / paketin günlük numarası — tezgâhın çağıracağı numara. */
+  gunlukNo?: number;
   garson?: string;
   kisiSayisi?: number;
   /** Adisyonun geneline yazılan not — "acele", "çocuk var" gibi. */
@@ -95,7 +98,7 @@ export type MutfakKarti = {
 
 const ALANLAR = `id, siparis_no, olusturma,
        garson:personel!turlar_garson_id_fkey (ad),
-       adisyon:adisyonlar!inner (adisyon_no, masa_ad, tip, ad, kisi_sayisi, not_metni,
+       adisyon:adisyonlar!inner (adisyon_no, gunluk_no, masa_ad, tip, ad, kisi_sayisi, not_metni,
                                  masa:masalar (ad)),
        adisyon_kalemleri (id, istasyon_id, ad, porsiyon, secimler, adet, durum, not_metni,
                           hazirlik_at, paketleme_at, hazir_at)`;
@@ -175,9 +178,16 @@ function kartlariDiz(
       // Adisyona serbest ad verilmişse ("Ahmet Bey") o geçerli, yoksa masanın
       // adı. masa_ad eski sütun; masa bağı masa_id'ye taşındığından beri yeni
       // adisyonlarda boş kalıyor, yalnız eski kayıtlar için bakılıyor.
-      masa: t.adisyon?.ad || t.adisyon?.masa?.ad || t.adisyon?.masa_ad || "—",
+      // Gel al / pakette masa adı yok; tezgâh çağıracağı numarayı görüyor.
+      masa:
+        t.adisyon?.tip && t.adisyon.tip !== "masa"
+          ? [masasizEtiketi(t.adisyon.tip, t.adisyon.gunluk_no ?? undefined), t.adisyon.ad]
+              .filter(Boolean)
+              .join(" · ")
+          : t.adisyon?.ad || t.adisyon?.masa?.ad || t.adisyon?.masa_ad || "—",
       tip: (t.adisyon?.tip ?? "masa") as AdisyonTipi,
       adisyonNo: t.adisyon?.adisyon_no ?? undefined,
+      gunlukNo: t.adisyon?.gunluk_no ?? undefined,
       garson: t.garson?.ad ?? undefined,
       kisiSayisi: t.adisyon?.kisi_sayisi ?? undefined,
       not: t.adisyon?.not_metni ?? undefined,

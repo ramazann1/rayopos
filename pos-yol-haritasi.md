@@ -127,8 +127,8 @@ Amaç: Yoğun bir restoranın mutfak-servis akışını taşıyabilmeli.
       ayrıca **çevrimdışı PIN ile kişi değiştirme** eklendi (`cevrimdisiPin.ts`).
       İnternetsiz sıfırdan giriş 31 Ağu 2026'da **atlandı** (kasa günün
       başında bir kez, internet varken açılıyor); gerekçesi ve gerekirse
-      nasıl yapılacağı `rayopos-tasarim.md`'de. Açık kalan: masasız adisyonun
-      çevrimdışı açılması.
+      nasıl yapılacağı `rayopos-tasarim.md`'de. Masasız adisyonun çevrimdışı
+      açılması da 1 Eki 2026'da kapandı (geçici kimlik + kuyruk).
 - [x] **İşletme kaydı ekranı (yeni müşteri açılışı).** 19 Ağu 2026'da yapıldı —
       `isletme_kur` fonksiyonu ve `pages/Kayit.tsx`. Örnek salon ve menüyle
       birlikte kuruluyor. Kötüye kullanım koruması da eklendi.
@@ -147,10 +147,12 @@ Amaç: Yoğun bir restoranın mutfak-servis akışını taşıyabilmeli.
       kodu — ayrıntısı `rayopos-tasarim.md`'de.
 
 ### FAZ 3 — Büyüme Özellikleri (6-8 hafta)
-- [ ] QR menü (public menü sayfası, anlık güncelleme)
-- [ ] Stok: reçete, otomatik düşüm, kritik stok uyarıları, maliyet/karlılık
+- [x] QR menü (public menü sayfası, anlık güncelleme) — kalanı (görseller, masadan
+      sipariş, garson çağırma, masa karekodu) `rayopos-tasarim.md` 0. bölümde
+- [x] Stok: reçete, otomatik düşüm, kritik stok uyarıları, maliyet/karlılık
 - [ ] Gelişmiş raporlar: saatlik ciro, personel performansı, karşılaştırmalı analizler
-- [ ] Cari müşteri / veresiye modülü
+      (Personel, Kârlılık, Mutfak var; eksik kısım bakılacak)
+- [x] Cari müşteri / veresiye modülü
 - [ ] Sadakat programı (puan, kampanya)
 - [ ] Çoklu şube: merkezi menü yönetimi, şube karşılaştırma raporları
 - [ ] **İkon boyut standardı** — ikon boyutları bugün 12'den 22'ye kadar

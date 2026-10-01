@@ -36,6 +36,8 @@ export type BilinenBilgi = {
 export type AdisyonVerisi = {
   id?: number;
   no?: number;
+  /** Gel al / paketin kasa gününe göre sırası; tezgâhta söylenen numara. */
+  gunlukNo?: number;
   sepet: SepetKalemi[];
   /**
    * Kayıt çevrimdışı kuyruktan geliyor: ürün müşteriye çoktan gitti. Eksi
@@ -197,7 +199,7 @@ function kalemeCevir(s: KalemSatiri): SepetKalemi {
   };
 }
 
-const ADISYON_ALANLARI = `id, adisyon_no, indirim, indirim_tanim_id, indirim_ad, acilis, garson, tip,
+const ADISYON_ALANLARI = `id, adisyon_no, gunluk_no, indirim, indirim_tanim_id, indirim_ad, acilis, garson, tip,
        ad, kisi_sayisi, not_metni, musteri_ad, musteri_telefon, adres,
        kuver_uygula, garsoniye_uygula,
        acan:personel!adisyonlar_acan_id_fkey (ad),
@@ -385,6 +387,7 @@ function adisyonaCevir(data: any): AdisyonVerisi {
   return {
     id: (data as any).id,
     no: (data as any).adisyon_no,
+    gunlukNo: (data as any).gunluk_no ?? undefined,
     sepet,
     bilinenIdler: kalemIdler,
     bilinenTahsilatIdler: tahsilatIdler,
@@ -442,12 +445,16 @@ export type MusteriBilgisi = {
 export type MasasizAdisyon = MusteriBilgisi & {
   id: number;
   no: number;
+  /** Gel al / paketin kasa gününe göre sırası; tezgâhta söylenen numara. */
+  gunlukNo?: number;
   tip: Exclude<AdisyonTipi, "masa">;
   tutar: number;
   odenen: number;
   kalan: number;
   adet: number;
   acilis: string;
+  /** Bağlantı yokken açıldı, sunucuya henüz varmadı. */
+  bekliyor?: boolean;
 };
 
 /** Yeni gel al / paket adisyonu açar; sepeti boş, ilk ürün eklenince dolar. */
@@ -495,7 +502,7 @@ export async function masasizAdisyonlar(): Promise<MasasizAdisyon[]> {
   const { data } = await supabase
     .from("adisyonlar")
     .select(
-      `id, adisyon_no, tip, indirim, acilis, musteri_ad, musteri_telefon, adres, musteri_id,
+      `id, adisyon_no, gunluk_no, tip, indirim, acilis, musteri_ad, musteri_telefon, adres, musteri_id,
        kuver_tutar, garsoniye_tutar,
        turlar (adisyon_kalemleri (adet, fiyat, durum, indirim)),
        tahsilatlar (tutar)`
@@ -521,6 +528,7 @@ export async function masasizAdisyonlar(): Promise<MasasizAdisyon[]> {
     return {
       id: satir.id,
       no: satir.adisyon_no,
+      gunlukNo: satir.gunluk_no ?? undefined,
       tip: satir.tip,
       tutar: net,
       odenen,
@@ -987,14 +995,19 @@ function indirimAlanlari(veri: AdisyonVerisi) {
 async function fisKunyesi(adisyonId: number) {
   const { data } = await supabase
     .from("adisyonlar")
-    .select("adisyon_no, ad, masalar (ad)")
+    .select("adisyon_no, gunluk_no, tip, ad, masalar (ad)")
     .eq("id", adisyonId)
     .single();
 
   const satir = data as any;
+  const masasiz = satir && satir.tip !== "masa";
   return {
     no: satir?.adisyon_no ?? undefined,
-    ad: satir?.ad || satir?.masalar?.ad || undefined,
+    gunlukNo: satir?.gunluk_no ?? undefined,
+    ad:
+      satir?.ad ||
+      satir?.masalar?.ad ||
+      (masasiz ? masasizEtiketi(satir.tip, satir.gunluk_no ?? undefined) : undefined),
   };
 }
 
@@ -1516,6 +1529,12 @@ async function odenmezAdlariniGetir(idler: number[]) {
   const { data } = await supabase.from("odenmezler").select("id, ad").in("id", tekil);
   for (const o of (data as any[]) ?? []) adlar.set(o.id, o.ad);
   return adlar;
+}
+
+/** "Gel Al 12" / "Paket 7" — günlük numara her yerde aynı biçimde yazılsın. */
+export function masasizEtiketi(tip: AdisyonTipi | undefined, gunlukNo?: number) {
+  const ad = tip === "paket" ? "Paket" : "Gel Al";
+  return gunlukNo ? `${ad} ${gunlukNo}` : ad;
 }
 
 /** Defterde adisyonun hangi masa olduğu yazılı dursun; masasızlarda tipi. */

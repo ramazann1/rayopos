@@ -481,6 +481,8 @@ export type AdisyonDetay = AnalizAdisyon & {
   turlar: DetayTur[];
   tahsilatlar: DetayTahsilat[];
   indirimAd: string;
+  /** Gel al / paketin günlük numarası. */
+  gunlukNo?: number;
   /** Hesap eksik kapatıldıysa borcun kime yazıldığı ve sebebi. */
   eksikKisi: string;
   eksikSebep: string;
@@ -491,7 +493,7 @@ export type AdisyonDetay = AnalizAdisyon & {
   kapatan: string;
 };
 
-const DETAY_ALANLARI = `id, adisyon_no, tip, durum, iptal_sebep, acilis, kapanis, indirim, indirim_ad,
+const DETAY_ALANLARI = `id, adisyon_no, gunluk_no, tip, durum, iptal_sebep, acilis, kapanis, indirim, indirim_ad,
        ad, kisi_sayisi, not_metni, musteri_ad, musteri_telefon, adres, masa_id,
        eksik_kisi, eksik_sebep,
        masa:masalar (ad, bolge_id, bolgeler (ad)),
@@ -535,6 +537,7 @@ export async function adisyonDetayi(adisyonId: number): Promise<AdisyonDetay | n
   return {
     ...satiraCevir(s, varsayilanKdv),
     indirimAd: s.indirim_ad ?? "",
+    gunlukNo: s.gunluk_no ?? undefined,
     eksikKisi: s.eksik_kisi ?? "",
     eksikSebep: s.eksik_sebep ?? "",
     not: s.not_metni ?? "",

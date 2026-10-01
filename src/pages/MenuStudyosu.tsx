@@ -5,6 +5,7 @@ import {
   ArrowUpDown,
   ArrowLeftRight,
   Check,
+  FolderOpen,
   ChevronDown,
   Copy,
   LayoutGrid,
@@ -103,10 +104,37 @@ function KategoriPenceresi({
   const ustAdaylari = kategoriler.filter((k) => !k.ustId && k.id !== kategori?.id);
 
   return (
-    <div className="modal-fon" onClick={onKapat}>
-      <div className="kategori-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{kategori ? "Kategoriyi düzenle" : "Yeni kategori"}</h3>
-
+    <OrtaPencere
+      ikon={FolderOpen}
+      baslik={kategori ? "Kategoriyi düzenle" : "Yeni kategori"}
+      genislik="dar"
+      onKapat={onKapat}
+      alt={
+        <>
+          <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
+          <button
+            className="pnc-kaydet"
+            disabled={!ad.trim()}
+            onClick={() =>
+              onKaydet({
+                ad: ad.trim(),
+                renk,
+                ustId,
+                istasyonId,
+                satistaGorunur,
+                mutfaktaGorunur,
+                // Tanıtım alanları bu pencerede düzenlenmiyor; olduğu gibi
+                // taşınıyor ki kaydetmek onları silmesin.
+                aciklama: kategori?.aciklama ?? "",
+                gorsel: kategori?.gorsel,
+              })
+            }
+          >
+            <Check size={17} /> Kaydet
+          </button>
+        </>
+      }
+    >
         <div className="alan">
           <span>
             Kategori adı
@@ -174,32 +202,7 @@ function KategoriPenceresi({
           acik={mutfaktaGorunur}
           degistir={setMutfaktaGorunur}
         />
-
-        <div className="modal-aksiyonlar">
-          <button className="iptal" onClick={onKapat}>Vazgeç</button>
-          <button
-            className="uygula"
-            disabled={!ad.trim()}
-            onClick={() =>
-              onKaydet({
-                ad: ad.trim(),
-                renk,
-                ustId,
-                istasyonId,
-                satistaGorunur,
-                mutfaktaGorunur,
-                // Tanıtım alanları bu pencerede düzenlenmiyor; olduğu gibi
-                // taşınıyor ki kaydetmek onları silmesin.
-                aciklama: kategori?.aciklama ?? "",
-                gorsel: kategori?.gorsel,
-              })
-            }
-          >
-            Kaydet
-          </button>
-        </div>
-      </div>
-    </div>
+    </OrtaPencere>
   );
 }
 

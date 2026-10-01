@@ -11,11 +11,13 @@ import {
   Minus,
   Plus,
   UploadCloud,
-  X,
 } from "lucide-react";
 import OnayModal from "./OnayModal";
+import OrtaPencere from "./OrtaPencere";
 import { ayarlar } from "../isletmeAyarlari";
 import { useKuyruk } from "../kuyruk";
+import { onbellekOku, onbellekYaz } from "../onbellek";
+import { baglantiVar } from "../baglanti";
 import { yetkiVar } from "../oturum";
 import { paraGoster, paraSayi, paraYaz } from "../para";
 import { kisaAd } from "../personel";
@@ -59,7 +61,11 @@ export default function Kasa() {
   const [acik, setAcik] = useState(false);
   // Hatırlatmadan gelindiğinde pencere doğrudan sayım formunda açılıyor.
   const [kapanisla, setKapanisla] = useState(false);
-  const [durum, setDurum] = useState<KasaDurumu>(BOS);
+  // Son bilinen durumla açılıyor: yoksa sayfa her yenilendiğinde sunucu
+  // cevap verene kadar düğme "Kasa kapalı" yazıyordu.
+  const [durum, setDurum] = useState<KasaDurumu>(
+    () => onbellekOku<KasaDurumu>("kasa-durumu")?.veri ?? BOS
+  );
   const [, saatiIlerlet] = useState(0);
   // Hatırlatma ertelendiğinde bu ana kadar susuyor.
   const [ertelemeSonu, setErtelemeSonu] = useState(0);
@@ -68,7 +74,15 @@ export default function Kasa() {
   // döküm kendiliğinden tazeleniyor.
   const { bekleyen } = useKuyruk();
 
-  const yenile = () => kasaDurumu().then(setDurum);
+  // Bağlantı yokken okuma boş dönüyor ve "kasa kapalı" sanılıyordu; cihazdaki
+  // son durum geçerli kalıyor.
+  const yenile = async () => {
+    if (!baglantiVar()) return;
+    await kasaDurumu().then((d) => {
+      setDurum(d);
+      onbellekYaz("kasa-durumu", d);
+    });
+  };
 
   useEffect(() => {
     yenile();
@@ -187,18 +201,20 @@ function KasaPenceresi({
   };
 
   return (
-    <div className="modal-fon" onClick={onKapat}>
-      <div className="kasa-pencere" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h3 className="modal-baslik">
-            <Banknote size={18} />
-            Kasa
-          </h3>
-          <button className="kasa-cik" onClick={onKapat}>
-            <X size={18} />
-          </button>
-        </header>
-
+    <>
+      <OrtaPencere
+        ikon={Banknote}
+        baslik="Kasa"
+        genislik="dar"
+        onKapat={onKapat}
+        alt={
+          vardiya && !kapaniyor && !hareketTipi ? (
+            <button className="pnc-kaydet" onClick={() => setKapaniyor(true)}>
+              <Lock size={17} /> Kasayı kapat
+            </button>
+          ) : undefined
+        }
+      >
         {!vardiya ? (
           <KasaAcma onAc={(tutar, not) => isle(() => kasaAc(tutar, not))} />
         ) : kapaniyor ? (
@@ -333,17 +349,13 @@ function KasaPenceresi({
                     Çekmeceyi aç
                   </button>
                 )}
-                <button className="kasa-birincil" onClick={() => setKapaniyor(true)}>
-                  <Lock size={16} />
-                  Kasayı kapat
-                </button>
               </div>
             )}
           </>
         )}
 
         {hata && <p className="kasa-hata">{hata}</p>}
-      </div>
+      </OrtaPencere>
 
       {uyari && <OnayModal mesaj={uyari} tekTus onKapat={() => setUyari("")} />}
 
@@ -364,7 +376,7 @@ function KasaPenceresi({
           onKapat={() => setBekleyenSorusu(null)}
         />
       )}
-    </div>
+    </>
   );
 }
 

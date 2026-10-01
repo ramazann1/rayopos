@@ -14,7 +14,7 @@ import OnayModal from "./OnayModal";
 import OdemeTipDuzelt from "./OdemeTipDuzelt";
 import { adetGoster, paraGoster } from "../para";
 import { yetkiVar } from "../oturum";
-import { adisyonIkram, adisyonIptal } from "../adisyonlar";
+import { adisyonIkram, adisyonIptal, masasizEtiketi } from "../adisyonlar";
 import {
   adisyonAktifEt,
   adisyonDetayi,
@@ -104,6 +104,7 @@ export default function AdisyonDetay({
         <header className="up-ust detay-ust">
           <h3>
             Adisyon #{detay?.no ?? "…"}
+            {detay?.gunlukNo ? ` · ${masasizEtiketi(detay.tip, detay.gunlukNo)}` : ""}
             {detay && (
               <span className={detay.durum === "acik" ? "detay-rozet acik" : "detay-rozet"}>
                 {durumAdi(detay)}
@@ -155,10 +156,12 @@ export default function AdisyonDetay({
           </div>
         </header>
 
-        {yukleniyor || !detay ? (
+        {yukleniyor ? (
           <div className="yukleniyor">
             <div className="cember" />
           </div>
+        ) : !detay ? (
+          <p className="bos">Bu adisyonu görme yetkiniz yok.</p>
         ) : gecmis ? (
           <div className="detay-govde tek">
             <ZamanCizelgesi detay={detay} kayitlar={kayitlar} />
