@@ -309,6 +309,15 @@ body {
   border-bottom: 1px solid #dce4ee;
 }
 
+/* Sekme satırı (seçim kipinde içindeki hap da) sayfa kaydıkça üstte kalıyor:
+   uzun salonda aşağı inen garson bölge değiştirmek için başa dönmesin. */
+.salon-sekme {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--zemin);
+}
+
 .salon-sekme button {
   display: inline-flex;
   align-items: center;
@@ -3051,6 +3060,7 @@ body {
   margin: 0 0 18px;
   padding: 0 24px;
   font-size: 15px;
+  font-weight: 500;
   color: var(--metin);
   line-height: 1.55;
   white-space: pre-line;
@@ -3059,7 +3069,7 @@ body {
 /* Masa adı, tutar gibi kararı belirleyen bilgi cümlenin içinde kaybolmasın:
    kalın ve tam koyu tonda. */
 .onay-modal p strong {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--metin);
 }
 
@@ -9256,11 +9266,170 @@ body {
   color: #d64431;
 }
 
+/* Başlıksız pencere (hata ve kısa uyarılar, metni değişken): ikon cümlenin
+   yanında. */
+.onay-yan {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 22px 24px 18px;
+}
+
+.onay-modal .onay-yan p {
+  margin: 0;
+  padding: 0;
+}
+
+/* Seçim kipinin göstergesi: sekmelerle aynı satırda küçük hap. */
+.secim-hapi {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  margin-left: auto;
+  padding: 5px 6px 5px 13px;
+  border: 1.5px solid var(--mercan);
+  border-radius: var(--r-tam);
+  background: var(--kart);
+  color: var(--metin);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.secim-hapi > svg {
+  color: #e0522e;
+  flex: none;
+}
+
+.secim-hapi strong {
+  font-weight: 700;
+}
+
+/* Hap sekme satırının içinde duruyor; satırın düğme ve sayaç kuralları
+   buraya sızmasın diye boşluk ve zemin açıkça sıfırlanıyor. */
+.secim-hapi em {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--soluk);
+}
+
+.secim-hapi button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-tam);
+  background: var(--kart-ust);
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.secim-hapi button:hover {
+  background: var(--cizgi);
+}
+
+/* Telefonda bölge çiplerinin üstünde, satırın tamamını kaplıyor; masaların
+   hiçbirini örtmüyor. */
+/* Bölge çipleri (seçim modunda hap da) kaydırırken üstte kalıyor. */
+.m-masalar-ust {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  padding-top: 6px;
+  background: var(--zemin);
+}
+
+.m-secim-hapi {
+  padding-bottom: 10px;
+}
+
+.m-secim-hapi .secim-hapi {
+  display: flex;
+  margin: 0;
+}
+
+.m-secim-hapi .secim-hapi strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-secim-hapi .secim-hapi em {
+  display: none;
+}
+
+.m-secim-hapi .secim-hapi button {
+  margin-left: auto;
+}
+
+/* Ürün taşıma onayındaki adet seçici. */
+.kto-adet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px 24px 18px;
+  padding: 8px 10px 8px 14px;
+  border-radius: var(--r-or);
+  background: var(--kart-ust);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kto-adet > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kto-adet button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--cizgi-koyu);
+  border-radius: var(--r-kk);
+  background: var(--kart);
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.kto-adet button:disabled {
+  color: var(--soluk);
+  cursor: default;
+}
+
+.kto-adet em {
+  min-width: 56px;
+  font-style: normal;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dört tür: ikon ve onay düğmesi aynı rengi taşıyor. */
+.onay-im.bilgi { background: #e7f1fb; box-shadow: 0 0 0 1px rgba(28, 111, 196, 0.2) inset; color: #1c6fc4; }
+.onay-im.uyari { background: var(--mercan-sis); color: #e0522e; }
+.onay-im.tehlike { background: #fdecea; box-shadow: 0 0 0 1px rgba(224, 49, 49, 0.2) inset; color: #d63131; }
+.onay-im.basarili { background: #e6f8f1; box-shadow: 0 0 0 1px rgba(18, 184, 134, 0.22) inset; color: #0c8a63; }
+
+.onay-modal .modal-aksiyonlar .uygula.bilgi { background: #1c6fc4; }
+.onay-modal .modal-aksiyonlar .uygula.bilgi:hover:not(:disabled) { background: #175ea8; }
+.onay-modal .modal-aksiyonlar .uygula.tehlike { background: #e03131; }
+.onay-modal .modal-aksiyonlar .uygula.tehlike:hover:not(:disabled) { background: #c92a2a; }
+.onay-modal .modal-aksiyonlar .uygula.basarili { background: var(--yesil); }
+.onay-modal .modal-aksiyonlar .uygula.basarili:hover:not(:disabled) { background: #0ca678; }
+
 .onay-ust h3 {
   flex: 1;
   min-width: 0;
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--metin);
 }
@@ -9374,6 +9543,7 @@ body {
   padding: 13px;
   border-radius: var(--r-kk);
   font-size: 15px;
+  font-weight: 600;
   transition: background var(--gecis), border-color var(--gecis), opacity var(--gecis);
 }
 
@@ -15358,71 +15528,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Yüzen seçim şeridi. Masaüstündeki şeritle aynı dili konuşuyor (mercan,
-   aynı cümle, aynı sayaç); telefonda yeri farklı — başparmağın altında. */
-.m-secim-serit {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(74px + env(safe-area-inset-bottom));
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  padding: 13px 16px;
-  border: 1px solid var(--cizgi);
-  border-left: 3px solid var(--mercan);
-  border-radius: var(--r-or);
-  background: var(--kart);
-  box-shadow: var(--g3);
-}
-
-.m-secim-serit > span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.m-secim-serit > span strong {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--metin);
-}
-
-.m-secim-serit > span em {
-  font-size: 14px;
-  font-style: normal;
-  color: var(--soluk);
-}
-
-.m-secim-serit > div {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.m-serit-sayac {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--soluk);
-  font-variant-numeric: tabular-nums;
-}
-
-.m-serit-vazgec {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 16px;
-  border: 1px solid var(--cizgi-koyu);
-  border-radius: var(--r-kk);
-  background: var(--kart);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--metin);
-  cursor: pointer;
-}
-
 /* İşlem listesi: ikon + ad, açıklama yok. */
 .m-islemler {
   display: flex;
@@ -17620,91 +17725,6 @@ body {
    hiçbir masanın üstünü örtmüyor.
    ============================================================ */
 
-/* Beyaz kart, solunda mercan dikey şerit: kipte olunduğunu söylüyor ama
-   salonun rengiyle yarışmıyor. Sipariş ekranındaki kategori deseninin aynısı. */
-.ss-serit {
-  position: sticky;
-  top: 0;
-  z-index: 12;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
-  padding: 13px 18px;
-  border: 1px solid var(--cizgi);
-  border-left: 3px solid var(--mercan);
-  border-radius: var(--r-or);
-  background: var(--kart);
-  box-shadow: var(--g2);
-  animation: ss-serit-gir var(--gecis-yavas);
-}
-
-@keyframes ss-serit-gir {
-  from { opacity: 0; transform: translateY(-6px); }
-}
-
-.ss-im {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--r-tam);
-  background: var(--mercan-sis);
-  color: var(--mercan);
-}
-
-/* İki satır: ne olduğu kalın, ne yapılacağı altında. Alt satır ikincil ama
-   soluk değil — okunur tonda ve 14px'in altına inmiyor. */
-.ss-yazi {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.ss-yazi strong {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--metin);
-}
-
-.ss-yazi em {
-  font-size: 14px;
-  font-style: normal;
-  color: var(--soluk);
-}
-
-.ss-sayac {
-  flex-shrink: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--soluk);
-  font-variant-numeric: tabular-nums;
-}
-
-.ss-vazgec {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  flex-shrink: 0;
-  padding: 9px 15px;
-  border: 1px solid var(--cizgi-koyu);
-  border-radius: var(--r-kk);
-  background: var(--kart);
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--metin);
-  cursor: pointer;
-  transition: border-color var(--gecis), background var(--gecis);
-}
-
-.ss-vazgec:hover {
-  border-color: var(--mercan);
-  background: var(--kart-ust);
-}
-
 /* Seçilebilir masa: kartın kendisi çerçeveleniyor. Küçük bir işaret koymak
    yetmiyor — uzaktan bakan garson hangi masaların açık olduğunu görmeli. */
 /* Kartın kendi kenarı yok (border: none), o yüzden çerçeve outline ile
@@ -17744,22 +17764,6 @@ body {
   color: var(--soluk);
 }
 
-@media (max-width: 780px) {
-  .ss-serit {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .ss-yazi {
-    flex: 1 1 100%;
-    order: 3;
-  }
-
-  .ss-sayac {
-    margin-left: auto;
-  }
-}
-
 /* Mobil seçim kipinde seçilemeyen masanın kilidi — masaüstündeki
    .masa-secilemez ile aynı iş, kartın küçük ölçüsüne göre. */
 .m-masa-secilemez {
@@ -17774,125 +17778,13 @@ body {
   color: var(--soluk);
 }
 
-/* ============================================================
-   MASA SEÇİM PENCERESİ (3 Eyl 2026 — yeni görsel dil)
-   Salonda hedef masa pencereyle değil planın kendisiyle seçiliyor;
-   bu pencere kalem taşımada kalıyor — sipariş ekranından açıldığı
-   için arkada plan yok. Seçim dili salondakiyle aynı: seçilebilen
-   masa mercan çerçeveli, seçilemeyen silikleşmiyor, kilit alıyor.
-   Ortak kabuk (.up-fon.ust / .up-modal) — Kalem Paneli'nin üstünde
-   açıldığı için "ust".
-   ============================================================ */
-
-.ms-modal {
-  max-width: 620px;
-}
-
-.ms-sayac {
-  flex: none;
-  padding: 4px 11px;
-  border: 1px solid var(--cizgi);
-  border-radius: var(--r-tam);
-  background: var(--kart-ust);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--soluk);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Başlık sabit kalıyor, uzun masa listesinde yalnız gövde kayıyor. */
-.ms-govde {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 18px 22px 22px;
-}
-
-.ms-bolge {
-  margin-top: 20px;
-}
-
-.ms-bolge h4 {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  margin-bottom: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--metin);
-}
-
-.ms-bolge h4 em {
-  font-size: 13px;
-  font-style: normal;
-  font-weight: 500;
-  color: var(--soluk);
-}
-
-.ms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
-  gap: 10px;
-}
-
-.ms-kart {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border: 1px solid var(--cizgi);
-  border-radius: var(--r-or);
-  background: var(--kart);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color var(--gecis), box-shadow var(--gecis), background var(--gecis);
-}
-
-.ms-kart.uygun {
-  border-color: var(--mercan);
-}
-
-.ms-kart.uygun:hover {
-  background: var(--mercan-sis);
-  box-shadow: var(--g1);
-}
-
-/* Seçilemeyen masa silikleşmiyor — adı okunur kalıyor, yalnız dokunulmaz
-   oluyor. Nedenini kilitli durum satırı söylüyor. */
-.ms-kart.kilitli {
-  background: var(--kart-ust);
-  cursor: not-allowed;
-}
-
+/* Menü Stüdyosu ürün satırındaki ad. */
 .ms-ad {
   font-size: 15px;
   font-weight: 600;
   color: var(--metin);
 }
 
-.ms-durum {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--soluk);
-}
-
-.ms-kart.uygun .ms-durum {
-  color: var(--mercan);
-}
-
-.ms-bos {
-  margin-top: 18px;
-  padding: 20px;
-  border: 1px solid var(--cizgi);
-  border-radius: var(--r-or);
-  background: var(--kart-ust);
-  font-size: 14px;
-  color: var(--metin);
-  text-align: center;
-}
 
 /* ============================================================
    MİSAFİR SAYISI (3 Eyl 2026 — yeni görsel dil)
@@ -19742,7 +19634,6 @@ body {
 .m-serit-bekleyen,
 .m-urunler,
 .mp-govde,
-.ms-govde,
 .ms-kat-liste,
 .msc-liste,
 .onay-modal,
@@ -23520,44 +23411,57 @@ body:has(.up-fon, .menu-perde) {
 
 /* Üretimde hammadde yetmiyor uyarısı. Engel değil bilgi: kırmızı değil
    amber, tek bakışta "ne kadar lazım, ne kadar var" okunsun. */
+/* Onay penceresinin tablolu hâli: başlık satırı (ikon + başlık) onay
+   penceresiyle aynı, altında cümle ve tablo tam genişlikte. */
 .urt-uyari {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 13px;
+  align-items: center;
   width: min(440px, calc(100vw - 32px));
-  padding: 26px 24px 20px;
+  padding: 22px 24px 20px;
+  border: 1px solid var(--cizgi);
   border-radius: var(--r-bk);
   background: var(--kart);
-  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.22);
-  text-align: center;
-  animation: urt-giris var(--gecis-yavas);
+  box-shadow: var(--g3);
 }
 
-@keyframes urt-giris {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+.urt-uyari > :not(.urt-uyari-im):not(h3) {
+  grid-column: 1 / -1;
 }
 
 .urt-uyari-im {
-  display: inline-grid;
+  display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(240, 160, 61, 0.16);
-  color: #c47a12;
-  box-shadow: 0 0 0 8px rgba(240, 160, 61, 0.07);
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-tam);
+  background: var(--mercan-sis);
+  color: #e0522e;
+}
+
+.urt-uyari-im svg {
+  width: 22px;
+  height: 22px;
 }
 
 .urt-uyari h3 {
-  margin: 16px 0 6px;
-  font-size: 18px;
-  font-weight: 600;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--metin);
 }
 
 .urt-uyari > p {
-  margin: 0 auto 18px;
-  max-width: 340px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--soluk);
+  margin: 14px 0 16px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--metin);
+}
+
+.urt-uyari > p strong {
+  font-weight: 700;
 }
 
 .urt-uyari-liste {
@@ -23629,9 +23533,8 @@ body:has(.up-fon, .menu-perde) {
 
 /* Satışta stok yetersiz: aynı pencere, ama burada kayıt gerçekten duruyor. */
 .urt-uyari-im.tehlike {
-  background: rgba(224, 49, 49, 0.12);
-  color: #d62828;
-  box-shadow: 0 0 0 8px rgba(224, 49, 49, 0.05);
+  background: #fdecea;
+  color: #d63131;
 }
 
 .urt-uyari-im.tehlike ~ .urt-uyari-liste .urt-uyari-satir em {

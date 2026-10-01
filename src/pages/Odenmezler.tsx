@@ -318,7 +318,8 @@ export default function Odenmezler() {
 
       {silinecek && (
         <OnayModal
-          mesaj={`${silinecek.ad} silinsin mi? Adına yazılmış ikram varsa kaydı silinmez, listeden gizlenir.`}
+          baslik="Kişi silinsin mi?"
+          mesaj={`*${silinecek.ad}* silinecek. Adına yazılmış ikram varsa kaydı silinmez, listeden gizlenir.`}
           tehlikeli
           onOnay={sil}
           onKapat={() => setSilinecek(null)}

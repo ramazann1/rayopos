@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRightLeft,
   Ban,
@@ -15,7 +15,6 @@ import {
   RotateCw,
   Users,
   Wallet,
-  X,
   Zap,
 } from "lucide-react";
 import {
@@ -23,6 +22,7 @@ import {
   SEYREK_TANIM,
   bolgeleriGetir,
   durgunMu,
+  hedefOnayBasligi,
   hedefOnayMesaji,
   yabanciMasaVar,
 } from "../masalar";
@@ -32,6 +32,7 @@ import {
   adisyonIptal,
   adisyonKaydet,
   adisyonOzeti,
+  kalemTasi,
   masaBirlestir,
   masaTasi,
   servisGirdisi,
@@ -45,6 +46,9 @@ import { servisSatirlari } from "../servis";
 import { adisyonFisiYaz } from "../yazicilar";
 import { yetkiVar } from "../oturum";
 import OnayModal from "../components/OnayModal";
+import SecimHapi from "../components/SecimHapi";
+import KalemTasiOnay from "../components/KalemTasiOnay";
+import { gelenSecim, type TasinanKalem } from "../salonSecimi";
 import SiparisGecmisi from "../components/SiparisGecmisi";
 import IslemPenceresi from "./IslemPenceresi";
 import HizliOde from "../components/HizliOde";
@@ -120,17 +124,31 @@ export default function MobilMasalar() {
   // Masanın açık hesabının zaman çizelgesi; bilgisayardaki salon menüsüyle aynı.
   const [gecmis, setGecmis] = useState<{ ad: string; adisyonId: number } | null>(null);
   // Izgara seçim modu: hangi işlem için hedef masa bekleniyor.
+  // Ürün taşıma sipariş ekranından başlıyor, hedef yine burada seçiliyor.
   const [secimModu, setSecimModu] = useState<{
-    tip: "tasi" | "birlestir";
+    tip: "tasi" | "birlestir" | "kalem";
     kaynak: Masa;
+    kalem?: TasinanKalem;
   } | null>(null);
-  // Hedefe dokunulunca masaüstündeki gibi onay soruluyor; şeritte ayrıca
+  // Hedefe dokunulunca masaüstündeki gibi onay soruluyor; göstergede ayrıca
   // "Uygula" düğmesi yok, iki yüzeyde de adım sayısı aynı.
   const [hedefSorusu, setHedefSorusu] = useState<{
-    tip: "tasi" | "birlestir";
+    tip: "tasi" | "birlestir" | "kalem";
     kaynak: Masa;
+    kalem?: TasinanKalem;
     hedef: Masa;
   } | null>(null);
+  const location = useLocation();
+
+  // Sipariş ekranından taşıma için gelindiyse ekran seçim modunda açılıyor.
+  // Bilgi geçmişten silinir ki geri/ileri ile dönüldüğünde mod yeniden açılmasın.
+  useEffect(() => {
+    const secim = gelenSecim(location.state);
+    if (!secim || bolgeler.length === 0) return;
+    const kaynak = bolgeler.flatMap((b) => b.masalar).find((m) => m.id === secim.masaId);
+    git(location.pathname, { replace: true, state: null });
+    if (kaynak) setSecimModu({ tip: secim.tip, kaynak, kalem: secim.kalem });
+  }, [location.state, bolgeler]);
   const [hizliMasa, setHizliMasa] = useState<{ masa: Masa; veri: AdisyonVerisi } | null>(null);
   const [iptalSorusu, setIptalSorusu] = useState<{ masa: Masa; adisyonId: number } | null>(null);
   const [ikramSorusu, setIkramSorusu] = useState<{ masa: Masa; adisyonId: number } | null>(null);
@@ -239,12 +257,9 @@ export default function MobilMasalar() {
   // Seçim modunda taşımada boş, birleştirmede dolu masalar seçilebilir.
   const secilebilir = (m: Masa) => {
     if (!secimModu || m.id === secimModu.kaynak.id) return false;
+    if (secimModu.tip === "kalem") return true;
     return secimModu.tip === "tasi" ? !adisyonlar[m.id] : !!adisyonlar[m.id];
   };
-  // Sayaç bölgeye değil salonun tamamına bakıyor: hedef başka bölgede olabilir.
-  const uygunSayisi = secimModu
-    ? bolgeler.flatMap((b) => b.masalar).filter(secilebilir).length
-    : 0;
 
   const masayaDokun = (m: Masa) => {
     if (secimModu) {
@@ -270,13 +285,14 @@ export default function MobilMasalar() {
     git(`/mobil/siparis/${soru.masa.id}`);
   };
 
-  const secimiUygula = async () => {
+  const secimiUygula = async (adet?: number) => {
     if (!hedefSorusu) return;
-    const { tip, kaynak, hedef } = hedefSorusu;
+    const { tip, kaynak, kalem, hedef } = hedefSorusu;
     setHedefSorusu(null);
     setSecimModu(null);
     try {
-      if (tip === "tasi") await masaTasi(kaynak.id, hedef.id);
+      if (tip === "kalem") await kalemTasi(kaynak.id, hedef.id, kalem!.id, adet ?? kalem!.adet);
+      else if (tip === "tasi") await masaTasi(kaynak.id, hedef.id);
       else await masaBirlestir(kaynak.id, hedef.id);
       await oku();
     } catch (e) {
@@ -381,20 +397,32 @@ export default function MobilMasalar() {
         </button>
       </header>
 
-      <div className="m-bolgeler">
-        {bolgeler.map((b) => {
-          const dolu = b.masalar.filter((m) => adisyonlar[m.id]).length;
-          return (
-            <button
-              key={b.id}
-              className={b.id === seciliBolge ? "m-cip secili" : "m-cip"}
-              onClick={() => setSeciliBolge(b.id)}
-            >
-              {b.ad}
-              <span>{dolu}/{b.masalar.length}</span>
-            </button>
-          );
-        })}
+      <div className="m-masalar-ust">
+        {secimModu && (
+          <div className="m-secim-hapi">
+            <SecimHapi
+              tip={secimModu.tip}
+              ad={secimModu.kalem?.ad ?? secimModu.kaynak.ad}
+              onVazgec={() => setSecimModu(null)}
+            />
+          </div>
+        )}
+
+        <div className="m-bolgeler">
+          {bolgeler.map((b) => {
+            const dolu = b.masalar.filter((m) => adisyonlar[m.id]).length;
+            return (
+              <button
+                key={b.id}
+                className={b.id === seciliBolge ? "m-cip secili" : "m-cip"}
+                onClick={() => setSeciliBolge(b.id)}
+              >
+                {b.ad}
+                <span>{dolu}/{b.masalar.length}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {masalar.length === 0 ? (
@@ -550,34 +578,6 @@ export default function MobilMasalar() {
         </div>
       )}
 
-      {/* Seçim modunun kendi şeridi: ne yapıldığı üstte yazıyor, onay altta. */}
-      {secimModu && (
-        <div className="m-secim-serit">
-          <span>
-            <strong>
-              {secimModu.kaynak.ad} {secimModu.tip === "tasi" ? "taşınıyor" : "birleştiriliyor"}
-            </strong>
-            <em>
-              {secimModu.tip === "tasi"
-                ? "Adisyonun geçeceği boş masaya dokunun."
-                : "Adisyonun ekleneceği açık masaya dokunun."}
-            </em>
-          </span>
-          <div>
-            <span className="m-serit-sayac">
-              {uygunSayisi > 0
-                ? `${uygunSayisi} uygun`
-                : secimModu.tip === "tasi"
-                  ? "Boş masa yok"
-                  : "Açık masa yok"}
-            </span>
-            <button className="m-serit-vazgec" onClick={() => setSecimModu(null)}>
-              <X size={16} /> Vazgeç
-            </button>
-          </div>
-        </div>
-      )}
-
       {islemMasasi && (
         <MasaIslemleri
           masa={islemMasasi}
@@ -625,17 +625,26 @@ export default function MobilMasalar() {
         );
       })()}
 
-      {hedefSorusu && (
+      {hedefSorusu?.tip === "kalem" && (
+        <KalemTasiOnay
+          kalem={hedefSorusu.kalem!}
+          hedefAd={hedefSorusu.hedef.ad}
+          onOnay={secimiUygula}
+          onKapat={() => setHedefSorusu(null)}
+        />
+      )}
+
+      {hedefSorusu && hedefSorusu.tip !== "kalem" && (
         <OnayModal
-          baslik={hedefSorusu.tip === "tasi" ? "Masayı taşı" : "Adisyonu birleştir"}
-          ikon={hedefSorusu.tip === "tasi" ? <ArrowRightLeft size={20} /> : <Combine size={20} />}
+          baslik={hedefOnayBasligi(hedefSorusu.tip)}
+          ikon={hedefSorusu.tip === "tasi" ? <ArrowRightLeft size={22} /> : <Combine size={22} />}
           mesaj={hedefOnayMesaji(
             hedefSorusu.tip,
             hedefSorusu.kaynak.ad,
             hedefSorusu.hedef.ad
           )}
-          onayMetni="Evet, uygula"
-          onOnay={secimiUygula}
+          onayMetni={hedefSorusu.tip === "tasi" ? "Taşı" : "Birleştir"}
+          onOnay={() => secimiUygula()}
           onKapat={() => setHedefSorusu(null)}
         />
       )}

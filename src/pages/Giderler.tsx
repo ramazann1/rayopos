@@ -255,7 +255,8 @@ export default function Giderler() {
 
       {silinecek && (
         <OnayModal
-          mesaj={`${silinecek.tipAd} · ${paraGoster(silinecek.tutar)} tutarındaki gider silinsin mi?`}
+          baslik="Gider silinsin mi?"
+          mesaj={`*${silinecek.tipAd} · ${paraGoster(silinecek.tutar)}* tutarındaki gider silinecek.`}
           tehlikeli
           onOnay={sil}
           onKapat={() => setSilinecek(null)}

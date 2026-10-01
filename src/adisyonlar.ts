@@ -1654,92 +1654,17 @@ export async function kalemTasi(
   kalemId: number,
   adet: number
 ) {
-  if (kaynakMasaId === hedefMasaId) throw new Error("Kalem zaten bu masada.");
-
-  const kaynak = await acikAdisyonBul(kaynakMasaId);
-  if (!kaynak) throw new Error("Bu masada açık adisyon yok.");
-
-  const { data: kalem } = await supabase
-    .from("adisyon_kalemleri")
-    .select(KALEM_ALANLARI + ", tur_id")
-    .eq("id", kalemId)
-    .maybeSingle();
-  if (!kalem) throw new Error("Kalem bulunamadı. Adisyonu kaydedip tekrar deneyin.");
-
-  const mevcutAdet = Number((kalem as any).adet);
-  const tasinan = Math.min(adet, mevcutAdet);
-
-  let hedef = await acikAdisyonBul(hedefMasaId);
-  if (!hedef) {
-    const acma = await supabase
-      .from("adisyonlar")
-      .insert({ masa_id: hedefMasaId, indirim: 0 })
-      .select("id, acilis, indirim")
-      .single();
-    yazmayiDenetle(acma, "Hedef masada adisyon açılamadı.");
-    hedef = acma.data as { id: number; acilis: string; indirim: number };
-  }
-
-  const { data: hedefTurlar } = await supabase
-    .from("turlar")
-    .select("sira")
-    .eq("adisyon_id", hedef.id);
-  const sira = ((hedefTurlar as any[]) ?? []).reduce((e, t) => Math.max(e, t.sira), 0) + 1;
-
-  const turSonucu = await supabase
-    .from("turlar")
-    .insert({ adisyon_id: hedef.id, sira })
-    .select("id")
-    .single();
-  yazmayiDenetle(turSonucu, "Hedef masada sipariş turu açılamadı.");
-  const tur = turSonucu.data;
-
-  const k = kalem as any;
-  const ekleme = await supabase.from("adisyon_kalemleri").insert({
-    tur_id: (tur as any).id,
-    // Satış taşıyana geçmesin: sunucu satanı bu kalemden okuyor.
-    tasindigi_kalem_id: kalemId,
-    urun_id: k.urun_id,
-    porsiyon_id: k.porsiyon_id,
-    ad: k.ad,
-    // Kategori taşınan kalemden geliyor, yeniden hesaplanmıyor: ürün arada
-    // başka kategoriye alınmışsa iki masada iki ayrı kategori görünmesin.
-    kategori_ad: k.kategori_ad ?? null,
-    porsiyon: k.porsiyon,
-    secimler: k.secimler ?? [],
-    cikan_malzemeler: k.cikan_malzemeler ?? null,
-    eklenen_malzemeler: k.eklenen_malzemeler ?? null,
-    adet: tasinan,
-    fiyat: k.fiyat,
-    kdv_oran: k.kdv_oran,
-    durum: k.durum,
-    not_metni: k.not_metni,
-  }).select("id").single();
-  yazmayiDenetle(ekleme, "Ürün hedef masaya yazılamadı.");
-
-  // Kaynaktan düşmeyi sunucu yapıyor: taşıma yetkisi "üründen çıkarma"
-  // istemesin, ama yalnız az önce yazılan kopya kadar düşülebilsin.
-  const { error: dusmeHatasi } = await supabase.rpc("tasinan_kalemi_kaynaktan_dus", {
-    p_kopya: (ekleme.data as any).id,
+  // Taşımanın tamamı sunucuda tek işlem (sql/2026-10-01-kalem-tasima-tek-istek.sql):
+  // tarayıcıdan sırayla on bir istek gidiyordu.
+  const { data, error } = await supabase.rpc("kalem_tasi", {
+    p_kaynak_masa: kaynakMasaId,
+    p_hedef_masa: hedefMasaId,
+    p_kalem: kalemId,
+    p_adet: adet,
   });
-  if (dusmeHatasi) throw new Error(dusmeHatasi.message || "Ürün kaynak masadan düşülemedi.");
+  if (error) throw new Error(error.message || "Ürün taşınamadı.");
 
-  await bosAdisyonuTemizle(kaynak.id);
-  await Promise.all([servisiTazele(kaynak.id), servisiTazele(hedef.id)]);
-}
-
-/** Son kalemi de gidince adisyon masayı işgal etmesin — boşsa siliniyor. */
-async function bosAdisyonuTemizle(adisyonId: number) {
-  const { data } = await supabase
-    .from("turlar")
-    .select("id, adisyon_kalemleri (id)")
-    .eq("adisyon_id", adisyonId);
-
-  const turlar = ((data as any[]) ?? []);
-  const kalemVar = turlar.some((t) => (t.adisyon_kalemleri ?? []).length > 0);
-  if (!kalemVar) {
-    const silme = await supabase.from("adisyonlar").delete().eq("id", adisyonId).select("id");
-    satirDenetle(silme, "Boşalan adisyon kapatılamadı.");
-  }
+  const { kaynak, hedef } = data as { kaynak: number | null; hedef: number };
+  await Promise.all([kaynak && servisiTazele(kaynak), servisiTazele(hedef)]);
 }
 

@@ -353,7 +353,8 @@ export default function StokHareketleri() {
 
       {silinecek && (
         <OnayModal
-          mesaj={`*${silinecek.malzemeAd}* hareketi silinsin mi? Malzemenin stok miktarı yeniden hesaplanacak.`}
+          baslik="Stok hareketi silinsin mi?"
+          mesaj={`*${silinecek.malzemeAd}* hareketi silinecek, malzemenin stok miktarı yeniden hesaplanır.`}
           tehlikeli
           onayMetni="Sil"
           onOnay={async () => {

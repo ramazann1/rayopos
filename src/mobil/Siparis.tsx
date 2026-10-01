@@ -33,26 +33,21 @@ import KalemPaneli from "../components/KalemPaneli";
 import AdisyonBilgi from "../components/AdisyonBilgi";
 import SiparisGecmisi from "../components/SiparisGecmisi";
 import MisafirSayisi from "../components/MisafirSayisi";
-import MasaSecim from "../components/MasaSecim";
 import { kalemiUygula } from "./KalemIslemleri";
 import OnayModal from "../components/OnayModal";
 import IslemPenceresi from "./IslemPenceresi";
 import { MENU_ANAHTAR, agacUrunleri, menuGetir, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
 import { useTanimEtkisi } from "../tanimAbonelik";
-import { bolgeleriGetir, hedefOnayMesaji, masaGetir } from "../masalar";
+import { masaGetir } from "../masalar";
 import {
   CEVRIMDISI_ADISYON,
   adisyonGetir,
   adisyonIptal,
   adisyonKaydet,
   adisyonOzeti,
-  kalemTasi,
   kalemTutari,
-  masaBirlestir,
-  masaTasi,
   sepetiTazele,
   servisGirdisi,
-  tumAdisyonlar,
   yeniKalemId,
 } from "../adisyonlar";
 import type { AdisyonVerisi } from "../adisyonlar";
@@ -65,12 +60,11 @@ import { SINYAL, useCanli } from "../canli";
 import { baglantiHatasi, baglantiVar } from "../baglanti";
 import { kilitKaldir, kilitKur } from "../cikisKilidi";
 import { useGeriKilidi } from "../geriKilidi";
+import { salonaSecimle } from "../salonSecimi";
 import { ayarlar } from "../isletmeAyarlari";
 import { yetkiVar } from "../oturum";
 import { adetGoster, paraGoster } from "../para";
 import type {
-  Bolge,
-  Masa,
   MenuKategori,
   MenuKdv,
   MenuSecenekGrubu,
@@ -148,10 +142,6 @@ export default function MobilSiparis() {
   const [sepetAcik, setSepetAcik] = useState(false);
   const [islemlerAcik, setIslemlerAcik] = useState(false);
   const [kalemIslem, setKalemIslem] = useState<SepetKalemi | null>(null);
-  const [hedefSecim, setHedefSecim] = useState<"tasi" | "birlestir" | null>(null);
-  const [hedefBolgeler, setHedefBolgeler] = useState<Bolge[]>([]);
-  const [hedefDolular, setHedefDolular] = useState<Set<number>>(new Set());
-  const [hedefOnay, setHedefOnay] = useState<{ tip: "tasi" | "birlestir"; masa: Masa } | null>(null);
   const [iptalSorusu, setIptalSorusu] = useState(false);
   const [kisiSorusu, setKisiSorusu] = useState(false);
   // Sipariş geçmişi masaüstüyle aynı pencereyi açıyor; telefonda başlıkta yer
@@ -453,43 +443,16 @@ export default function MobilSiparis() {
     }
   };
 
-  // Taşıma ve birleştirmede ekranda bekleyen sipariş varsa önce o yazılıyor:
-  // yoksa kaydedilmemiş kalemler eski masada kalırdı.
+  // Hedef masa masalar ekranında seçiliyor. Ekranda gönderilmemiş sipariş
+  // varsa önce o gönderilmeli: yoksa kalemler eski masada kalırdı.
   const masaIslemi = (tip: "tasi" | "birlestir") => {
     setIslemlerAcik(false);
     if (kirli) {
       setUyari("Önce siparişi gönder, sonra masayı taşı.");
       return;
     }
-    setHedefSecim(tip);
-  };
-
-  // Hedef penceresi açılırken masa planı ve doluluk okunuyor. Doluluk
-  // önbellekten gelmiyor: bayat liste dolu masayı boş gösterirse adisyon
-  // yanlış yere taşınır.
-  useEffect(() => {
-    if (!hedefSecim) return;
-    let gecerli = true;
-    Promise.all([bolgeleriGetir(), tumAdisyonlar()]).then(([b, a]) => {
-      if (!gecerli) return;
-      setHedefBolgeler(b);
-      setHedefDolular(new Set(Object.keys(a).map(Number)));
-    });
-    return () => {
-      gecerli = false;
-    };
-  }, [hedefSecim]);
-
-  const hedefeUygula = async (tip: "tasi" | "birlestir", hedefMasaId: number) => {
-    setHedefOnay(null);
-    try {
-      if (tip === "tasi") await masaTasi(masaId, hedefMasaId);
-      else await masaBirlestir(masaId, hedefMasaId);
-      kilitKaldir();
-      git("/mobil/masalar");
-    } catch (e) {
-      setUyari(e instanceof Error ? e.message : "İşlem yapılamadı.");
-    }
+    kilitKaldir();
+    git("/mobil/masalar", salonaSecimle({ tip, masaId }));
   };
 
   /**
@@ -1101,37 +1064,6 @@ export default function MobilSiparis() {
         />
       )}
 
-      {hedefSecim && (
-        <MasaSecim
-          baslik={hedefSecim === "tasi" ? "Masayı taşı" : "Masaları birleştir"}
-          aciklama={
-            hedefSecim === "tasi"
-              ? `${masaAdi} masasındaki adisyonun tamamı seçtiğiniz boş masaya geçer.`
-              : `${masaAdi} masasındaki adisyon seçtiğiniz masanın adisyonuna eklenir, iki hesap tek adisyonda toplanır.`
-          }
-          bolgeler={hedefBolgeler}
-          doluIdler={hedefDolular}
-          secilebilirlik={hedefSecim === "tasi" ? "bos" : "dolu"}
-          haricId={masaId}
-          onSec={(m) => {
-            setHedefOnay({ tip: hedefSecim, masa: m });
-            setHedefSecim(null);
-          }}
-          onKapat={() => setHedefSecim(null)}
-        />
-      )}
-
-      {hedefOnay && (
-        <OnayModal
-          baslik={hedefOnay.tip === "tasi" ? "Masayı taşı" : "Masaları birleştir"}
-          ikon={hedefOnay.tip === "tasi" ? <ArrowRightLeft size={20} /> : <Merge size={20} />}
-          mesaj={hedefOnayMesaji(hedefOnay.tip, masaAdi, hedefOnay.masa.ad)}
-          onayMetni={hedefOnay.tip === "tasi" ? "Evet, taşı" : "Evet, birleştir"}
-          onOnay={() => hedefeUygula(hedefOnay.tip, hedefOnay.masa.id)}
-          onKapat={() => setHedefOnay(null)}
-        />
-      )}
-
       {iptalSorusu && (
         <OnayModal
           baslik="Adisyonu iptal et"
@@ -1162,7 +1094,6 @@ export default function MobilSiparis() {
         <KalemPaneli
           kalem={kalemIslem}
           urun={urunler.find((u) => u.id === kalemIslem.urunId || u.ad === kalemIslem.ad)}
-          masaId={masaId}
           odenmis={odenmisIdler.has(kalemIslem.id ?? 0)}
           onKapat={() => setKalemIslem(null)}
           onUygula={(yeniler) => {
@@ -1175,17 +1106,23 @@ export default function MobilSiparis() {
                 : s.flatMap((k) => (k.id === kalemIslem.id ? yeniler : [k])).filter((k) => k.adet > 0)
             );
           }}
-          onTasi={async (hedefMasaId, adet) => {
+          onTasi={async () => {
             const kalemId = kalemIslem.id!;
             setKalemIslem(null);
             try {
-              // Taşıma sunucu işi: önce ekrandaki sipariş yazılıyor, sonra
-              // kalem gidiyor, sonra masa yeniden okunuyor.
-              await adisyonKaydet(masaId, adisyon);
-              await kalemTasi(masaId, hedefMasaId, kalemId, adet);
-              const guncel = await adisyonGetir(masaId);
-              setSepet(guncel.sepet);
-              baslangicImza.current = JSON.stringify(guncel.sepet);
+              // Taşıma sunucu işi: gönderilmemiş değişiklik varsa önce sipariş
+              // yazılıyor; yoksa beklemeden masalar ekranına geçiliyor.
+              let kalem: SepetKalemi | undefined = kalemIslem;
+              if (kirli) {
+                await adisyonKaydet(masaId, adisyon);
+                kalem = (await adisyonGetir(masaId)).sepet.find((k) => k.id === kalemId);
+              }
+              if (!kalem) throw new Error("Kalem bulunamadı, taşıma yapılmadı.");
+              kilitKaldir();
+              git(
+                "/mobil/masalar",
+                salonaSecimle({ tip: "kalem", masaId, kalem: { id: kalemId, ad: kalem.ad, adet: kalem.adet } })
+              );
             } catch (e) {
               setUyari(e instanceof Error ? e.message : "Kalem taşınamadı.");
             }

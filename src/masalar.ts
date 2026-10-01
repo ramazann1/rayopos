@@ -228,9 +228,11 @@ export function durgunMu(ozet?: { sonSiparis?: string; acilis?: string }) {
  */
 export function hedefOnayMesaji(tip: "tasi" | "birlestir", kaynakAd: string, hedefAd: string) {
   return tip === "tasi"
-    ? `*${kaynakAd}* masasındaki adisyon *${hedefAd}* masasına taşınacak. Onaylıyor musunuz?`
-    : `*${kaynakAd}* masasındaki adisyon *${hedefAd}* masasının adisyonuna eklenecek. ` +
-      `*${kaynakAd}* boşalacak, iki hesap tek adisyonda toplanacak. Onaylıyor musunuz?`;
+    ? `*${kaynakAd}* masasındaki adisyon *${hedefAd}* masasına taşınacak.`
+    : `*${kaynakAd}* masasındaki ürünler *${hedefAd}* masasının adisyonuna eklenecek.`;
 }
+
+export const hedefOnayBasligi = (tip: "tasi" | "birlestir") =>
+  tip === "tasi" ? "Masa taşınsın mı?" : "Masalar birleştirilsin mi?";
 
 tazeleyiciTanit(BOLGE_ANAHTAR, bolgeleriOku);

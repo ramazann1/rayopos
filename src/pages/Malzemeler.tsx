@@ -410,7 +410,8 @@ export default function Malzemeler() {
 
       {silinecek && (
         <OnayModal
-          mesaj={`*${silinecek.ad}* silinsin mi? Reçetelerde kullanılıyorsa önce oradan çıkarılmalı.`}
+          baslik="Malzeme silinsin mi?"
+          mesaj={`*${silinecek.ad}* silinecek. Reçetelerde kullanılıyorsa önce oradan çıkarılmalı.`}
           tehlikeli
           onOnay={async () => {
             const m = silinecek;
@@ -1120,10 +1121,11 @@ function GrupPenceresi({
           cevaplanmazsa kullanıcı silmeye çekiniyor. */}
       {silinecek && (
         <OnayModal
+          baslik="Grup silinsin mi?"
           mesaj={
             sayi(silinecek.id) > 0
-              ? `*${silinecek.ad}* grubu silinsin mi? İçindeki ${sayi(silinecek.id)} malzeme silinmez, grupsuz kalır.`
-              : `*${silinecek.ad}* grubu silinsin mi?`
+              ? `*${silinecek.ad}* grubu silinecek. İçindeki ${sayi(silinecek.id)} malzeme silinmez, grupsuz kalır.`
+              : `*${silinecek.ad}* grubu silinecek.`
           }
           tehlikeli
           onayMetni="Sil"

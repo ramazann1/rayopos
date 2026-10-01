@@ -210,7 +210,8 @@ export default function HizliOde({
 
       {bahsisSorusu && (
         <OnayModal
-          mesaj={`Girilen tutar kalandan ${paraGoster(bahsisSorusu.bahsis)} fazla. Üstü bahşiş olarak yazılsın mı?`}
+          baslik="Üstü bahşiş olsun mu?"
+          mesaj={`Girilen tutar kalandan *${paraGoster(bahsisSorusu.bahsis)}* fazla. Bu fark bahşiş olarak yazılacak.`}
           onayMetni="Bahşiş yaz"
           onOnay={() => {
             gonder(bahsisSorusu.tip, kalan, bahsisSorusu.bahsis);

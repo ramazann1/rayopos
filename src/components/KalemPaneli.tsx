@@ -1,19 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, Ban, Gift, Minus, Percent, Plus, RotateCcw, Send, Trash2, X } from "lucide-react";
-import MasaSecim from "./MasaSecim";
 import IndirimModal from "./IndirimModal";
 import Bilgi from "./Bilgi";
 import { porsiyonFiyat } from "../menu";
-import { kalemTutari, tumAdisyonlar, yeniKalemId } from "../adisyonlar";
-import { bolgeleriGetir } from "../masalar";
+import { kalemTutari, yeniKalemId } from "../adisyonlar";
 import { adetGoster, paraGoster, paraMetin, paraSayi, paraYaz } from "../para";
 import { indirimYapabilir, yetkiVar } from "../oturum";
-import type { Bolge, MenuUrun, SepetKalemi } from "../types";
+import type { MenuUrun, SepetKalemi } from "../types";
 
 type Props = {
   kalem: SepetKalemi;
   urun?: MenuUrun; // porsiyon değiştirmek için; menüden silinmiş ürünlerde boş olabilir
-  masaId: number;
   /** Ödemesi işlenmiş kalem taşınmaz; düğme yerine gerekçe gösteriliyor. */
   odenmis?: boolean;
   /** Gel al ve paket adisyonlarında masa yok, taşıma düğmesi de çıkmıyor. */
@@ -21,7 +18,8 @@ type Props = {
   onKapat: () => void;
   // İkram/iptal kalemin bir kısmına uygulanabildiği için satır ikiye bölünebilir.
   onUygula: (kalemler: SepetKalemi[]) => void;
-  onTasi: (hedefMasaId: number, adet: number) => void;
+  /** Salona dönülüp hedef masa orada seçiliyor. */
+  onTasi: () => void;
 };
 
 // İptal sebebi denetim defterine yazılıyor; hazır seçenekler işin mutfaktaki
@@ -39,22 +37,21 @@ const IKRAM_SEBEPLERI = ["İşletme ikramı", "Müşteri şikâyeti", "Tanıtım
 
 /**
  * Kalemin durumunu değiştiren işler pencereyi kip değiştirerek yürüyor:
- * ikram, iptal ve taşıma için pencerenin üstüne ikinci bir pencere açmıyoruz.
+ * ikram ve iptal için pencerenin üstüne ikinci bir pencere açmıyoruz.
  * Kaç adedin işleme gireceği ve sebebi hep aynı yüzeyde
- * soruluyor; kullanıcı tek "geri" ile düzenlemeye dönüyor.
+ * soruluyor; kullanıcı tek "geri" ile düzenlemeye dönüyor. Taşımanın kipi
+ * yok: hedef masa salonda seçiliyor, adet de orada soruluyor.
  */
-type Kip = "ikram" | "iptal" | "tasi";
+type Kip = "ikram" | "iptal";
 
 const KIP_BASLIK: Record<Kip, string> = {
   ikram: "İkram et",
   iptal: "Kalemi iptal et",
-  tasi: "Başka masaya taşı",
 };
 
 export default function KalemPaneli({
   kalem,
   urun,
-  masaId,
   odenmis,
   tasinabilir = true,
   onKapat,
@@ -72,20 +69,7 @@ export default function KalemPaneli({
   const [sebep, setSebep] = useState("");
   const [serbestSebep, setSerbestSebep] = useState("");
 
-  const [masaSecimAcik, setMasaSecimAcik] = useState(false);
-  const [bolgeler, setBolgeler] = useState<Bolge[]>([]);
-  const [doluIdler, setDoluIdler] = useState<Set<number>>(new Set());
-
   const porsiyonlar = urun?.porsiyonlar ?? [];
-
-  // Masa listesi ancak taşıma istenince gerekiyor; panel açılışını yavaşlatmasın.
-  useEffect(() => {
-    if (!masaSecimAcik) return;
-    Promise.all([bolgeleriGetir(), tumAdisyonlar()]).then(([b, a]) => {
-      setBolgeler(b);
-      setDoluIdler(new Set(Object.keys(a).map(Number)));
-    });
-  }, [masaSecimAcik]);
 
   const kipAc = (yeni: Kip) => {
     setKipAdet(adet);
@@ -155,13 +139,9 @@ export default function KalemPaneli({
         : null;
 
   const kipSebebi = sebep === "diger" ? serbestSebep.trim() : sebep;
-  const kipOnaylanabilir = kip === "tasi" || !!kipSebebi;
+  const kipOnaylanabilir = !!kipSebebi;
 
   const kipOnayla = () => {
-    if (kip === "tasi") {
-      setMasaSecimAcik(true);
-      return;
-    }
     if (kip === "ikram") kaydet("ikram", kipAdet, kipSebebi);
     if (kip === "iptal") kaydet("iptal", kipAdet, kipSebebi);
   };
@@ -295,9 +275,7 @@ export default function KalemPaneli({
                       ? ` Kalan ${adetGoster(kalem.adet - kipAdet)} adet normal satır olarak duruyor.`
                       : ""
                   }`
-                : kip === "iptal"
-                  ? `${adetGoster(kipAdet)} adet hesaptan çıkıyor. Kayıt silinmiyor, iptal olarak duruyor ve sebebi denetim defterine yazılıyor.`
-                  : `Seçtiğiniz masanın adisyonuna ${adetGoster(kipAdet)} adet geçiyor. Boş masa seçerseniz orada yeni adisyon açılıyor.`}
+                : `${adetGoster(kipAdet)} adet hesaptan çıkıyor. Kayıt silinmiyor, iptal olarak duruyor ve sebebi denetim defterine yazılıyor.`}
             </Bilgi>
           </div>
         ) : (
@@ -441,7 +419,7 @@ export default function KalemPaneli({
                     <button
                       className="kp-islem"
                       disabled={odenmis}
-                      onClick={() => kipAc("tasi")}
+                      onClick={onTasi}
                     >
                       <Send size={16} />
                       Başka masaya taşı
@@ -484,7 +462,7 @@ export default function KalemPaneli({
                 disabled={!kipOnaylanabilir}
                 onClick={kipOnayla}
               >
-                {kip === "ikram" ? "İkram et" : kip === "iptal" ? "İptal et" : "Masa seç"}
+                {kip === "ikram" ? "İkram et" : "İptal et"}
               </button>
             </>
           ) : (
@@ -504,26 +482,6 @@ export default function KalemPaneli({
           )}
         </footer>
       </div>
-
-      {masaSecimAcik && (
-        <MasaSecim
-          baslik="Kalemi taşı"
-          aciklama={
-            kipAdet < kalem.adet
-              ? `“${kalem.ad}” kaleminin ${adetGoster(kalem.adet)} adedinden ${adetGoster(kipAdet)} tanesi seçtiğiniz masaya gider, kalan ${adetGoster(kalem.adet - kipAdet)} adet bu adisyonda durur. Boş masa seçerseniz orada yeni adisyon açılır.`
-              : `“${kalem.ad}” seçtiğiniz masanın adisyonuna geçer. Boş masa seçerseniz orada yeni adisyon açılır.`
-          }
-          bolgeler={bolgeler}
-          doluIdler={doluIdler}
-          secilebilirlik="hepsi"
-          haricId={masaId}
-          onSec={(m) => {
-            setMasaSecimAcik(false);
-            onTasi(m.id, kipAdet);
-          }}
-          onKapat={() => setMasaSecimAcik(false)}
-        />
-      )}
 
       {/* İndirim penceresi olduğu gibi kalıyor — hesap indirimiyle aynı
           yüzeyi kullanmak "indirim nasıl verilir" sorusunu tek yerde tutuyor. */}

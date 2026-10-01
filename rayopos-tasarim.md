@@ -1,9 +1,46 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (1 Eki 2026 güncellendi — mobil pencereler seansı)
+## 0. SIRADAKİ İŞ (1 Eki 2026 güncellendi — uyarı standardı ve taşıma seansı)
 
 > **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" listesinin 1. maddesi.**
+>
+> **BİTTİ (1 Eki 2026, ikinci seans): MASA/ÜRÜN TAŞIMA AKIŞI.**
+> - Büyük şerit (masaüstü) ve alt kart (mobil) kalktı; yerine `SecimHapi`:
+>   "B 6 taşınıyor · masa seçin" + çarpı. Masaüstünde sekme satırının
+>   sağında, mobilde bölge çiplerinin üstünde.
+> - **Bölge sekmeleri her zaman yapışkan** (Ramazan): masaüstü `.salon-sekme`,
+>   mobil `.m-masalar-ust` (hap + çipler) kaydırınca üstte kalıyor.
+> - Onaylar: "Masa taşınsın mı?" / "Masalar birleştirilsin mi?" (`hedefOnayBasligi`),
+>   cümle "…adisyonuna eklenecek." ile bitiyor, düğme "Taşı"/"Birleştir".
+> - **Ürün taşıma salonda:** Kalem penceresinde "Başka masaya taşı" kipi ve
+>   `MasaSecim` ızgarası silindi. Basınca (kaydedilmemiş değişiklik varsa önce
+>   kaydedilip) salona dönülüyor; bilgi router state ile (`salonSecimi.ts`).
+>   Masaya basınca `KalemTasiOnay`: çok adetli kalemde adet seçici.
+>   `OnayModal` artık `children` alıyor.
+> - Mobil sipariş ekranından masa taşı/birleştir de masalar ekranına dönüyor.
+> - **Taşıma tek istek:** `sql/2026-10-01-kalem-tasima-tek-istek.sql`
+>   (`kalem_tasi`, çağıranın yetkisiyle, tek işlem — yarım taşıma kalmıyor).
+>   Ölçüm (Chrome, Deneme): 11 ardışık istek → 1; ekranda 1,4 sn → 1,0 sn.
+>
+> **BİTTİ (1 Eki 2026, ikinci seans): UYARI/ONAY PENCERESİ STANDARDI.**
+> - `OnayModal`'a `tur`: bilgi (mavi, Info) / uyari (mercan, üçgen) /
+>   tehlike (kırmızı, çöp) / basarili (yeşil, onay). İkon ve onay düğmesinin
+>   rengi türden gelir; verilmezse tehlikeli→tehlike, tekTus→bilgi, öteki→uyarı.
+>   `ikon` yine verilebilir (çıkış uyarısında üçgen gibi).
+> - **KURAL: soru soran her onay penceresinin kısa başlığı olur** ("Ürün
+>   silinsin mi?"), cümle soru değil "ne olacak" ("*POWERBANK* menüden
+>   kaldırılacak."), ad *yıldızla* kalın. 22 başlıksız pencere elden geçti.
+>   Metni değişken hata/uyarı pencereleri başlıksız kalır, ikon cümlenin
+>   yanında (`onay-yan`).
+> - Yazı kalınlığı (Ramazan "çiğ duruyor"): başlık 700, cümle 500, vurgu 700,
+>   düğme 600. İkon daire içinde kaldı, düğmeler tam genişlik.
+> - Stok uyarısı (`urt-uyari`) aynı dile geçti: ikon solda başlıkla, animasyon yok.
+> - Kalem penceresi 720px kalır (daraltıldı, iki sütunlu ana ekran sıkıştı,
+>   geri alındı — Ramazan).
+> - **Tarayıcı geri tuşu yönetim sayfalarında da soruyor:** `Duzen.tsx`
+>   `kilitDinle` ile kilidi izliyor, `useGeriKilidi` tek yerde; Menü Stüdyosu,
+>   Fiş Tasarımı, Yetkiler birlikte korunuyor. Onayda `kilitliGeriCik()`.
 >
 > **BİTTİ (1 Eki 2026): MOBİL PENCERELER, SEKME GÜVENLİĞİ, ÇIKIŞ UYARISI.**
 > - Ortak kabuğa geçti: masa ⋮ menüsü ve sipariş işlemleri (`AltSayfa`
@@ -122,31 +159,17 @@
 >   aynı kare kartlardan ikinci sıra olarak eklenir (Ramazan fikri).
 >
 > Sonrakiler:
-> 1. **Uyarı/onay pencerelerinde standart (1 Eki Ramazan: "standardı yok").**
->    Sayım: 65 `OnayModal` — ~40'ı düz cümle (başlık/ikon yok), 25'i başlıklı
->    + ikonlu; stok uyarısı (`urt-uyari`) ortada büyük ikonlu; Kasa ve Menü
->    Stüdyosu'nda eski `modal-fon` kabuğu. Öneri: `OnayModal`'a `tur`
->    (bilgi / uyarı / tehlike / başarılı) — ikon ve renk türden gelir, her
->    uyarıya kısa başlık. Ramazan bu pencerelerdeki yazının görünümünü de
->    beğenmiyor (Poppins mi, boyut/kalınlık mı — taslakta netleşecek).
->    **Önce taslak** (dört tür yan yana), onaydan sonra 65 kullanım tek tek.
-> 2. **Masa taşıma / birleştirme / ürün taşıma akışı (masaüstü + mobil,
->    1 Eki Ramazan ekran görüntüleriyle):**
->    - Masaüstündeki "B 6 taşınıyor" şeridi (sol mercan çizgi, "130 masa
->      uygun", Vazgeç) çirkin ve birden beliriyor; mobilde alttaki kart çok
->      büyük, en alt sıradaki masaları kapatıyor. Sade, küçük gösterge.
->    - Birleştirme onayı "…B 2 masasının adisyonuna eklenecek." ile bitsin;
->      "B 1 boşalacak, iki hesap… Onaylıyor musunuz?" çıkar.
->    - "Kalemi taşı" penceresi (mercan çerçeveli masa ızgarası) kalkar:
->      ürün taşımada da salona dönülür, masa orada seçilir.
->    - "Başka masaya taşı" ara penceresi (satır toplamı, pembe kutu, "Masa
->      seç") kalkar; masaya basınca kısa "taşınsın mı?" onayı. Açık soru:
->      çok adetli kalemde adet seçimi — öneri: son onayda küçük adet seçici.
->    - Mobil de aynı YENİ akışa geçer. Uyarı standardı (1) bitince yapılır,
->      onay pencerelerini o kullanıyor. Önce taslak.
-> 3. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
+> 1. **Telefonda ürün taşıma hızı (Ramazan denesin):** taşıma artık tek
+>    sunucu isteği (`kalem_tasi`). Kasada 1,4 sn → 1,0 sn; kalan süre
+>    kuver/garsoniye tazeleme (iki ardışık istek) ve salon yenilemesi.
+>    Hâlâ yavaşsa seçenek: hedef masayı ekranda hemen dolu göster (iyimser
+>    güncelleme), sunucuyu arkadan bekle.
+> 2. **Müşteri ekranında kapanmış adisyon:** "Müşterileri görme" olup
 >    "Özet ve adisyon listesi" olmayan kişi müşterinin geçmiş adisyonunu
 >    açamayabilir — `adisyon_okunur` kapanmışta `cari.gor`'a bakmıyor. Doğrula.
+> 3. **Eski `modal-fon` kabuğundaki form pencereleri** (Kasa penceresi,
+>    Menü Stüdyosu kategori formu) ortak `OrtaPencere`'ye taşınmalı mı —
+>    Ramazan'a sor.
 > ÖKC konuşuldu, "zamanı gelince": firma yazışması gerekiyor; o güne kadar
 > sahte ÖKC ile akış kurulabilir.
 >

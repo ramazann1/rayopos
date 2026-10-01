@@ -28,7 +28,6 @@ import {
   CEVRIMDISI_ADISYON,
   adisyonGetir,
   adisyonKaydet,
-  kalemTasi,
   kalemTutari,
   masasizGetir,
   masasizKaydet,
@@ -55,6 +54,7 @@ import MisafirSayisi from "../components/MisafirSayisi";
 import type { AdisyonBilgisi } from "../components/AdisyonBilgi";
 import { kilitKaldir, kilitKur } from "../cikisKilidi";
 import { useGeriKilidi } from "../geriKilidi";
+import { salonaSecimle } from "../salonSecimi";
 import { baglantiHatasi, baglantiVar, hataMesaji } from "../baglanti";
 import { bekleyenKayit, kuyrugaEkle } from "../kuyruk";
 import { hesapKopyasiOku, hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
@@ -559,19 +559,24 @@ export default function Siparis() {
     );
   };
 
-  // Taşıma veritabanı üstünde çalışıyor: ekrandaki henüz kaydedilmemiş kalemin
-  // karşılığı diskte olmadığı için önce adisyon yazılıyor.
-  const kalemiTasi = async (kalem: SepetKalemi, hedefMasaId: number, adet: number) => {
+  // Hedef masa salonda seçiliyor. Taşıma veritabanı üstünde çalıştığı için
+  // ekranda kaydedilmemiş değişiklik varsa önce o yazılıyor; yoksa beklemeden
+  // salona dönülüyor (taşınan kalem zaten kayıtlı).
+  const kalemiTasi = async (kalem: SepetKalemi) => {
     setSeciliKalem(null);
     try {
-      const kayitli = await adisyonuYaz({ sepet, indirim, indirimTanim, tahsilatlar: kayitliTahsilatlar });
-      const guncel = kayitli.sepet.find(
-        (k) => k.id === kalem.id || (kalem.id && kalem.id < 0 && k.ad === kalem.ad)
-      );
+      const guncel = kirli
+        ? (await adisyonuYaz({ sepet, indirim, indirimTanim, tahsilatlar: kayitliTahsilatlar })).sepet.find(
+            (k) => k.id === kalem.id || (kalem.id && kalem.id < 0 && k.ad === kalem.ad)
+          )
+        : kalem;
       if (!guncel?.id) throw new Error("Kalem kaydedilemedi, taşıma yapılmadı.");
 
-      await kalemTasi(masaId, hedefMasaId, guncel.id, adet);
-      await adisyonuTazele();
+      kilitKaldir();
+      navigate(
+        "/",
+        salonaSecimle({ tip: "kalem", masaId, kalem: { id: guncel.id, ad: guncel.ad, adet: guncel.adet } })
+      );
     } catch (e) {
       await adisyonuTazele();
       setUyari(e instanceof Error ? e.message : "Kalem taşınamadı.");
@@ -1087,10 +1092,9 @@ export default function Siparis() {
         <KalemPaneli
           kalem={seciliKalem}
           urun={tumUrunler.find((u) => u.id === seciliKalem.urunId || u.ad === seciliKalem.ad)}
-          masaId={masaId}
           odenmis={odenmisIdler.has(seciliKalem.id ?? 0)}
           tasinabilir={!masasiz}
-          onTasi={(hedefMasaId, adet) => kalemiTasi(seciliKalem, hedefMasaId, adet)}
+          onTasi={() => kalemiTasi(seciliKalem)}
           onKapat={() => setSeciliKalem(null)}
           onUygula={(yeniler) => {
             // Satır bölündüyse eskisinin yerine birden fazla satır geçer; aynı

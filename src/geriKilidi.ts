@@ -13,6 +13,14 @@ import { useEffect, useRef } from "react";
 // Kilidin kendi geri aldığı adım da tarayıcıdan "geri basıldı" olarak dönüyor;
 // o sırada kilit yeniden kurulduysa kullanıcı basmış sanılıp soru açılıyordu.
 let kendiGeriAdimi = false;
+// "Çık" dendiğinde kilidin adımı ile sayfanın kendisi birlikte geçiliyor;
+// o geri hareketi soru açmamalı.
+let cikiliyor = false;
+
+export function kilitliGeriCik() {
+  cikiliyor = true;
+  window.history.go(-2);
+}
 
 export function useGeriKilidi(kirli: boolean, onGeri: () => void) {
   const sor = useRef(onGeri);
@@ -24,6 +32,7 @@ export function useGeriKilidi(kirli: boolean, onGeri: () => void) {
     adim();
 
     const geriBasildi = () => {
+      if (cikiliyor) return;
       if (kendiGeriAdimi) {
         kendiGeriAdimi = false;
         return;
@@ -35,6 +44,10 @@ export function useGeriKilidi(kirli: boolean, onGeri: () => void) {
 
     return () => {
       window.removeEventListener("popstate", geriBasildi);
+      if (cikiliyor) {
+        cikiliyor = false;
+        return;
+      }
       // Sayfadan çıkılırken geçmişin başında artık yeni sayfa duruyor; adım
       // yalnız hâlâ bu sayfadaysak (kaydedildiyse) geri alınıyor.
       if (window.history.state?.geriKilidi) {

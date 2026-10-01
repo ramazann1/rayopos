@@ -17,6 +17,7 @@ import {
   Star,
   Table,
   Trash2,
+  TriangleAlert,
   X,
 } from "lucide-react";
 import Bilgi from "../components/Bilgi";
@@ -706,7 +707,7 @@ export default function MenuStudyosu() {
   const [vurgulu, setVurgulu] = useState<number | null>(null);
   const [uyari, setUyari] = useState<string | null>(null);
   const [bildirim, setBildirim] = useState<string | null>(null);
-  const [onaySor, setOnaySor] = useState<{ mesaj: string; devam: () => void } | null>(null);
+  const [onaySor, setOnaySor] = useState<{ baslik: string; mesaj: string; ikon?: React.ReactNode; devam: () => void } | null>(null);
 
   const yukle = async (ilk = false) => {
     // Ürün/kategori istasyonu değişmiş olabilir; fiş tarafındaki eşleme tazelensin.
@@ -832,14 +833,15 @@ export default function MenuStudyosu() {
     ].filter(Boolean);
     const mesaj = [
       parcalar.length
-        ? `*"${k.ad}"* kategorisi ile içindeki *${parcalar.join(" ve ")}* silinecek.`
-        : `*"${k.ad}"* kategorisi silinsin mi?`,
+        ? `*${k.ad}* kategorisi ile içindeki *${parcalar.join(" ve ")}* silinecek.`
+        : `*${k.ad}* kategorisi silinecek.`,
       kalanlar ? `${kalanlar} ürün başka kategoride de olduğu için silinmeyecek, yalnız bu kategoriden çıkacak.` : "",
     ]
       .filter(Boolean)
       .join(" ");
 
     setOnaySor({
+      baslik: "Kategori silinsin mi?",
       mesaj,
       devam: async () => {
         const oldu = await dene(async () => {
@@ -912,7 +914,8 @@ export default function MenuStudyosu() {
   const urunuSil = (u: MenuUrun) => {
     if (!u.id) return;
     setOnaySor({
-      mesaj: `"${u.ad}" silinsin mi?`,
+      baslik: "Ürün silinsin mi?",
+      mesaj: `*${u.ad}* menüden kaldırılacak.`,
       devam: async () => {
         if (!(await dene(() => urunSil(u.id!), "Ürün silinemedi."))) return;
         setBildirim(`${u.ad} silindi`);
@@ -948,7 +951,8 @@ export default function MenuStudyosu() {
       return;
     }
     setOnaySor({
-      mesaj: `"${g.ad}" grubu silinsin mi?`,
+      baslik: "Seçenek grubu silinsin mi?",
+      mesaj: `*${g.ad}* grubu silinecek.`,
       devam: async () => {
         if (!(await dene(() => grupSil(g.id), "Seçenek grubu silinemedi."))) return;
         setBildirim(`${g.ad} silindi`);
@@ -1113,7 +1117,9 @@ export default function MenuStudyosu() {
   const gorunumDegis = (yeni: typeof gorunum) => {
     if (gorunum === "toplu" && topluDegisiklik > 0) {
       setOnaySor({
-        mesaj: `${topluDegisiklik} üründe kaydedilmemiş değişiklik var. Vazgeçilsin mi?`,
+        baslik: "Kaydedilmemiş değişiklik var",
+        ikon: <TriangleAlert size={22} />,
+        mesaj: `*${topluDegisiklik} üründe* yaptığınız değişiklikler kaydedilmedi. Çıkarsanız kaybolacak.`,
         devam: () => {
           setTopluDegisiklik(0);
           navigate(`/menu/${yeni}`);
@@ -1521,6 +1527,8 @@ export default function MenuStudyosu() {
 
       {onaySor && (
         <OnayModal
+          baslik={onaySor.baslik}
+          ikon={onaySor.ikon}
           mesaj={onaySor.mesaj}
           tehlikeli
           onOnay={() => { onaySor.devam(); setOnaySor(null); }}

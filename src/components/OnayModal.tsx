@@ -1,5 +1,18 @@
 import { useState } from "react";
-import { PackageX } from "lucide-react";
+import { CircleCheck, Info, PackageX, Trash2, TriangleAlert } from "lucide-react";
+
+/**
+ * Pencerenin türü ikonu ve rengi belirliyor; her çağıran kendi ikonunu seçince
+ * aynı iş farklı ekranlarda farklı görünüyordu.
+ */
+export type OnayTuru = "bilgi" | "uyari" | "tehlike" | "basarili";
+
+const turIkonu: Record<OnayTuru, React.ReactNode> = {
+  bilgi: <Info size={22} />,
+  uyari: <TriangleAlert size={22} />,
+  tehlike: <Trash2 size={22} />,
+  basarili: <CircleCheck size={22} />,
+};
 
 /**
  * Mesajın içinde *yıldız arasına* alınan parçalar koyu yazılıyor. Masa adı,
@@ -34,6 +47,8 @@ type Props = {
   /** Mesajın üstünde duran kısa başlık; ikonla birlikte kullanılıyor. */
   baslik?: string;
   ikon?: React.ReactNode;
+  /** Verilmezse: tehlikeli → tehlike, tek tuşlu → bilgi, öteki → uyarı. */
+  tur?: OnayTuru;
   tekTus?: boolean;
   tehlikeli?: boolean;
   /**
@@ -51,12 +66,15 @@ type Props = {
   iptalMetni?: string;
   onOnay?: (sebep?: string, odenmezId?: number) => void;
   onKapat: () => void;
+  /** Cümlenin altına giren ek alan (adet seçici gibi). */
+  children?: React.ReactNode;
 };
 
 export default function OnayModal({
   mesaj,
   baslik,
   ikon,
+  tur,
   tekTus,
   tehlikeli,
   sebepler,
@@ -65,11 +83,13 @@ export default function OnayModal({
   iptalMetni,
   onOnay,
   onKapat,
+  children,
 }: Props) {
   const [secili, setSecili] = useState("");
   const [serbest, setSerbest] = useState("");
   const [odenmezId, setOdenmezId] = useState<number | null>(null);
 
+  const tip: OnayTuru = tur ?? (tehlikeli ? "tehlike" : tekTus ? "bilgi" : "uyari");
   const sebep = secili === "diger" ? serbest.trim() : secili;
   const onaylanabilir = !sebepler || !!sebep;
 
@@ -113,13 +133,20 @@ export default function OnayModal({
       >
         {baslik && (
           <div className="onay-ust">
-            {ikon && <span className={tehlikeli ? "onay-im tehlikeli" : "onay-im"}>{ikon}</span>}
+            <span className={`onay-im ${tip}`}>{ikon ?? turIkonu[tip]}</span>
             <h3>{baslik}</h3>
           </div>
         )}
         {/* İlk satır cümle, alttaki satırlar liste: "stok yetersiz" gibi
             birden çok kalemi sayan mesaj tek paragrafa sıkışmasın. */}
-        <p>{vurgula(mesaj.split("\n")[0])}</p>
+        {baslik ? (
+          <p>{vurgula(mesaj.split("\n")[0])}</p>
+        ) : (
+          <div className="onay-yan">
+            <span className={`onay-im ${tip}`}>{ikon ?? turIkonu[tip]}</span>
+            <p>{vurgula(mesaj.split("\n")[0])}</p>
+          </div>
+        )}
         {mesaj.includes("\n") && (
           <ul className="onay-liste">
             {mesaj
@@ -130,6 +157,8 @@ export default function OnayModal({
               ))}
           </ul>
         )}
+
+        {children}
 
         {sebepler && (
           <div className="onay-sebepler">
@@ -179,16 +208,16 @@ export default function OnayModal({
 
         <div className="modal-aksiyonlar">
           {tekTus ? (
-            <button className="uygula" onClick={onKapat}>Tamam</button>
+            <button className={`uygula ${tip}`} onClick={onKapat}>Tamam</button>
           ) : (
             <>
               <button className="iptal" onClick={onKapat}>{iptalMetni ?? "Vazgeç"}</button>
               <button
-                className={tehlikeli ? "uygula tehlikeli" : "uygula"}
+                className={`uygula ${tip}`}
                 disabled={!onaylanabilir}
                 onClick={() => onOnay?.(sebep || undefined, odenmezId ?? undefined)}
               >
-                {onayMetni ?? (tehlikeli ? "Evet, sil" : "Evet")}
+                {onayMetni ?? (tip === "tehlike" ? "Evet, sil" : "Evet")}
               </button>
             </>
           )}

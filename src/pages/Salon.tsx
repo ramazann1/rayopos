@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRightLeft,
   Ban,
@@ -20,7 +20,6 @@ import {
   RotateCw,
   ShoppingBag,
   Trash2,
-  X,
   Zap,
 } from "lucide-react";
 import { bekleyenMasalar, cevrimdisiHesap, kopyaMasalari, kuyrugaEkle, useKuyruk } from "../kuyruk";
@@ -28,6 +27,9 @@ import { hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
 import MasaKarti from "../components/MasaKarti";
 import MasaPlani, { yerlesimiVar } from "../components/MasaPlani";
 import OnayModal from "../components/OnayModal";
+import SecimHapi from "../components/SecimHapi";
+import KalemTasiOnay from "../components/KalemTasiOnay";
+import { gelenSecim, type TasinanKalem } from "../salonSecimi";
 import HizliOde from "../components/HizliOde";
 import SiparisGecmisi from "../components/SiparisGecmisi";
 import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
@@ -44,6 +46,7 @@ import {
   adisyonIptal,
   adisyonKaydet,
   adisyonOzeti,
+  kalemTasi,
   masaBirlestir,
   masaTasi,
   masasizAc,
@@ -62,6 +65,7 @@ import {
   SEYREK_TANIM,
   bolgeleriGetir,
   durgunMu,
+  hedefOnayBasligi,
   hedefOnayMesaji,
   yabanciMasaVar,
 } from "../masalar";
@@ -180,11 +184,23 @@ export default function Salon() {
   // kalmasın diye dakikada bir yeniden çiziliyor.
   const [, setTik] = useState(0);
   // Masa işlemi iki adımda ilerliyor: önce hedef masa seçilir, sonra onaylanır.
-  const [islem, setIslem] = useState<{ tip: "tasi" | "birlestir"; masa: Masa } | null>(null);
+  // Ürün taşıma sipariş ekranından başlıyor, hedef yine burada seçiliyor.
+  const [islem, setIslem] = useState<{
+    tip: "tasi" | "birlestir" | "kalem";
+    masa: Masa;
+    kalem?: TasinanKalem;
+  } | null>(null);
+  const [kalemSorusu, setKalemSorusu] = useState<{
+    kaynak: Masa;
+    hedef: Masa;
+    kalem: TasinanKalem;
+  } | null>(null);
+  const location = useLocation();
   const [onay, setOnay] = useState<{
     mesaj: string;
     baslik?: string;
     ikon?: ReactNode;
+    onayMetni?: string;
     onOnay: () => void;
   } | null>(null);
   const [uyari, setUyari] = useState<string | null>(null);
@@ -213,6 +229,18 @@ export default function Salon() {
     }
     navigate(`/siparis/${masa.id}`);
   };
+
+  // Sipariş ekranından taşıma için gelindiyse salon seçim kipinde açılıyor.
+  // Bilgi geçmişten silinir ki geri/ileri ile dönüldüğünde kip yeniden açılmasın.
+  useEffect(() => {
+    const secim = gelenSecim(location.state);
+    if (!secim || bolgeler.length === 0) return;
+    const masa = bolgeler.flatMap((b) => b.masalar).find((m) => m.id === secim.masaId);
+    navigate(location.pathname, { replace: true, state: null });
+    if (!masa) return;
+    if (seciliId === "masasiz") setSeciliId("tumu");
+    setIslem({ tip: secim.tip, masa, kalem: secim.kalem });
+  }, [location.state, bolgeler]);
 
   // Seçim kipi pencere değil ama penceredeki alışkanlık sürüyor: Escape çıkarır.
   useEffect(() => {
@@ -389,14 +417,20 @@ export default function Salon() {
   }
 
   function hedefSecildi(hedef: Masa) {
-    if (!islem) return;
+    if (!islem || !hedefUygun(hedef)) return;
     const kaynak = islem.masa;
-    const tasima = islem.tip === "tasi";
+    if (islem.tip === "kalem") {
+      setKalemSorusu({ kaynak, hedef, kalem: islem.kalem! });
+      return;
+    }
+    const tip = islem.tip;
+    const tasima = tip === "tasi";
     setIslem(null);
     setOnay({
-      baslik: tasima ? "Masayı taşı" : "Adisyonu birleştir",
-      ikon: tasima ? <ArrowRightLeft size={20} /> : <Combine size={20} />,
-      mesaj: hedefOnayMesaji(islem.tip, kaynak.ad, hedef.ad),
+      baslik: hedefOnayBasligi(tip),
+      ikon: tasima ? <ArrowRightLeft size={22} /> : <Combine size={22} />,
+      mesaj: hedefOnayMesaji(tip, kaynak.ad, hedef.ad),
+      onayMetni: tasima ? "Taşı" : "Birleştir",
       onOnay: async () => {
         setOnay(null);
         try {
@@ -575,6 +609,7 @@ export default function Salon() {
   // buluyor, plan ikinci kez küçültülmüş hâlde çizilmiyor.
   const hedefUygun = (masa: Masa) => {
     if (!islem || masa.id === islem.masa.id) return false;
+    if (islem.tip === "kalem") return true;
     return islem.tip === "birlestir" ? !!adisyonlar[masa.id] : !adisyonlar[masa.id];
   };
 
@@ -615,7 +650,6 @@ export default function Salon() {
   const paketler = masasizlar.filter((a) => a.tip === "paket");
   const gelaller = masasizlar.filter((a) => a.tip === "gelal");
   const listelenen = masasizTip === "paket" ? paketler : gelaller;
-  const uygunSayisi = islem ? tumMasalar.filter(hedefUygun).length : 0;
 
   return (
     <>
@@ -645,36 +679,6 @@ export default function Salon() {
           </div>
         ) : (
           <>
-            {/* Kip şeridi sekmelerin üstünde ve sabit: hangi işin ortasında
-                olduğunu yazıyor ve hiçbir masanın üstünü örtmüyor. */}
-            {islem && (
-              <div className="ss-serit">
-                <span className="ss-im">
-                  {islem.tip === "tasi" ? <ArrowRightLeft size={17} /> : <Combine size={17} />}
-                </span>
-                <span className="ss-yazi">
-                  <strong>
-                    {islem.masa.ad} {islem.tip === "tasi" ? "taşınıyor" : "birleştiriliyor"}
-                  </strong>
-                  <em>
-                    {islem.tip === "tasi"
-                      ? "Adisyonun geçeceği boş masaya dokunun."
-                      : "Adisyonun ekleneceği açık masaya dokunun."}
-                  </em>
-                </span>
-                <span className="ss-sayac">
-                  {uygunSayisi > 0
-                    ? `${uygunSayisi} masa uygun`
-                    : islem.tip === "tasi"
-                      ? "Boş masa yok"
-                      : "Başka açık masa yok"}
-                </span>
-                <button className="ss-vazgec" onClick={() => setIslem(null)}>
-                  <X size={16} /> Vazgeç
-                </button>
-              </div>
-            )}
-
             <nav className="salon-sekme">
               {bolgeler.map((b) => (
                 <button
@@ -706,6 +710,14 @@ export default function Salon() {
                   {masasizBaslik}
                   {masasizlar.length > 0 && <em>{masasizlar.length}</em>}
                 </button>
+              )}
+
+              {islem && (
+                <SecimHapi
+                  tip={islem.tip}
+                  ad={islem.kalem?.ad ?? islem.masa.ad}
+                  onVazgec={() => setIslem(null)}
+                />
               )}
 
               {/* Kasa şeridin sonunda, bölge sekmelerinden ayrı durur: sekme
@@ -896,9 +908,28 @@ export default function Salon() {
             baslik={onay.baslik}
             ikon={onay.ikon}
             mesaj={onay.mesaj}
-            onayMetni="Evet, uygula"
+            onayMetni={onay.onayMetni ?? "Evet, uygula"}
             onOnay={onay.onOnay}
             onKapat={() => setOnay(null)}
+          />
+        )}
+
+        {kalemSorusu && (
+          <KalemTasiOnay
+            kalem={kalemSorusu.kalem}
+            hedefAd={kalemSorusu.hedef.ad}
+            onKapat={() => setKalemSorusu(null)}
+            onOnay={async (adet) => {
+              const { kaynak, hedef, kalem } = kalemSorusu;
+              setKalemSorusu(null);
+              setIslem(null);
+              try {
+                await kalemTasi(kaynak.id, hedef.id, kalem.id, adet);
+                await yenile();
+              } catch (e) {
+                setUyari(e instanceof Error ? e.message : "Ürün taşınamadı.");
+              }
+            }}
           />
         )}
 

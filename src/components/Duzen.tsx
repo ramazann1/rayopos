@@ -39,11 +39,13 @@ import {
   UserCog,
   UsersRound,
   UtensilsCrossed,
+  TriangleAlert,
   Wifi,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import OnayModal from "./OnayModal";
-import { kilitKaldir, kilitliMi } from "../cikisKilidi";
+import { kilitDinle, kilitKaldir, kilitliMi } from "../cikisKilidi";
+import { kilitliGeriCik, useGeriKilidi } from "../geriKilidi";
 import { isletmeAdi, isletmeKodu } from "../isletmeAyarlari";
 import { kilitle, oturumuKapat, useOturum } from "../oturum";
 import { yolaGirebilir } from "../rotaYetkileri";
@@ -233,6 +235,12 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
   // Açık ekranda kaydedilmemiş değişiklik varsa sayfa değiştirmeden önce sorulur.
   // Menü gezinirken açık kalıyor: kasada arka arkaya bölüm değiştirmek olağan,
   // her seferinde menüyü yeniden açtırmak yorucu.
+  // Tarayıcının geri tuşu da aynı soruyu açıyor; "geri" yol değil, onayda
+  // geçmişte geri gidiliyor.
+  const [kilitli, setKilitli] = useState(false);
+  useEffect(() => kilitDinle(() => setKilitli(kilitliMi())), []);
+  useGeriKilidi(kilitli, () => setCikisYolu("geri"));
+
   const git = (yol: string) => {
     if (yol === pathname) return;
     if (kilitliMi()) setCikisYolu(yol);
@@ -437,12 +445,15 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
 
       {cikisYolu && (
         <OnayModal
-          mesaj="Kaydedilmemiş değişiklikler var. Sayfadan çıkılsın mı?"
+          baslik="Kaydedilmemiş değişiklik var"
+          ikon={<TriangleAlert size={22} />}
+          mesaj="Bu sayfada yaptığınız değişiklikler henüz kaydedilmedi. Çıkarsanız kaybolacak."
           tehlikeli
           onayMetni="Evet, çık"
           onOnay={() => {
+            if (cikisYolu === "geri") kilitliGeriCik();
             kilitKaldir();
-            navigate(cikisYolu);
+            if (cikisYolu !== "geri") navigate(cikisYolu);
             setCikisYolu(null);
           }}
           onKapat={() => setCikisYolu(null)}
@@ -451,7 +462,9 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
 
       {oturumSor && (
         <OnayModal
-          mesaj={`${oturum?.ad} oturumu kapatılsın mı? Ekran giriş ekranına döner.`}
+          baslik="Oturum kapatılsın mı?"
+          ikon={<LogOut size={22} />}
+          mesaj={`*${oturum?.ad}* oturumu kapanacak, ekran giriş ekranına döner.`}
           onayMetni="Evet, çık"
           onOnay={oturumuKapat}
           onKapat={() => setOturumSor(false)}

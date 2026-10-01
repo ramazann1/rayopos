@@ -433,7 +433,8 @@ export default function PersonelEkrani() {
 
       {silinecek && (
         <OnayModal
-          mesaj={`${silinecek.ad} silinsin mi? İşten ayrıldıysa silmek yerine "Personel listesinde görünsün" anahtarını kapatın; kaydı ve geçmiş işlemleri durur.`}
+          baslik="Personel silinsin mi?"
+          mesaj={`*${silinecek.ad}* silinecek. İşten ayrıldıysa silmek yerine "Personel listesinde görünsün" anahtarını kapatın; kaydı ve geçmiş işlemleri durur.`}
           tehlikeli
           onOnay={sil}
           onKapat={() => setSilinecek(null)}

@@ -555,7 +555,8 @@ function KopruHesaplari({
 
       {kaldirilacak && (
         <OnayModal
-          mesaj={`"${kaldirilacak.ad}" bağlantısı kaldırılsın mı? O bilgisayar fiş basmayı bırakır; yeniden bağlamak için köprüde yeni kod alınır.`}
+          baslik="Bağlantı kaldırılsın mı?"
+          mesaj={`*${kaldirilacak.ad}* bağlantısı kalkacak. O bilgisayar fiş basmayı bırakır; yeniden bağlamak için köprüde yeni kod alınır.`}
           tehlikeli
           onayMetni="Evet, kaldır"
           onOnay={kaldir}
@@ -808,10 +809,11 @@ export default function Yazicilar() {
 
       {silinecek && (
         <OnayModal
+          baslik={silinecek.tur === "yazici" ? "Yazıcı silinsin mi?" : "İstasyon silinsin mi?"}
           mesaj={
             silinecek.tur === "yazici"
-              ? `"${silinecek.ad}" yazıcısı silinsin mi?`
-              : `"${silinecek.ad}" istasyonu silinsin mi? Bu istasyona bağlı ürünlerin fişi hiçbir yazıcıya gitmez.`
+              ? `*${silinecek.ad}* yazıcısı silinecek.`
+              : `*${silinecek.ad}* istasyonu silinecek. Bu istasyona bağlı ürünlerin fişi hiçbir yazıcıya gitmez.`
           }
           tehlikeli
           onayMetni="Evet, sil"

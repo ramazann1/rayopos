@@ -283,7 +283,8 @@ export default function BaglantiDurumu() {
 
       {silinecek && (
         <OnayModal
-          mesaj={`"${silinecek}" listeden silinsin mi? Köprü o bilgisayarda yeniden açılırsa listeye kendiliğinden geri gelir.`}
+          baslik="Bilgisayar listeden silinsin mi?"
+          mesaj={`*${silinecek}* listeden kalkacak. Köprü o bilgisayarda yeniden açılırsa listeye kendiliğinden geri gelir.`}
           tehlikeli
           onayMetni="Sil"
           onKapat={() => setSilinecek(null)}

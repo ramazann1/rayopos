@@ -599,7 +599,8 @@ export default function Musteriler() {
 
       {silinecek && (
         <OnayModal
-          mesaj={`${tamAd(silinecek)} silinsin mi? Hesap hareketi varsa kaydı silinmez, listeden gizlenir.`}
+          baslik="Müşteri silinsin mi?"
+          mesaj={`*${tamAd(silinecek)}* silinecek. Hesap hareketi varsa kaydı silinmez, listeden gizlenir.`}
           tehlikeli
           onOnay={sil}
           onKapat={() => setSilinecek(null)}

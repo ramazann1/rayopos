@@ -1647,7 +1647,8 @@ export default function IsletmeAyarlari() {
 
       {kasaOnay && kasaTaslak && (
         <OnayModal
-          mesaj={`Kasa günü ${kasaTaslak.bas} – ${kasaTaslak.bit} olarak değiştirilsin mi? Gün sonu ve raporlar bu aralığa göre hesaplanır.`}
+          baslik="Kasa günü değişsin mi?"
+          mesaj={`Kasa günü *${kasaTaslak.bas} – ${kasaTaslak.bit}* olacak. Gün sonu ve raporlar bu aralığa göre hesaplanır.`}
           onOnay={async () => {
             setKasaOnay(false);
             setKasaDegisiyor(false);
@@ -1666,7 +1667,8 @@ export default function IsletmeAyarlari() {
 
       {silinecekBolge && (
         <OnayModal
-          mesaj={`${silinecekBolge.ad} bölgesi ve içindeki ${silinecekBolge.masalar.length} masa silinsin mi?`}
+          baslik="Bölge silinsin mi?"
+          mesaj={`*${silinecekBolge.ad}* bölgesi ve içindeki *${silinecekBolge.masalar.length} masa* silinecek.`}
           tehlikeli
           onOnay={async () => {
             try {
@@ -1686,7 +1688,8 @@ export default function IsletmeAyarlari() {
 
       {silinecekMasa && (
         <OnayModal
-          mesaj={`${silinecekMasa.ad} masası silinsin mi?`}
+          baslik="Masa silinsin mi?"
+          mesaj={`*${silinecekMasa.ad}* masası salondan kaldırılacak.`}
           tehlikeli
           onOnay={async () => {
             try {
@@ -1750,7 +1753,8 @@ export default function IsletmeAyarlari() {
 
       {silinecekIndirim && (
         <OnayModal
-          mesaj={`${silinecekIndirim.ad} indirimi silinsin mi?`}
+          baslik="İndirim silinsin mi?"
+          mesaj={`*${silinecekIndirim.ad}* indirimi listeden kaldırılacak.`}
           tehlikeli
           onOnay={async () => {
             await indirimTanimiSil(silinecekIndirim.id);
@@ -1793,7 +1797,8 @@ export default function IsletmeAyarlari() {
 
       {silinecekOdeme && (
         <OnayModal
-          mesaj={`${silinecekOdeme.ad} ödeme tipi silinsin mi? Geçmiş tahsilat kayıtları etkilenmez.`}
+          baslik="Ödeme tipi silinsin mi?"
+          mesaj={`*${silinecekOdeme.ad}* ödeme tipi kaldırılacak. Geçmiş tahsilat kayıtları etkilenmez.`}
           tehlikeli
           onOnay={async () => {
             await odemeTipiSil(silinecekOdeme.id);
