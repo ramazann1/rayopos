@@ -151,7 +151,7 @@ export default function AdisyonDetay({
               </>
             )}
             <button className="up-kapat" onClick={onKapat}>
-              <X size={19} />
+              <X size={20} />
             </button>
           </div>
         </header>
@@ -249,7 +249,7 @@ export default function AdisyonDetay({
                           aria-label="Ödeme tipini düzelt"
                           onClick={() => setDuzeltilen(t)}
                         >
-                          <Pencil size={15} />
+                          <Pencil size={16} />
                         </button>
                       )}
                     </li>
@@ -275,7 +275,7 @@ export default function AdisyonDetay({
               {detay.eksikKisi && (
                 <div className="detay-eksik">
                   <span className="detay-eksik-ust">
-                    <HandCoins size={15} /> {detay.eksikKisi}
+                    <HandCoins size={16} /> {detay.eksikKisi}
                   </span>
                   <em>{detay.eksikSebep}</em>
                 </div>
@@ -307,7 +307,7 @@ export default function AdisyonDetay({
       {aktifSor && detay && (
         <OnayModal
           baslik="Adisyon yeniden açılsın mı?"
-          ikon={<LockOpen size={18} />}
+          ikon={<LockOpen size={16} />}
           mesaj={`#${detay.no} numaralı adisyon tekrar açılıp sipariş ekranına gidilecek. Kapanmış hesap ciroya yazılmayı bırakır, yeniden kapatılana kadar açık görünür.`}
           onayMetni="Evet, aç"
           onOnay={aktifEt}
@@ -318,7 +318,7 @@ export default function AdisyonDetay({
       {islem && detay && (
         <OnayModal
           baslik={islem === "iptal" ? "Adisyon iptal edilsin mi?" : "Adisyon ikram edilsin mi?"}
-          ikon={islem === "iptal" ? <Ban size={18} /> : <Gift size={18} />}
+          ikon={islem === "iptal" ? <Ban size={16} /> : <Gift size={16} />}
           tehlikeli={islem === "iptal"}
           mesaj={
             islem === "iptal"

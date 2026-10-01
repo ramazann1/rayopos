@@ -146,7 +146,7 @@ export default function RenkSecici({
             <header className="cember-ust">
               <h3>Kendi rengini seç</h3>
               <button className="cember-kapat" onClick={() => setAcik(false)} title="Kapat">
-                <X size={18} />
+                <X size={20} />
               </button>
             </header>
 

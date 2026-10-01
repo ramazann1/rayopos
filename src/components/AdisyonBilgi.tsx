@@ -42,11 +42,11 @@ export default function AdisyonBilgi({
     <div className="up-fon" onClick={onKapat}>
       <div className="up-modal ab-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <StickyNote size={18} className="ab-simge" />
+          <StickyNote size={20} className="ab-simge" />
           <h3>{baslik}</h3>
           {no ? <span className="ab-no">Adisyon #{no}</span> : null}
           <button className="up-kapat" onClick={onKapat} aria-label="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -55,7 +55,7 @@ export default function AdisyonBilgi({
               forma sıra numarası olarak değil, kendi kartıyla giriyor. */}
           <div className="ab-kisi">
             <span className="ab-kisi-im">
-              <Users size={19} />
+              <Users size={20} />
             </span>
             <div className="ab-kisi-yazi">
               <strong>Kişi sayısı</strong>
@@ -67,18 +67,18 @@ export default function AdisyonBilgi({
                 disabled={kisi <= 0}
                 aria-label="Azalt"
               >
-                <Minus size={17} />
+                <Minus size={16} />
               </button>
               <strong>{kisi > 0 ? kisi : "—"}</strong>
               <button onClick={() => setKisi((k) => k + 1)} aria-label="Artır">
-                <Plus size={17} />
+                <Plus size={16} />
               </button>
             </div>
           </div>
 
           <label className="ab-alan">
             <span>
-              <Tag size={15} />
+              <Tag size={16} />
               Adisyon adı
             </span>
             <input
@@ -92,7 +92,7 @@ export default function AdisyonBilgi({
           <div className="ab-ikili">
             <label className="ab-alan">
               <span>
-                <User size={15} />
+                <User size={16} />
                 Müşteri adı
               </span>
               <input
@@ -104,7 +104,7 @@ export default function AdisyonBilgi({
 
             <label className="ab-alan">
               <span>
-                <Phone size={15} />
+                <Phone size={16} />
                 Telefon
               </span>
               <input
@@ -118,7 +118,7 @@ export default function AdisyonBilgi({
 
           <label className="ab-alan">
             <span>
-              <StickyNote size={15} />
+              <StickyNote size={16} />
               Adisyon notu
             </span>
             <textarea

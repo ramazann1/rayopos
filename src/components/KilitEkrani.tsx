@@ -58,7 +58,7 @@ export default function KilitEkrani() {
         </span>
 
         <span className="kilit-im">
-          <LockKeyhole size={22} />
+          <LockKeyhole size={20} />
         </span>
         <h1>Ekran kilitli</h1>
         <span className="giris-alt">Devam etmek için PIN'ini gir</span>
@@ -89,14 +89,14 @@ export default function KilitEkrani() {
             0
           </button>
           <button className="sil" onClick={() => tus("sil")} disabled={bekliyor}>
-            <Delete size={22} />
+            <Delete size={20} />
           </button>
         </div>
 
         {cevrimici && (
           <div className="kilit-cikis">
             <button onClick={cik} disabled={cikiliyor}>
-              <LogOut size={17} />
+              <LogOut size={16} />
               {cikiliyor ? "Çıkış yapılıyor…" : "Çıkış yap"}
             </button>
           </div>

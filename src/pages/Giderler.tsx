@@ -142,7 +142,7 @@ export default function Giderler() {
         ) : tipler.length === 0 ? (
           <section className="ayar-bolum">
             <div className="ayar-bos">
-              <Tags size={30} />
+              <Tags size={24} />
               <p>
                 Gider girmeden önce gider türlerini tanımlayın. Hazır listeyle
                 başlayıp sonra kendinize göre düzenleyebilirsiniz.
@@ -156,10 +156,10 @@ export default function Giderler() {
                     setBildirim("Hazır gider türleri eklendi");
                   }}
                 >
-                  <Plus size={15} /> Hazır türleri ekle
+                  <Plus size={16} /> Hazır türleri ekle
                 </button>
                 <button className="gider-tur-dugme" onClick={() => setTipPenceresi(true)}>
-                  <Tags size={15} /> Kendim tanımlayayım
+                  <Tags size={16} /> Kendim tanımlayayım
                 </button>
               </div>
               <p className="gider-hazir-liste">{HAZIR_TIPLER.join(" · ")}</p>
@@ -168,7 +168,7 @@ export default function Giderler() {
         ) : (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><Receipt size={17} /> Giderler</h2>
+              <h2><Receipt size={20} /> Giderler</h2>
               {donem.kod !== "tumu" && (
                 <span className="ts-aralik">{donemAralikMetni(donem)}</span>
               )}
@@ -180,16 +180,16 @@ export default function Giderler() {
                 <CalendarDays size={16} /> {donemAdi(donem)}
               </button>
               <button className="gider-tur-dugme" onClick={() => setTipPenceresi(true)}>
-                <Tags size={15} /> Gider türleri
+                <Tags size={16} /> Gider türleri
               </button>
               <button className="ayar-ekle" onClick={() => setPanel(null)}>
-                <Plus size={15} /> Gider ekle
+                <Plus size={16} /> Gider ekle
               </button>
             </div>
 
             {gorunen.length === 0 ? (
               <div className="ayar-bos">
-                <Receipt size={30} />
+                <Receipt size={24} />
                 <p>
                   {ara
                     ? `"${ara}" ile eşleşen gider yok.`
@@ -325,12 +325,12 @@ function GiderPaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button className="pnc-kaydet" disabled={!gecerli} onClick={kaydet}>
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -386,17 +386,17 @@ function GiderPaneli({
 
           <div className="gdr-ikili">
             <div className="gdr-alan">
-              <label><CalendarDays size={15} /> Tarih</label>
+              <label><CalendarDays size={16} /> Tarih</label>
               <TarihKutusu className="" gun={tarih} degis={setTarih} />
             </div>
             <div className="gdr-alan">
-              <label><Clock size={15} /> Saat</label>
+              <label><Clock size={16} /> Saat</label>
               <SaatKutusu deger={saat} degis={setSaat} />
             </div>
           </div>
 
           <div className="gdr-alan">
-            <label><StickyNote size={15} /> Açıklama</label>
+            <label><StickyNote size={16} /> Açıklama</label>
             <input
               placeholder="Fatura no, satıcı, not"
               value={aciklama}
@@ -441,7 +441,7 @@ function TurPenceresi({
       onKapat={onKapat}
       alt={
         <button className="pnc-kaydet" onClick={onKapat}>
-          <Check size={17} /> Tamam
+          <Check size={16} /> Tamam
         </button>
       }
     >
@@ -469,7 +469,7 @@ function TurPenceresi({
                 setYeni("");
               }}
             >
-              <Plus size={15} /> Ekle
+              <Plus size={16} /> Ekle
             </button>
           </div>
 
@@ -486,10 +486,10 @@ function TurPenceresi({
                         setDuzenlenen(null);
                       }}
                     >
-                      <Check size={15} />
+                      <Check size={16} />
                     </button>
                     <button title="Vazgeç" onClick={() => setDuzenlenen(null)}>
-                      <X size={15} />
+                      <X size={16} />
                     </button>
                   </>
                 ) : (
@@ -517,7 +517,7 @@ function TurPenceresi({
             className="gider-tur-dugme"
             onClick={() => isle(() => hazirTipleriEkle(tipler))}
           >
-            <Plus size={15} /> Hazır türlerden eksikleri ekle
+            <Plus size={16} /> Hazır türlerden eksikleri ekle
           </button>
 
           {hata && <p className="kasa-hata">{hata}</p>}

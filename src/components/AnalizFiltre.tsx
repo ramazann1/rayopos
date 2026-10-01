@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CalendarDays, Check, Filter, SlidersHorizontal, X } from "lucide-react";
 import Anahtar from "./Anahtar";
 import OrtaPencere from "./OrtaPencere";
@@ -36,9 +36,12 @@ const DURUM_CIPLERI: Record<Filtre["durum"], string> = {
 export default function AnalizFiltre({
   filtre,
   degistir,
+  ek,
 }: {
   filtre: Filtre;
   degistir: (f: Filtre) => void;
+  /** Filtre düğmesinin yanında duran, sayfaya ait ek düğme (Excel). */
+  ek?: ReactNode;
 }) {
   const [panelAcik, setPanelAcik] = useState(false);
   const [donemAcik, setDonemAcik] = useState(false);
@@ -116,6 +119,7 @@ export default function AnalizFiltre({
         {/* Arama buraya değil, her sekmenin kendi listesinin başına ait: aranan
             şey sekmeden sekmeye değişiyor (adisyon no, ürün adı, personel). */}
         <div className="analiz-filtre-sag">
+          {ek}
           <button
             className={sayi > 0 ? "analiz-filtre-dugme dolu" : "analiz-filtre-dugme"}
             onClick={() => setPanelAcik(true)}
@@ -134,7 +138,7 @@ export default function AnalizFiltre({
         {cipler.map((c) => (
           <button key={c.ad} className="analiz-cip" onClick={c.sil}>
             {c.ad}
-            <X size={13} />
+            <X size={14} />
           </button>
         ))}
         {sayi > 0 && (
@@ -175,7 +179,7 @@ export default function AnalizFiltre({
                 <button className="pnc-vazgec" onClick={temizle}>Temizle</button>
               )}
               <button className="pnc-kaydet" onClick={() => setPanelAcik(false)}>
-                <Check size={17} /> Tamam
+                <Check size={16} /> Tamam
               </button>
             </>
           }

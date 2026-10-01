@@ -93,7 +93,7 @@ export default function SiralamaModal({
       <div className="up-modal sr-modal">
         <header className="up-ust">
           <span className="sr-im">
-            <ArrowUpDown size={18} />
+            <ArrowUpDown size={20} />
           </span>
           <h3>{baslik}</h3>
           <button className="sr-az" onClick={alfabetik}>
@@ -101,7 +101,7 @@ export default function SiralamaModal({
             Alfabetik
           </button>
           <button className="up-kapat" aria-label="Kapat" onClick={onKapat}>
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -149,7 +149,7 @@ export default function SiralamaModal({
                   </button>
                 )}
                 <span className="sr-ad">{s.ad}</span>
-                <GripVertical className="sr-tutamac" size={18} />
+                <GripVertical className="sr-tutamac" size={16} />
               </div>
             ))}
           </div>

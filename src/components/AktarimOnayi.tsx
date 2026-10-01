@@ -71,7 +71,7 @@ export default function AktarimOnayi({
         <div className="up-modal ak-modal bitti">
           <div className="ak-sonuc">
             <span className="ak-sonuc-im">
-              <Check size={26} />
+              <Check size={24} />
             </span>
             <h3>Menüye yazıldı</h3>
             <p>
@@ -95,14 +95,14 @@ export default function AktarimOnayi({
       <div className="up-modal tam ak-modal">
         <header className="up-ust">
           <span className="ak-im">
-            <FileSpreadsheet size={18} />
+            <FileSpreadsheet size={20} />
           </span>
           <div className="ak-baslik">
             <h3>Menüye yazılacaklar</h3>
             <span>{dosyaAdi}</span>
           </div>
           <button className="up-kapat" onClick={onVazgec} disabled={yaziliyor} aria-label="Vazgeç">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 

@@ -245,7 +245,7 @@ export default function MobilMasalar() {
       <div className="m-bos">
         <p>Masalar yüklenemedi.</p>
         <button className="m-dugme" onClick={() => oku()}>
-          <RotateCw size={18} /> Yeniden dene
+          <RotateCw size={16} /> Yeniden dene
         </button>
       </div>
     );
@@ -489,7 +489,7 @@ export default function MobilMasalar() {
                         setIslemMasasi(m);
                       }}
                     >
-                      <EllipsisVertical size={22} />
+                      <EllipsisVertical size={20} />
                     </span>
                   )}
                   {/* Seçilemeyen masa silikleşmiyor; nedenini köşedeki kilit
@@ -536,7 +536,7 @@ export default function MobilMasalar() {
                     >
                       {odendi ? (
                         <>
-                          <CircleCheckBig size={17} />
+                          <CircleCheckBig size={16} />
                           Ödendi
                         </>
                       ) : (
@@ -547,14 +547,14 @@ export default function MobilMasalar() {
                     <span className="m-masa-alt">
                       {acik.bekliyor ? (
                         <>
-                          <CloudUpload size={13} />
+                          <CloudUpload size={14} />
                           <span className="m-rozet-yazi">Gönderilmedi</span>
                         </>
                       ) : acik.kopyaZamani ? (
                         // Gönderilmemiş kayıt değil: masa sunucuya sorulamadı,
                         // cihazdaki kopyadan çiziliyor. Kopyanın saati yazıyor.
                         <>
-                          <CloudOff size={13} />
+                          <CloudOff size={14} />
                           <span className="m-rozet-yazi">{kopyaSaati(acik.kopyaZamani)} hâli</span>
                         </>
                       ) : (
@@ -566,7 +566,7 @@ export default function MobilMasalar() {
                         satır akışına girmediği için masadan masaya kaymıyor. */}
                     {!!acik.kisiSayisi && (
                       <span className="m-masa-kisi">
-                        <Users size={12} />
+                        <Users size={14} />
                         {acik.kisiSayisi}
                       </span>
                     )}
@@ -637,7 +637,7 @@ export default function MobilMasalar() {
       {hedefSorusu && hedefSorusu.tip !== "kalem" && (
         <OnayModal
           baslik={hedefOnayBasligi(hedefSorusu.tip)}
-          ikon={hedefSorusu.tip === "tasi" ? <ArrowRightLeft size={22} /> : <Combine size={22} />}
+          ikon={hedefSorusu.tip === "tasi" ? <ArrowRightLeft size={20} /> : <Combine size={20} />}
           mesaj={hedefOnayMesaji(
             hedefSorusu.tip,
             hedefSorusu.kaynak.ad,
@@ -755,29 +755,29 @@ function MasaIslemleri({
   const satirlar = [
     ...(odeyebilir
       ? [
-          { ad: "Öde", ikon: <Wallet size={19} />, renk: "ode", sec: onOde },
+          { ad: "Öde", ikon: <Wallet size={20} />, renk: "ode", sec: onOde },
           {
             ad: `Hızlı Öde · ${paraGoster(ozet?.kalan ?? 0)}`,
-            ikon: <Zap size={19} />,
+            ikon: <Zap size={20} />,
             renk: "hizli",
             sec: onHizli,
           },
         ]
-      : [{ ad: "Hesabı gör", ikon: <Wallet size={19} />, renk: "ode", sec: onOde }]),
+      : [{ ad: "Hesabı gör", ikon: <Wallet size={20} />, renk: "ode", sec: onOde }]),
     ...(yetkiVar("siparis.fis_yazdir")
-      ? [{ ad: "Yazdır", ikon: <Printer size={19} />, renk: "yazdir", sec: onYazdir }]
+      ? [{ ad: "Yazdır", ikon: <Printer size={20} />, renk: "yazdir", sec: onYazdir }]
       : []),
     ...(yetkiVar("siparis.tasi")
       ? [
           {
             ad: "Masayı taşı",
-            ikon: <ArrowRightLeft size={19} />,
+            ikon: <ArrowRightLeft size={20} />,
             renk: "tasi",
             sec: () => onTasi("tasi"),
           },
           {
             ad: "Masaları birleştir",
-            ikon: <Combine size={19} />,
+            ikon: <Combine size={20} />,
             renk: "tasi",
             sec: () => onTasi("birlestir"),
           },
@@ -787,7 +787,7 @@ function MasaIslemleri({
       ? [
           {
             ad: "Sipariş geçmişi",
-            ikon: <History size={19} />,
+            ikon: <History size={20} />,
             renk: "gecmis",
             sec: () => onGecmis(ozet.id),
           },
@@ -802,7 +802,7 @@ function MasaIslemleri({
       ? [
           {
             ad: "Adisyonu ikram et",
-            ikon: <Gift size={19} />,
+            ikon: <Gift size={20} />,
             renk: "ikram",
             sec: () => onIkram(ozet.id),
           },
@@ -812,7 +812,7 @@ function MasaIslemleri({
       ? [
           {
             ad: "Adisyonu iptal et",
-            ikon: <Ban size={19} />,
+            ikon: <Ban size={20} />,
             renk: "iptal",
             sec: () => onIptal(ozet.id),
           },
@@ -838,7 +838,7 @@ function MasaIslemleri({
             {!!ozet.kisiSayisi && (
               <>
                 ·
-                <Users size={13} />
+                <Users size={14} />
                 {ozet.kisiSayisi}
               </>
             )}

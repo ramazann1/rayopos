@@ -40,7 +40,7 @@ export default function Ben() {
 
       <div className="m-liste">
         <button className="m-satir" onClick={kilitle}>
-          <Lock size={19} />
+          <Lock size={20} />
           <span>
             Ekranı kilitle
             <small>Telefonu bırakırken; oturum kapanmaz, adisyonlar yerinde kalır.</small>
@@ -48,7 +48,7 @@ export default function Ben() {
         </button>
 
         <button className="m-satir tehlikeli" onClick={cikisDene}>
-          <LogOut size={19} />
+          <LogOut size={20} />
           <span>Çıkış yap</span>
         </button>
       </div>

@@ -45,7 +45,7 @@ export default function OdemeTipDuzelt({
         <div className="onay-ust">
           <span className="onay-im"><Pencil size={20} /></span>
           <h3>Ödeme tipini düzelt</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="panel-kapat" onClick={onKapat}><X size={20} /></button>
         </div>
 
         <p>

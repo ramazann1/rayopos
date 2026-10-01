@@ -663,7 +663,7 @@ export default function MobilSiparis() {
         {odenen > 0 && (
           <div className="m-serit-odeme">
             <span className="m-serit-odendi">
-              <CircleCheck size={17} /> {paraGoster(odenen)} ödendi
+              <CircleCheck size={16} /> {paraGoster(odenen)} ödendi
             </span>
             <span className="m-serit-kalan">
               Kalan <b>{paraGoster(Math.max(0, ozet.kalan))}</b>
@@ -673,7 +673,7 @@ export default function MobilSiparis() {
 
         <div className="m-serit-alt">
           <button className="m-serit-ozet" onClick={() => setSepetAcik(true)}>
-            <ReceiptText size={18} />
+            <ReceiptText size={16} />
             <span className="m-serit-son">
               {sepet.length > 0 ? sepet.length + " kalem" : "Adisyon boş"}
             </span>
@@ -685,13 +685,13 @@ export default function MobilSiparis() {
               geçiyor, yeni ürün girilince tekrar Gönder oluyor. */}
           {kirli ? (
             <button className="m-gonder" disabled={gonderiliyor} onClick={gonder}>
-              {baglantiVar() ? <Send size={18} /> : <CloudOff size={18} />}
+              {baglantiVar() ? <Send size={16} /> : <CloudOff size={16} />}
               Gönder
             </button>
           ) : (
             sepet.length > 0 && odemeAlabilir && (
               <button className="m-gonder" onClick={() => setTahsilatAcik(true)}>
-                <Wallet size={18} />
+                <Wallet size={16} />
                 Öde
               </button>
             )
@@ -703,7 +703,7 @@ export default function MobilSiparis() {
         <div className="up-fon" onClick={() => setSepetAcik(false)}>
           <div className="up-modal ma-pencere" onClick={(e) => e.stopPropagation()}>
               <header className="up-ust">
-                <ReceiptText size={18} className="ma-simge" />
+                <ReceiptText size={16} className="ma-simge" />
                 <h3>{masaBasligi}</h3>
                 <span className="ma-sayac">
                   <ShoppingBag size={14} />
@@ -808,7 +808,7 @@ export default function MobilSiparis() {
                               onClick={() => setServis((s) => ({ ...s, [alan]: true }))}
                             >
                               <span>
-                                <Plus size={15} /> {tanim.ad} ekle
+                                <Plus size={16} /> {tanim.ad} ekle
                               </span>
                               <span>{servisEtiketi(tanim)}</span>
                             </button>
@@ -835,7 +835,7 @@ export default function MobilSiparis() {
                                   title={`${tanim.ad} kaldır`}
                                   onClick={() => setServis((s) => ({ ...s, [alan]: false }))}
                                 >
-                                  <X size={15} />
+                                  <X size={16} />
                                 </button>
                               )}
                             </span>
@@ -886,13 +886,13 @@ export default function MobilSiparis() {
                     olmadan düğme yer kaplıyordu. */}
                 {kirli ? (
                   <button className="m-dugme" disabled={gonderiliyor} onClick={gonder}>
-                    {baglantiVar() ? <Send size={18} /> : <CloudOff size={18} />}
+                    {baglantiVar() ? <Send size={16} /> : <CloudOff size={16} />}
                     Gönder
                   </button>
                 ) : (
                   sepet.length > 0 && odemeAlabilir && (
                     <button className="m-dugme" onClick={() => setTahsilatAcik(true)}>
-                      <Wallet size={18} />
+                      <Wallet size={16} />
                       Öde
                     </button>
                   )
@@ -914,7 +914,7 @@ export default function MobilSiparis() {
               {!!kisiSayisi && (
                 <>
                   ·
-                  <Users size={13} />
+                  <Users size={14} />
                   {kisiSayisi}
                 </>
               )}
@@ -930,7 +930,7 @@ export default function MobilSiparis() {
             }}
           >
             <span className="m-islem-ikon">
-              <Users size={19} />
+              <Users size={20} />
             </span>
             Misafir sayısı{kisiSayisi ? ` · ${kisiSayisi}` : ""}
           </button>
@@ -942,7 +942,7 @@ export default function MobilSiparis() {
             }}
           >
             <span className="m-islem-ikon">
-              <StickyNote size={19} />
+              <StickyNote size={20} />
             </span>
             Adisyon bilgileri
             {bilgi.ad || bilgi.musteriAd ? <em>{bilgi.ad || bilgi.musteriAd}</em> : null}
@@ -955,7 +955,7 @@ export default function MobilSiparis() {
             }}
           >
             <span className="m-islem-ikon">
-              <ReceiptText size={19} />
+              <ReceiptText size={20} />
             </span>
             Adisyonu gör
           </button>
@@ -968,7 +968,7 @@ export default function MobilSiparis() {
               }}
             >
               <span className="m-islem-ikon">
-                <History size={19} />
+                <History size={20} />
               </span>
               Sipariş geçmişi
             </button>
@@ -987,7 +987,7 @@ export default function MobilSiparis() {
             }}
           >
             <span className="m-islem-ikon">
-              <Wallet size={19} />
+              <Wallet size={20} />
             </span>
             Öde
           </button>
@@ -996,7 +996,7 @@ export default function MobilSiparis() {
           {yetkiVar("siparis.fis_yazdir") && (
             <button className="m-islem m-islem-yazdir" onClick={fisYazdir}>
               <span className="m-islem-ikon">
-                <Printer size={19} />
+                <Printer size={20} />
               </span>
               Hesap fişi yazdır
             </button>
@@ -1011,7 +1011,7 @@ export default function MobilSiparis() {
                 onClick={() => masaIslemi("tasi")}
               >
                 <span className="m-islem-ikon">
-                  <ArrowRightLeft size={19} />
+                  <ArrowRightLeft size={20} />
                 </span>
                 Masayı taşı
               </button>
@@ -1020,7 +1020,7 @@ export default function MobilSiparis() {
                 onClick={() => masaIslemi("birlestir")}
               >
                 <span className="m-islem-ikon">
-                  <Merge size={19} />
+                  <Merge size={20} />
                 </span>
                 Masaları birleştir
               </button>
@@ -1035,7 +1035,7 @@ export default function MobilSiparis() {
                 onClick={() => setIptalSorusu(true)}
               >
                 <span className="m-islem-ikon">
-                  <Ban size={19} />
+                  <Ban size={20} />
                 </span>
                 Adisyonu iptal et
               </button>
@@ -1218,7 +1218,7 @@ export default function MobilSiparis() {
         <OnayModal
           tehlikeli
           baslik="Gönderilmemiş değişiklik var"
-          ikon={<TriangleAlert size={22} />}
+          ikon={<TriangleAlert size={20} />}
           mesaj="Bu masada yaptığın değişiklikler henüz gönderilmedi. Çıkarsan kaybolacak."
           iptalMetni="Masada kal"
           onayMetni="Göndermeden çık"

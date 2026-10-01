@@ -334,12 +334,12 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
               zorunlu değil, ödeme kaydedilip adisyon açık bırakılabiliyor. */}
           <div className="th-eylemler">
             <button className="th-eylem" onClick={() => { onKaydet(tahsilatlar); onKapat(); }}>
-              <Save size={17} />
+              <Save size={16} />
               Kaydet
             </button>
             {odemeBitti ? (
               <button className="th-eylem birincil" onClick={() => onOdendi(tahsilatlar)}>
-                <CircleCheckBig size={17} />
+                <CircleCheckBig size={16} />
                 Adisyonu Kapat
               </button>
             ) : (
@@ -347,13 +347,13 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
               // karar: borç birine yazılıyor, kayıt düşüyor, yetki istiyor.
               yetkiVar("odeme.eksik_kapat") && (
                 <button className="th-eylem" onClick={() => setEksikAcik(true)}>
-                  <HandCoins size={17} />
+                  <HandCoins size={16} />
                   Eksik Kapat
                 </button>
               )
             )}
             <button className="th-kapat" aria-label="Kapat" onClick={onKapat}>
-              <X size={19} />
+              <X size={20} />
             </button>
           </div>
         </header>
@@ -408,7 +408,7 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
                     <span>
                       {pasif
                         ? k.durum === "ikram" ? "İkram" : "İptal"
-                        : bitti ? <Check size={17} /> : seciliAdet > 0
+                        : bitti ? <Check size={16} /> : seciliAdet > 0
                           ? `${payYazi(seciliAdet)} seçili · ₺${kurus(birimTutar(k) * seciliAdet)}`
                           : k.indirim
                             ? <><s className="eski-tutar">₺{kurus(k.fiyat * k.adet)}</s> ₺{kalemTutari(k)}</>
@@ -425,7 +425,7 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
               <div className="th-yonlendirme">
                 <span>{payYazi(Object.values(secilen).reduce((t, a) => t + a, 0))} ürün seçili · ₺{seciliTutar(secilen)}</span>
                 <button onClick={() => { setSecilen({}); setGirilen(""); }}>
-                  <X size={15} />
+                  <X size={16} />
                   Seçimi bırak
                 </button>
               </div>
@@ -458,7 +458,7 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
                           if (o.id) setSilmeSorusu(i);
                           else tahsilatiCikar(i);
                         }}
-                      ><X size={15} /></button>
+                      ><X size={16} /></button>
                     )}
                   </div>
                 ))}
@@ -579,7 +579,7 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
                   <div className="th-bahsis-serit">
                     <span>Bu ödemeye ₺{bahsis} bahşiş eklenecek</span>
                     <button onClick={() => { setBahsis(0); setBahsisGirdi(""); }}>
-                      <X size={15} />
+                      <X size={16} />
                       Kaldır
                     </button>
                   </div>
@@ -618,7 +618,7 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
                     Vazgeç
                   </button>
                   <button className="th-eylem birincil" onClick={bahsisOnayla}>
-                    <Check size={17} />
+                    <Check size={16} />
                     {bekleyenTip ? `${bekleyenTip} ile tahsil et` : "Bahşişi ekle"}
                   </button>
                 </div>

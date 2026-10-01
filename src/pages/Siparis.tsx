@@ -638,14 +638,14 @@ export default function Siparis() {
     <div className="siparis-sayfa">
       <header className="siparis-ust">
         <button className="geri" onClick={salonaDon}>
-          <ArrowLeft size={17} />
+          <ArrowLeft size={20} />
           Salon
         </button>
         <span className="ust-ayrac" />
         <h1>
           {masasiz ? (
             <>
-              {masasizBilgi?.tip === "paket" ? <Bike size={19} /> : <ShoppingBag size={19} />}
+              {masasizBilgi?.tip === "paket" ? <Bike size={20} /> : <ShoppingBag size={20} />}
               {masasizEtiketi(masasizBilgi?.tip, masasizBilgi?.gunlukNo)}
               {adisyonNo && !masasizBilgi?.gunlukNo ? ` #${adisyonNo}` : ""}
               {bilgi.musteriAd ? ` · ${bilgi.musteriAd}` : ""}
@@ -710,7 +710,7 @@ export default function Siparis() {
               className={ozelListe === "favori" ? "kategori favori aktif" : "kategori favori"}
               onClick={() => setOzelListe("favori")}
             >
-              <Star size={15} strokeWidth={2} fill="currentColor" />
+              <Star size={16} strokeWidth={2} fill="currentColor" />
               Favoriler
             </button>
           )}
@@ -735,7 +735,7 @@ export default function Siparis() {
                       setAcikGrupId(acikGrupId === k.id ? null : k.id);
                     }}
                   >
-                    <ChevronDown size={18} className={acikGrupId === k.id ? "donuk" : ""} />
+                    <ChevronDown size={16} className={acikGrupId === k.id ? "donuk" : ""} />
                   </span>
                 )}
               </button>
@@ -767,7 +767,7 @@ export default function Siparis() {
               onChange={(e) => setArama(e.target.value)}
             />
             {arama && (
-              <button className="arama-temizle" onClick={() => setArama("")}><X size={15} /></button>
+              <button className="arama-temizle" onClick={() => setArama("")}><X size={16} /></button>
             )}
           </div>
 
@@ -808,7 +808,7 @@ export default function Siparis() {
               olabilir, ödemeyi alan kişi bilerek alsın. */}
           {kopyaZamani && (
             <div className="m-kopya-serit">
-              <CloudOff size={17} />
+              <CloudOff size={16} />
               Bağlantı yok — hesabın {kopyaSaati(kopyaZamani)} itibarıyla bilinen hâli. Alınan
               ödeme bağlantı gelince kasaya yazılacak.
             </div>
@@ -861,7 +861,7 @@ export default function Siparis() {
                     title="Bir adet azalt"
                     onClick={(e) => { e.stopPropagation(); sepettenCikar(k.id); }}
                   >
-                    <Minus size={15} />
+                    <Minus size={16} />
                   </button>
                 )}
               </div>
@@ -925,7 +925,7 @@ export default function Siparis() {
                             title={`${tanim.ad} kaldır`}
                             onClick={() => setServis((s) => ({ ...s, [hangi]: false }))}
                           >
-                            <X size={13} />
+                            <X size={14} />
                           </button>
                         )}
                       </span>
@@ -956,7 +956,7 @@ export default function Siparis() {
                   disabled={sepet.length === 0}
                   onClick={() => setIndirimAcik(true)}
                 >
-                  <Percent size={15} />
+                  <Percent size={16} />
                   İndirim
                 </button>
               )}
@@ -969,7 +969,7 @@ export default function Siparis() {
                     disabled={sepet.length === 0}
                     onClick={() => setTahsilatAcik(true)}
                   >
-                    <Wallet size={15} />
+                    <Wallet size={16} />
                     Öde
                   </button>
                   <button
@@ -977,7 +977,7 @@ export default function Siparis() {
                     disabled={sepet.length === 0 || kalan <= 0}
                     onClick={() => setHizliAcik(true)}
                   >
-                    <Zap size={15} />
+                    <Zap size={16} />
                     Hızlı Öde
                   </button>
                 </>
@@ -1173,7 +1173,7 @@ export default function Siparis() {
         <OnayModal
           tehlikeli
           baslik="Kaydedilmemiş değişiklik var"
-          ikon={<TriangleAlert size={22} />}
+          ikon={<TriangleAlert size={20} />}
           mesaj="Bu adisyonda yaptığın değişiklikler henüz kaydedilmedi. Çıkarsan kaybolacak."
           iptalMetni="Adisyonda kal"
           onayMetni="Kaydetmeden çık"

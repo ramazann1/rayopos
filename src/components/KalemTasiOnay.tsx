@@ -22,7 +22,7 @@ export default function KalemTasiOnay({ kalem, hedefAd, onOnay, onKapat }: Props
   return (
     <OnayModal
       baslik="Ürün taşınsın mı?"
-      ikon={<ArrowRightLeft size={22} />}
+      ikon={<ArrowRightLeft size={20} />}
       mesaj={`*${kalem.ad}*, *${hedefAd}* masasına taşınacak.`}
       onayMetni="Taşı"
       onOnay={() => onOnay(adet)}

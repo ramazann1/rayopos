@@ -210,7 +210,7 @@ function KasaPenceresi({
         alt={
           vardiya && !kapaniyor && !hareketTipi ? (
             <button className="pnc-kaydet" onClick={() => setKapaniyor(true)}>
-              <Lock size={17} /> Kasayı kapat
+              <Lock size={16} /> Kasayı kapat
             </button>
           ) : undefined
         }
@@ -275,7 +275,7 @@ function KasaPenceresi({
               {durum.bekleyenAdet > 0 && (
                 <div className="kasa-bekleyen">
                   <dt>
-                    <UploadCloud size={15} />
+                    <UploadCloud size={16} />
                     Gönderilmeyi bekleyen
                     <em>{durum.bekleyenAdet} ödeme</em>
                   </dt>
@@ -299,9 +299,9 @@ function KasaPenceresi({
                 {durum.hareketler.map((h) => (
                   <li key={h.id}>
                     {h.tip === "giris" ? (
-                      <ArrowDownLeft size={15} className="artan" />
+                      <ArrowDownLeft size={16} className="artan" />
                     ) : (
-                      <ArrowUpRight size={15} className="azalan" />
+                      <ArrowUpRight size={16} className="azalan" />
                     )}
                     <span>
                       <strong>{h.aciklama || (h.tip === "giris" ? "Para eklendi" : "Para çıkarıldı")}</strong>

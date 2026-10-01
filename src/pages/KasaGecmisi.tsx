@@ -30,7 +30,7 @@ function Fark({ fark }: { fark: number | null }) {
   if (fark === 0)
     return (
       <span className="kasa-fark tutuyor">
-        <Check size={15} /> Tutuyor
+        <Check size={16} /> Tutuyor
       </span>
     );
   return (
@@ -81,17 +81,17 @@ export default function KasaGecmisi() {
         ) : (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><History size={17} /> Vardiyalar</h2>
+              <h2><History size={20} /> Vardiyalar</h2>
             </div>
 
             {liste.length === 0 ? (
               <div className="ayar-bos">
-                <History size={30} />
+                <History size={24} />
                 <p>Henüz kasa açılmamış. İlk vardiya kasayı açtığınızda burada listelenir.</p>
               </div>
             ) : gorunen.length === 0 ? (
               <div className="ayar-bos">
-                <History size={30} />
+                <History size={24} />
                 <p>"{ara}" ile eşleşen vardiya yok.</p>
               </div>
             ) : (
@@ -160,7 +160,7 @@ function VardiyaDetay({ vardiya, onKapat }: { vardiya: VardiyaOzeti; onKapat: ()
               </>
             ) : (
               <>
-                <LockOpen size={15} /> Vardiya sürüyor
+                <LockOpen size={16} /> Vardiya sürüyor
               </>
             )}
           </p>
@@ -230,9 +230,9 @@ function VardiyaDetay({ vardiya, onKapat }: { vardiya: VardiyaOzeti; onKapat: ()
               {hareketler.map((h) => (
                 <li key={h.id}>
                   {h.tip === "giris" ? (
-                    <ArrowDownLeft size={15} className="artan" />
+                    <ArrowDownLeft size={16} className="artan" />
                   ) : (
-                    <ArrowUpRight size={15} className="azalan" />
+                    <ArrowUpRight size={16} className="azalan" />
                   )}
                   <span>
                     <strong>

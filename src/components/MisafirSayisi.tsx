@@ -33,11 +33,11 @@ export default function MisafirSayisi({
       <div className="up-modal mis-modal">
         <header className="up-ust">
           <span className="mis-im">
-            <Users size={18} />
+            <Users size={20} />
           </span>
           <h3>Misafir sayısı</h3>
           <button className="up-kapat" aria-label="Salona dön" onClick={onVazgec}>
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -61,7 +61,7 @@ export default function MisafirSayisi({
               onKeyDown={(e) => e.key === "Enter" && sayi >= 1 && onSec(sayi)}
             />
             <button disabled={!(sayi >= 1)} aria-label="Onayla" onClick={() => onSec(sayi)}>
-              <Check size={19} />
+              <Check size={20} />
             </button>
           </div>
         </div>

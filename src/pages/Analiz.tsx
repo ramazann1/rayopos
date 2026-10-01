@@ -38,6 +38,9 @@ import {
   TriangleAlert,
   Wallet,
   X,
+  FileSpreadsheet,
+  Flame,
+  LoaderCircle,
 } from "lucide-react";
 import { analizBolumleri } from "../components/Duzen";
 import BolumSecici from "../components/BolumSecici";
@@ -68,7 +71,10 @@ import {
   mutfakSureleri,
   urunKategorileri,
   menuUrunKunyeleri,
-  tamamiIkram,
+  durumMetni,
+  yogunlukTablosu,
+  TIP_ADLARI,
+  type Yogunluk,
   type AnalizAdisyon,
   type AnalizFiltre as Filtre,
   type AnalizOzeti,
@@ -90,6 +96,7 @@ import {
   type ZamanSerisi,
 } from "../analiz";
 import { SAKIN, useCanli } from "../canli";
+import { DISA_AKTARILAN_BOLUMLER, analiziIndir } from "../analizExcel";
 import { odemeAdi, type Masraf } from "../masraflar";
 import { kisaAd } from "../personel";
 import { useKutuBoyu } from "../kutuBoyu";
@@ -130,40 +137,73 @@ export default function Analiz() {
     menuUrunKunyeleri().then(setMenuUrunleri);
   }, []);
 
-  // Filtre değişince tek sorgu atılıyor; altı sekme de aynı listeden besleniyor.
+  // Adisyon ve gider listesi bütün sekmelerin ortak verisi; filtre değişince
+  // bir kez çekiliyor. Yalnız bir sekmenin kullandığı veri (mutfak süreleri,
+  // denetim, açık hesap, önceki dönem) o sekme açılınca ayrıca çekiliyor —
+  // hepsi birlikte istenince en ağırları birbirini bekletiyordu.
+  const yuklemeSuruyor = useRef(false);
+  const bekleyenTazeleme = useRef(false);
+
   useEffect(() => {
     let gecerli = true;
     if (!sessizTazeleme.current) setYukleniyor(true);
-    Promise.all([
-      analizAdisyonlari(filtre),
-      analizGiderleri(filtre),
-      analizDenetimi(filtre),
-      analizCariHareketleri(filtre),
-      // Hazırlık süreleri adisyondan değil turdan çıkıyor; kendi sorgusu var.
-      mutfakSureleri(filtre),
-      oncekiAdisyonlar(filtre),
-    ]).then(([a, g, d, c, m, o]) => {
+    yuklemeSuruyor.current = true;
+    Promise.all([analizAdisyonlari(filtre), analizGiderleri(filtre)]).then(([a, g]) => {
       if (!gecerli) return;
       setAdisyonlar(a);
-      setOncekiler(o);
       setGiderler(g);
-      setDenetim(d);
-      setCariHareketler(c);
-      setMutfak(m);
       setYukleniyor(false);
       sessizTazeleme.current = false;
+      yuklemeSuruyor.current = false;
+      if (bekleyenTazeleme.current) {
+        bekleyenTazeleme.current = false;
+        sessizTazeleme.current = true;
+        setTazele((t) => t + 1);
+      }
     });
     return () => {
       gecerli = false;
     };
   }, [filtre, tazele]);
 
+  const ekVeri =
+    bolum === "mutfak"
+      ? "mutfak"
+      : bolum === "denetim"
+        ? "denetim"
+        : bolum === "acik-hesap"
+          ? "cari"
+          : bolum === "ozet" || bolum === "urunler" || bolum === "karlilik"
+            ? "onceki"
+            : null;
+  const [ekYukleniyor, setEkYukleniyor] = useState(false);
+
+  useEffect(() => {
+    if (!ekVeri) return;
+    let gecerli = true;
+    if (!sessizTazeleme.current) setEkYukleniyor(true);
+    const bitti = () => gecerli && setEkYukleniyor(false);
+    if (ekVeri === "mutfak") mutfakSureleri(filtre).then((m) => gecerli && setMutfak(m)).then(bitti);
+    if (ekVeri === "denetim") analizDenetimi(filtre).then((d) => gecerli && setDenetim(d)).then(bitti);
+    if (ekVeri === "cari") analizCariHareketleri(filtre).then((c) => gecerli && setCariHareketler(c)).then(bitti);
+    if (ekVeri === "onceki") oncekiAdisyonlar(filtre).then((o) => gecerli && setOncekiler(o)).then(bitti);
+    return () => {
+      gecerli = false;
+    };
+  }, [filtre, tazele, ekVeri]);
+
   // Satış, tahsilat ve gider girildiği anda buradaki rakamlar eskiyor. Bakma
   // ekranı olduğu için sakin hızda: yoğun saatte her kaleme sorgu atılmıyor,
-  // okunan sayı da altından kaymıyor.
+  // okunan sayı da altından kaymıyor. Yükleme sürerken gelen haber yüklemeyi
+  // kesmiyor, bitince bir kez daha tazeleniyor — yoksa yoğun saatte uzun
+  // dönemin raporu hiç gelmiyordu.
   useCanli(
     ["masa_degisim", "masraflar"],
     () => {
+      if (yuklemeSuruyor.current) {
+        bekleyenTazeleme.current = true;
+        return;
+      }
       sessizTazeleme.current = true;
       setTazele((t) => t + 1);
     },
@@ -197,6 +237,32 @@ export default function Analiz() {
   const personel = useMemo(() => analizPersoneli(adisyonlar), [adisyonlar]);
   const giderOzeti = useMemo(() => analizGiderOzeti(giderler), [giderler]);
   const odenmezler = useMemo(() => analizOdenmezleri(adisyonlar), [adisyonlar]);
+  const yogunluk = useMemo(() => {
+    const { bas, bit } = donemAraligi(filtre);
+    return yogunlukTablosu(adisyonlar, bas, bit);
+  }, [adisyonlar, filtre]);
+
+  const [indiriliyor, setIndiriliyor] = useState(false);
+  const indir = async () => {
+    setIndiriliyor(true);
+    try {
+      await analiziIndir(bolum, {
+        filtre,
+        adisyonlar,
+        ozet,
+        urunler,
+        personel,
+        mutfak,
+        giderler,
+        giderOzeti,
+        odenmezler,
+        cariHareketler,
+        denetim,
+      });
+    } finally {
+      setIndiriliyor(false);
+    }
+  };
 
   return (
     <>
@@ -214,9 +280,25 @@ export default function Analiz() {
           </div>
         </header>
 
-        <AnalizFiltre filtre={filtre} degistir={setFiltre} />
+        <AnalizFiltre
+          filtre={filtre}
+          degistir={setFiltre}
+          ek={
+            DISA_AKTARILAN_BOLUMLER[bolum] && (
+              <button
+                className="analiz-filtre-dugme"
+                disabled={indiriliyor || yukleniyor || ekYukleniyor}
+                onClick={indir}
+                title={`${DISA_AKTARILAN_BOLUMLER[bolum]} sekmesini Excel dosyası olarak indir`}
+              >
+                {indiriliyor ? <LoaderCircle size={16} className="donen" /> : <FileSpreadsheet size={16} />}
+                Excel'e indir
+              </button>
+            )
+          }
+        />
 
-        {yukleniyor ? (
+        {yukleniyor || (ekYukleniyor && ekVeri !== "onceki") ? (
           <div className="yukleniyor">
             <div className="cember" />
           </div>
@@ -226,6 +308,7 @@ export default function Analiz() {
             onceki={oncekiOzet}
             seri={seri}
             oncekiSeri={oncekiSeri}
+            yogunluk={yogunluk}
             onEksigeGit={() => {
               setSadeceEksik(true);
               navigate("/analiz/adisyonlar");
@@ -278,7 +361,6 @@ export default function Analiz() {
   );
 }
 
-const TIP_ADLARI = { masa: "Masa", gelal: "Gel Al", paket: "Paket" };
 
 const saatMetni = (t: string) =>
   new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
@@ -401,13 +483,13 @@ function Adisyonlar({
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
-            <ClipboardList size={17} /> Adisyonlar
+            <ClipboardList size={16} /> Adisyonlar
           </h2>
           {sadeceEksik && <EksikCipi onBirak={onEksigiBirak} />}
           <AramaKutusu deger={arama} degistir={setArama} yer="Adisyon no, masa, müşteri" />
         </div>
         <div className="ayar-bos">
-          <ClipboardList size={30} />
+          <ClipboardList size={24} />
           <p>Seçilen dönem ve filtrelerle eşleşen adisyon yok.</p>
         </div>
       </section>
@@ -449,7 +531,7 @@ function Adisyonlar({
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <ClipboardList size={15} /> Adisyon
+              <ClipboardList size={16} /> Adisyon
             </span>
             <strong>{adisyonlar.length}</strong>
             <em>
@@ -477,7 +559,7 @@ function Adisyonlar({
       <section className="ayar-bolum">
       <div className="analiz-liste-ust">
         <h2>
-          <ClipboardList size={17} /> {adisyonlar.length} adisyon
+          <ClipboardList size={16} /> {adisyonlar.length} adisyon
         </h2>
         {sadeceEksik && <EksikCipi onBirak={onEksigiBirak} />}
         <AramaKutusu deger={arama} degistir={setArama} yer="Adisyon no, masa, müşteri" />
@@ -561,12 +643,6 @@ function EksikCipi({ onBirak }: { onBirak: () => void }) {
  * Rozette yazan durum. Sıralama da bu metne bakıyor — sütunda okunan sırayla
  * dizilenin aynı olması için tek kaynak.
  */
-function durumMetni(a: AnalizAdisyon) {
-  if (a.durum === "acik") return "Açık";
-  if (a.durum === "iptal") return "İptal";
-  if (tamamiIkram(a)) return "İkram";
-  return a.kalan > 0 ? "Eksik tahsilat" : "Kapandı";
-}
 
 const DURUM_RENKLERI: Record<string, string> = {
   Açık: "acik",
@@ -626,12 +702,14 @@ function Ozet({
   seri,
   oncekiSeri,
   onEksigeGit,
+  yogunluk,
 }: {
   ozet: AnalizOzeti;
   onceki: AnalizOzeti | null;
   seri: ZamanSerisi;
   oncekiSeri: ZamanSerisi | null;
   onEksigeGit: () => void;
+  yogunluk: Yogunluk;
 }) {
   const kdvDahil = ayarlar().kdvDahil;
 
@@ -732,7 +810,7 @@ function Ozet({
           </div>
           {seri.noktalar.length === 0 ? (
             <div className="oz-egri-bos">
-              <BarChart3 size={30} />
+              <BarChart3 size={24} />
               <p>Bu dönemde kapanmış adisyon yok.</p>
             </div>
           ) : (
@@ -745,7 +823,7 @@ function Ozet({
         <section className="ayar-bolum">
           <div className="ayar-bolum-ust">
             <h2>
-              <Receipt size={17} /> Hesap dökümü
+              <Receipt size={16} /> Hesap dökümü
             </h2>
           </div>
           <dl className="kasa-dokum">
@@ -787,7 +865,7 @@ function Ozet({
                 <dd>
                   <button type="button" onClick={onEksigeGit}>
                     {paraGoster(ozet.eksikTahsilat)}
-                    <ChevronRight size={15} />
+                    <ChevronRight size={16} />
                   </button>
                 </dd>
               </div>
@@ -810,12 +888,12 @@ function Ozet({
         <section className="ayar-bolum">
           <div className="ayar-bolum-ust">
             <h2>
-              <CreditCard size={17} /> Ödeme dağılımı
+              <CreditCard size={16} /> Ödeme dağılımı
             </h2>
           </div>
           {ozet.odemeler.length === 0 ? (
             <div className="ayar-bos">
-              <CreditCard size={30} />
+              <CreditCard size={24} />
               <p>Bu dönemde tahsilat yok.</p>
             </div>
           ) : (
@@ -826,12 +904,12 @@ function Ozet({
         <section className="ayar-bolum">
           <div className="ayar-bolum-ust">
             <h2>
-              <ClipboardList size={17} /> Sipariş tipi
+              <ClipboardList size={16} /> Sipariş tipi
             </h2>
           </div>
           {ozet.tipler.length === 0 ? (
             <div className="ayar-bos">
-              <ClipboardList size={30} />
+              <ClipboardList size={24} />
               <p>Bu dönemde kapanmış adisyon yok.</p>
             </div>
           ) : (
@@ -844,10 +922,24 @@ function Ozet({
       <section className="ayar-bolum">
         <div className="ayar-bolum-ust">
           <h2>
-            <Clock size={17} /> Saatlere göre
+            <Clock size={16} /> Saatlere göre
           </h2>
         </div>
         <Saatler saatler={ozet.saatler} />
+      </section>
+
+      <section className="ayar-bolum">
+        <div className="ayar-bolum-ust">
+          <h2>
+            <Flame size={16} /> Yoğunluk
+            <Ipucu baslik="Yoğunluk">
+              {yogunluk.haftalik
+                ? "Haftanın hangi günü, hangi saatte kaç adisyon açıldığı; dönem uzun olduğu için günler haftaya toplandı."
+                : "Hangi gün, hangi saatte kaç adisyon açıldığı; renk koyulaştıkça kalabalık artıyor."}
+            </Ipucu>
+          </h2>
+        </div>
+        <YogunlukTablosu yogunluk={yogunluk} />
       </section>
     </div>
   );
@@ -991,7 +1083,7 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
     return (
       <section className="ayar-bolum">
         <div className="ayar-bos">
-          <Package size={30} />
+          <Package size={24} />
           <p>Bu dönemde satılmış ürün yok.</p>
         </div>
       </section>
@@ -1004,7 +1096,7 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Package size={15} /> Satılan
+              <Package size={16} /> Satılan
             </span>
             <strong>{sayiGoster(ozet.miktar)}</strong>
             <em>adet ürün</em>
@@ -1031,13 +1123,13 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
         <section className="ayar-bolum urun-kat-kart">
           <div className="ayar-bolum-ust">
             <h2>
-              <Layers size={17} /> Kategoriler
+              <Layers size={16} /> Kategoriler
             </h2>
             <AramaKutusu deger={kategoriArama} degistir={setKategoriArama} yer="Kategori ara" />
           </div>
           {kategoriler.length === 0 ? (
             <div className="ayar-bos">
-              <Layers size={30} />
+              <Layers size={24} />
               <p>Aramayla eşleşen kategori yok.</p>
             </div>
           ) : (
@@ -1059,12 +1151,12 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
         <section className="ayar-bolum">
           <div className="analiz-liste-ust">
             <h2>
-              <MapPin size={17} /> Bölgeler
+              <MapPin size={16} /> Bölgeler
             </h2>
           </div>
           {ozet.bolgeler.length === 0 ? (
             <div className="ayar-bos">
-              <MapPin size={30} />
+              <MapPin size={24} />
               <p>Bölge bilgisi olan satış yok.</p>
             </div>
           ) : (
@@ -1094,7 +1186,7 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
-            <Package size={17} /> {satirlar.length} ürün
+            <Package size={16} /> {satirlar.length} ürün
           </h2>
           <AramaKutusu deger={arama} degistir={setArama} yer="Ürün ara" />
         </div>
@@ -1184,7 +1276,7 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
         <CevapPenceresi
           baslik={
             <>
-              <Target size={18} /> Ciroyu taşıyan {tasiyanlar.adet} ürün
+              <Target size={16} /> Ciroyu taşıyan {tasiyanlar.adet} ürün
             </>
           }
           liste={tasiyanlar.liste}
@@ -1198,7 +1290,7 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
         <CevapPenceresi
           baslik={
             <>
-              <Link2 size={18} /> Birlikte satılan {ozet.birlikteler.length} çift
+              <Link2 size={16} /> Birlikte satılan {ozet.birlikteler.length} çift
             </>
           }
           liste={ozet.birlikteler}
@@ -1221,7 +1313,7 @@ function CevapDevam({ kalan, birim, onTumu }: { kalan: number; birim: string; on
       </span>
       <b>
         Tümünü gör
-        <ChevronRight size={15} />
+        <ChevronRight size={16} />
       </b>
     </button>
   );
@@ -1242,7 +1334,7 @@ function CiroyuTasiyanlar({
     <section className="ayar-bolum urun-cevap">
       <div className="ayar-bolum-ust">
         <h2>
-          <Target size={17} /> Ciroyu taşıyanlar
+          <Target size={16} /> Ciroyu taşıyanlar
         </h2>
       </div>
       <p className="urun-cevap-cumle">
@@ -1288,7 +1380,7 @@ function BirlikteSatilanlar({ liste, onTumu }: { liste: BirlikteSatis[]; onTumu:
     <section className="ayar-bolum urun-cevap">
       <div className="ayar-bolum-ust">
         <h2>
-          <Link2 size={17} /> Birlikte satılanlar
+          <Link2 size={16} /> Birlikte satılanlar
         </h2>
       </div>
       <p className="urun-cevap-cumle">
@@ -1349,7 +1441,7 @@ function CevapPenceresi<T>({
         <header className="up-ust">
           <h3>{baslik}</h3>
           <button className="up-kapat" onClick={onKapat} aria-label="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
         <div className="cevap-pencere-icerik">
@@ -1390,7 +1482,7 @@ function OneCikanlar({ ozet }: { ozet: UrunOzeti }) {
     <div className="one-cikanlar">
       <article className="one-cikan yildiz">
         <span className="one-cikan-etiket">
-          <Star size={15} /> Dönemin yıldızı
+          <Star size={16} /> Dönemin yıldızı
         </span>
         <strong>{yildiz.ad}</strong>
         <em>
@@ -1401,7 +1493,7 @@ function OneCikanlar({ ozet }: { ozet: UrunOzeti }) {
       {yukselen ? (
         <article className="one-cikan artan">
           <span className="one-cikan-etiket">
-            <TrendingUp size={15} /> En çok yükselen
+            <TrendingUp size={16} /> En çok yükselen
           </span>
           <strong>{yukselen.satir.ad}</strong>
           <em>
@@ -1414,7 +1506,7 @@ function OneCikanlar({ ozet }: { ozet: UrunOzeti }) {
       {dusen ? (
         <article className="one-cikan azalan">
           <span className="one-cikan-etiket">
-            <TrendingDown size={15} /> En çok düşen
+            <TrendingDown size={16} /> En çok düşen
           </span>
           <strong>{dusen.satir.ad}</strong>
           <em>
@@ -1455,10 +1547,10 @@ function KategoriPenceresi({
       <div className="up-modal kat-pencere" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <h3>
-            <Layers size={18} /> {satirlar.length} kategori
+            <Layers size={16} /> {satirlar.length} kategori
           </h3>
           <button className="up-kapat" onClick={onKapat} aria-label="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -1476,7 +1568,7 @@ function KategoriPenceresi({
             <div className="kat-pencere-govde">
               {liste.length === 0 ? (
                 <div className="ayar-bos">
-                  <Layers size={30} />
+                  <Layers size={24} />
                   <p>Aramayla eşleşen kategori yok.</p>
                 </div>
               ) : (
@@ -1538,11 +1630,11 @@ function Satilmayanlar({ liste }: { liste: SatilmayanUrun[] }) {
     <section className="ayar-bolum">
       <div className="analiz-liste-ust">
         <h2>
-          <EyeOff size={17} /> Hiç satılmayan {liste.length} ürün
+          <EyeOff size={16} /> Hiç satılmayan {liste.length} ürün
         </h2>
         <button type="button" className="detay-dugme" onClick={() => setAcik((a) => !a)}>
           {acik ? "Gizle" : "Göster"}
-          <ChevronRight size={15} className={acik ? "dokum-ok acik" : "dokum-ok"} />
+          <ChevronRight size={16} className={acik ? "dokum-ok acik" : "dokum-ok"} />
         </button>
       </div>
 
@@ -1756,7 +1848,7 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
 
   const fireSatiri = kayiplar.length > 0 && (
     <p className="kar-cumle kar-fire">
-      <Trash2 size={15} />
+      <Trash2 size={16} />
       <span>
         Aynı dönemde <b className="fr-fire-rakam">{paraGoster(fireKurus / 100)}</b> fire
         verildi
@@ -1771,7 +1863,7 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
       </span>
       <button type="button" className="detay-dugme" onClick={() => setDokumAcik(true)}>
         Fire ve çıkış dökümü
-        <ChevronRight size={15} />
+        <ChevronRight size={16} />
       </button>
     </p>
   );
@@ -1781,7 +1873,7 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
       <div className="analiz-ozet">
         <section className="ayar-bolum">
           <div className="ayar-bos">
-            <Wallet size={30} />
+            <Wallet size={24} />
             <p>
               Bu dönemde maliyeti bilinen satış yok. Kârlılık, reçetesi girilmiş
               ürünlerin satışından hesaplanır.
@@ -1806,28 +1898,28 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Receipt size={15} /> Satış
+              <Receipt size={16} /> Satış
             </span>
             <strong>{paraGoster(ozet.maliyetliCiro)}</strong>
             <em>maliyeti bilinen ürünlerden</em>
           </div>
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Package size={15} /> Malzeme maliyeti
+              <Package size={16} /> Malzeme maliyeti
             </span>
             <strong>{paraGoster(ozet.maliyet)}</strong>
             <em>satılanların reçetesinden</em>
           </div>
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Wallet size={15} /> Brüt kâr
+              <Wallet size={16} /> Brüt kâr
             </span>
             <strong className={brutKar < 0 ? "zarar" : undefined}>{paraGoster(brutKar)}</strong>
             <em>satış eksi malzeme</em>
           </div>
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Percent size={15} /> Kâr oranı
+              <Percent size={16} /> Kâr oranı
             </span>
             <strong className={oran < 0 ? "zarar" : undefined}>{oranMetni(oran)}</strong>
             <em>satışın kâra kalan payı</em>
@@ -1835,7 +1927,7 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
         </div>
         {ozet.ikramMaliyeti > 0 && (
           <p className="kar-cumle">
-            <Gift size={15} />
+            <Gift size={16} />
             <span>
               İkram edilen ürünlerin malzemesi <b>{paraGoster(ozet.ikramMaliyeti)}</b>;
               bu tutar kâra değil, ikram kaybına yazılıyor.
@@ -1852,13 +1944,13 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
       <div className="kar-uclar">
         <KarUcu
           baslik="En çok kazandıranlar"
-          ikon={<TrendingUp size={17} />}
+          ikon={<TrendingUp size={16} />}
           liste={enCok}
           deger={(s) => paraGoster(s.kar)}
         />
         <KarUcu
           baslik="En düşük kâr oranı"
-          ikon={<TrendingDown size={17} />}
+          ikon={<TrendingDown size={16} />}
           liste={enAz}
           deger={(s) => oranMetni(s.oran)}
         />
@@ -1867,7 +1959,7 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
-            <Wallet size={17} /> {gorunen.length} ürün
+            <Wallet size={16} /> {gorunen.length} ürün
             <Ipucu baslik="Birim rakamlar">
               Birim maliyet bir porsiyonun malzemeye kaça mal olduğu, birim kâr
               tanesinden kalan. Fiyat kararı bu iki rakamla verilir.
@@ -1949,7 +2041,7 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
         <section className="ayar-bolum">
           <div className="analiz-liste-ust">
             <h2>
-              <TriangleAlert size={17} /> Maliyeti bilinmeyen {bilinmeyenler.length} ürün
+              <TriangleAlert size={16} /> Maliyeti bilinmeyen {bilinmeyenler.length} ürün
               <Ipucu baslik="Neden hesapta yok">
                 Reçetesi girilmemiş ya da reçete girilmeden önce satılmış ürünler;
                 Menü Stüdyosu'ndan reçete girildiğinde sonraki satışları hesaba katılır.
@@ -1961,7 +2053,7 @@ function Karlilik({ ozet, filtre, ciro }: { ozet: UrunOzeti; filtre: Filtre; cir
               onClick={() => setBilinmeyenAcik((a) => !a)}
             >
               {bilinmeyenAcik ? "Gizle" : "Göster"}
-              <ChevronRight size={15} className={bilinmeyenAcik ? "dokum-ok acik" : "dokum-ok"} />
+              <ChevronRight size={16} className={bilinmeyenAcik ? "dokum-ok acik" : "dokum-ok"} />
             </button>
           </div>
 
@@ -2110,10 +2202,10 @@ function FireCikis({
       <div className="fr-modal" role="dialog" aria-label="Fire ve çıkış dökümü">
         <header className="fr-modal-ust">
           <h2>
-            <Trash2 size={19} /> Fire ve çıkış dökümü
+            <Trash2 size={20} /> Fire ve çıkış dökümü
           </h2>
           <button type="button" className="fr-kapat" onClick={onKapat} aria-label="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
         <div className="fr-modal-govde">
@@ -2121,21 +2213,21 @@ function FireCikis({
             <div className="serit-satir">
               <div className="serit-sayi">
                 <span className="serit-etiket">
-                  <Trash2 size={15} /> Fire
+                  <Trash2 size={16} /> Fire
                 </span>
                 <strong className="fr-fire-rakam">{paraGoster(hesap.fireKurus / 100)}</strong>
                 <em>{hesap.fireAdet} kayıt · kayıp</em>
               </div>
               <div className="serit-sayi">
                 <span className="serit-etiket">
-                  <PackageMinus size={15} /> Çıkış
+                  <PackageMinus size={16} /> Çıkış
                 </span>
                 <strong>{paraGoster(hesap.cikisKurus / 100)}</strong>
                 <em>{hesap.cikisAdet} kayıt · bilinçli tüketim</em>
               </div>
               <div className="serit-sayi">
                 <span className="serit-etiket">
-                  <Percent size={15} /> Firenin ciroya oranı
+                  <Percent size={16} /> Firenin ciroya oranı
                 </span>
                 <strong>{cirodaPay == null ? "—" : `%${cirodaPay.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}`}</strong>
                 <em>her 100 liralık satışta</em>
@@ -2143,7 +2235,7 @@ function FireCikis({
             </div>
             {hesap.fiyatsiz > 0 && (
               <p className="kar-cumle">
-                <TriangleAlert size={15} />
+                <TriangleAlert size={16} />
                 <span>
                   <b>{hesap.fiyatsiz} kayıt</b> tutara katılmadı: malzemenin henüz fiyatlı
                   bir girişi yok.
@@ -2153,14 +2245,14 @@ function FireCikis({
           </section>
 
           <div className="kar-uclar">
-            <SebepKarti baslik="Fire sebepleri" ikon={<Trash2 size={17} />} tip="fire" liste={hesap.fire} toplam={hesap.fireKurus} />
-            <SebepKarti baslik="Çıkış sebepleri" ikon={<PackageMinus size={17} />} tip="cikis" liste={hesap.cikis} toplam={hesap.cikisKurus} />
+            <SebepKarti baslik="Fire sebepleri" ikon={<Trash2 size={16} />} tip="fire" liste={hesap.fire} toplam={hesap.fireKurus} />
+            <SebepKarti baslik="Çıkış sebepleri" ikon={<PackageMinus size={16} />} tip="cikis" liste={hesap.cikis} toplam={hesap.cikisKurus} />
           </div>
 
           <section className="ayar-bolum fr-tablo-bolum">
             <div className="analiz-liste-ust">
               <h2>
-                <Package size={17} /> {gorunen.length} malzeme
+                <Package size={16} /> {gorunen.length} malzeme
                 <Ipucu baslik="Sıra">En çok para götüren malzeme en üstte; fire ve çıkış toplamına göre.</Ipucu>
               </h2>
               <AramaKutusu deger={arama} degistir={setArama} yer="Malzeme ara" />
@@ -2349,7 +2441,7 @@ function Mutfak({ ozet }: { ozet: MutfakSuresiOzeti | null }) {
     return (
       <section className="ayar-bolum">
         <div className="ayar-bos">
-          <ChefHat size={30} />
+          <ChefHat size={24} />
           <p>Bu dönemde hazır işaretlenmiş ürün yok.</p>
         </div>
       </section>
@@ -2366,7 +2458,7 @@ function Mutfak({ ozet }: { ozet: MutfakSuresiOzeti | null }) {
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <ChefHat size={15} /> Hazırlanan
+              <ChefHat size={16} /> Hazırlanan
             </span>
             <strong>{ozet.adet}</strong>
             <em>ürün hazır işaretlendi</em>
@@ -2408,7 +2500,7 @@ function Mutfak({ ozet }: { ozet: MutfakSuresiOzeti | null }) {
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
-            <ChefHat size={17} /> {satirlar.length} ürün
+            <ChefHat size={16} /> {satirlar.length} ürün
           </h2>
           <AramaKutusu deger={arama} degistir={setArama} yer="Ürün ara" />
         </div>
@@ -2493,7 +2585,7 @@ function Personel({ ozet }: { ozet: PersonelOzeti }) {
     return (
       <section className="ayar-bolum">
         <div className="ayar-bos">
-          <Users size={30} />
+          <Users size={24} />
           <p>Bu dönemde kapanmış adisyon yok.</p>
         </div>
       </section>
@@ -2509,7 +2601,7 @@ function Personel({ ozet }: { ozet: PersonelOzeti }) {
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Users size={15} /> Satış yapan
+              <Users size={16} /> Satış yapan
             </span>
             <strong>{ozet.kisi}</strong>
             <em>kişi</em>
@@ -2530,7 +2622,7 @@ function Personel({ ozet }: { ozet: PersonelOzeti }) {
       <section className="ayar-bolum">
         <div className="ayar-bolum-ust">
           <h2>
-            <TrendingUp size={17} /> Ciro dağılımı
+            <TrendingUp size={16} /> Ciro dağılımı
           </h2>
         </div>
         <Dagilim
@@ -2545,7 +2637,7 @@ function Personel({ ozet }: { ozet: PersonelOzeti }) {
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
-            <Users size={17} /> {satirlar.length} kişi
+            <Users size={16} /> {satirlar.length} kişi
           </h2>
           <AramaKutusu deger={arama} degistir={setArama} yer="Personel ara" />
         </div>
@@ -2658,7 +2750,7 @@ function Giderler({
     return (
       <section className="ayar-bolum">
         <div className="ayar-bos">
-          <Wallet size={30} />
+          <Wallet size={24} />
           <p>Bu dönemde gider kaydı yok.</p>
         </div>
       </section>
@@ -2676,7 +2768,7 @@ function Giderler({
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Wallet size={15} /> Toplam gider
+              <Wallet size={16} /> Toplam gider
             </span>
             <strong>{paraGoster(ozet.toplam)}</strong>
             <em>{ozet.kayit} kayıt</em>
@@ -2698,7 +2790,7 @@ function Giderler({
         <section className="ayar-bolum">
           <div className="ayar-bolum-ust">
             <h2>
-              <Layers size={17} /> Gider türü
+              <Layers size={16} /> Gider türü
             </h2>
           </div>
           <Dagilim satirlar={ozet.turler} toplam={ozet.toplam} birim="kayıt" />
@@ -2707,7 +2799,7 @@ function Giderler({
         <section className="ayar-bolum">
           <div className="ayar-bolum-ust">
             <h2>
-              <CreditCard size={17} /> Ödeme tipi
+              <CreditCard size={16} /> Ödeme tipi
             </h2>
           </div>
           <Dagilim satirlar={ozet.odemeler} toplam={ozet.toplam} birim="kayıt" />
@@ -2717,7 +2809,7 @@ function Giderler({
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
-            <Wallet size={17} /> {satirlar.length} gider
+            <Wallet size={16} /> {satirlar.length} gider
           </h2>
           <AramaKutusu deger={arama} degistir={setArama} yer="Tür, açıklama, kişi" />
         </div>
@@ -2817,7 +2909,7 @@ function Saatler({ saatler }: { saatler: { saat: number; tutar: number; adet: nu
   if (saatler.every((s) => s.tutar === 0)) {
     return (
       <div className="ayar-bos">
-        <BarChart3 size={30} />
+        <BarChart3 size={24} />
         <p>Bu dönemde kapanmış adisyon yok.</p>
       </div>
     );
@@ -2832,6 +2924,80 @@ function Saatler({ saatler }: { saatler: { saat: number; tutar: number; adet: nu
         adet: s.adet,
       }))}
     />
+  );
+}
+
+/**
+ * Gün × saat ısı tablosu. Hücrede adet yazıyor, renk adetin dönemin en kalabalık
+ * saatine oranı: dört basamak, en koyusu en kalabalığı. Sağda gün toplamı,
+ * altta saat toplamı — "en yoğun gün" ile "en yoğun saat" tek bakışta.
+ */
+function YogunlukTablosu({ yogunluk }: { yogunluk: Yogunluk }) {
+  if (yogunluk.satirlar.length === 0) {
+    return (
+      <div className="ayar-bos">
+        <Flame size={24} />
+        <p>Bu dönemde açılmış adisyon yok.</p>
+      </div>
+    );
+  }
+
+  const { saatler, satirlar, enCok } = yogunluk;
+  const kademe = (adet: number) => (adet === 0 ? 0 : Math.max(1, Math.ceil((adet / enCok) * 4)));
+  const saatToplami = saatler.map((_, i) => satirlar.reduce((t, s) => t + s.hucreler[i].adet, 0));
+  const genelToplam = saatToplami.reduce((t, n) => t + n, 0);
+  const iki = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    <div className="ygn-kaydir">
+      <div className="ygn" style={{ gridTemplateColumns: `max-content repeat(${saatler.length}, minmax(30px, 1fr)) max-content` }}>
+        <span className="ygn-kose" />
+        {saatler.map((s) => (
+          <span key={s} className="ygn-saat">
+            {iki(s)}
+          </span>
+        ))}
+        <span className="ygn-saat ygn-toplam-baslik">Toplam</span>
+
+        {satirlar.map((satir) => (
+          <Fragment key={satir.baslik}>
+            <span className="ygn-gun" title={satir.baslik}>
+              {satir.etiket}
+            </span>
+            {satir.hucreler.map((h, i) => (
+              <span
+                key={saatler[i]}
+                className={`ygn-hucre k${kademe(h.adet)}`}
+                title={
+                  h.adet
+                    ? `${satir.baslik} · ${iki(saatler[i])}:00 – ${iki((saatler[i] + 1) % 24)}:00\n${h.adet} adisyon · ${paraGoster(h.tutar)}`
+                    : undefined
+                }
+              >
+                {h.adet || ""}
+              </span>
+            ))}
+            <span className="ygn-satir-toplam">{satir.adet || "—"}</span>
+          </Fragment>
+        ))}
+
+        <span className="ygn-gun ygn-alt">Toplam</span>
+        {saatToplami.map((n, i) => (
+          <span key={saatler[i]} className="ygn-sutun-toplam">
+            {n || ""}
+          </span>
+        ))}
+        <span className="ygn-satir-toplam ygn-alt">{genelToplam}</span>
+      </div>
+
+      <div className="ygn-anahtar">
+        <span>Az</span>
+        {[1, 2, 3, 4].map((k) => (
+          <i key={k} className={`ygn-hucre k${k}`} />
+        ))}
+        <span>Çok</span>
+      </div>
+    </div>
   );
 }
 
@@ -2889,7 +3055,7 @@ function Denetim({ kayitlar }: { kayitlar: DenetimSatiri[] }) {
     return (
       <section className="ayar-bolum">
         <div className="ayar-bos">
-          <ShieldCheck size={30} />
+          <ShieldCheck size={24} />
           <p>Bu dönemde denetim kaydı yok.</p>
         </div>
       </section>
@@ -2902,7 +3068,7 @@ function Denetim({ kayitlar }: { kayitlar: DenetimSatiri[] }) {
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <ShieldCheck size={15} /> Toplam işlem
+              <ShieldCheck size={16} /> Toplam işlem
             </span>
             <strong>{kayitlar.length}</strong>
             <em>kayıt</em>
@@ -2920,7 +3086,7 @@ function Denetim({ kayitlar }: { kayitlar: DenetimSatiri[] }) {
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
-            <ShieldCheck size={17} /> {satirlar.length} işlem
+            <ShieldCheck size={16} /> {satirlar.length} işlem
           </h2>
           <div className="denetim-suzgec">
             {/* İşlem türü çip olarak duruyor: "sadece iptaller" en çok sorulan
@@ -2998,7 +3164,7 @@ function OdenmezDokumu({ satirlar }: { satirlar: OdenmezSatiri[] }) {
     return (
       <section className="ayar-bolum">
         <div className="ayar-bos">
-          <Gift size={30} />
+          <Gift size={24} />
           <p>Bu dönemde ikram yok.</p>
         </div>
       </section>
@@ -3015,7 +3181,7 @@ function OdenmezDokumu({ satirlar }: { satirlar: OdenmezSatiri[] }) {
         <div className="serit-satir">
           <div className="serit-sayi">
             <span className="serit-etiket">
-              <Gift size={15} /> Toplam ikram
+              <Gift size={16} /> Toplam ikram
             </span>
             <strong>{paraGoster(toplam)}</strong>
             <em>{adet} adet ürün</em>
@@ -3110,7 +3276,7 @@ function AcikHesap({ hareketler }: { hareketler: CariHareketSatiri[] }) {
     return (
       <section className="ayar-bolum">
         <div className="ayar-bos">
-          <ClipboardList size={30} />
+          <ClipboardList size={24} />
           <p>Bu dönemde açık hesap hareketi yok.</p>
         </div>
       </section>
@@ -3205,7 +3371,7 @@ function Yapiliyor({ bolum }: { bolum: string }) {
   return (
     <section className="ayar-bolum">
       <div className="ayar-bos">
-        <ClipboardList size={30} />
+        <ClipboardList size={24} />
         <p>
           <strong>{bilgi?.ad ?? "Bu bölüm"}</strong> hazırlanıyor.
           {bilgi ? ` ${bilgi.metin}` : ""}

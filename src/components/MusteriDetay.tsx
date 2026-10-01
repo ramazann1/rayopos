@@ -56,9 +56,9 @@ function OdemeAl({
     <div className="up-fon ust" onClick={onKapat}>
       <div className="up-modal cd-kucuk" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <span className="cd-im"><HandCoins size={18} /></span>
+          <span className="cd-im"><HandCoins size={20} /></span>
           <h3>Ödeme al</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="cd-form">
@@ -124,9 +124,9 @@ function BakiyeDuzelt({
     <div className="up-fon ust" onClick={onKapat}>
       <div className="up-modal cd-kucuk" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <span className="cd-im"><Scale size={18} /></span>
+          <span className="cd-im"><Scale size={20} /></span>
           <h3>Bakiye düzelt</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="cd-form">
@@ -273,17 +273,17 @@ export default function MusteriDetay({
             {tahsilatYapabilir && (
               <>
                 <button className="cari-tus one" onClick={() => setOdeme(true)}>
-                  <HandCoins size={15} /> Ödeme al
+                  <HandCoins size={16} /> Ödeme al
                 </button>
                 <button className="cari-tus" onClick={() => setDuzeltme(true)}>
-                  <Scale size={15} /> Bakiye düzelt
+                  <Scale size={16} /> Bakiye düzelt
                 </button>
               </>
             )}
             <button className="cari-tus" onClick={onDuzenle}>
-              <Pencil size={15} /> Düzenle
+              <Pencil size={16} /> Düzenle
             </button>
-            <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+            <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
           </div>
         </header>
 

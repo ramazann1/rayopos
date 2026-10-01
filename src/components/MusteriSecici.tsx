@@ -51,11 +51,11 @@ export default function MusteriSecici({
       <div className="up-modal msc-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <span className="msc-im">
-            <Users size={18} />
+            <Users size={20} />
           </span>
           <h3>{baslik}</h3>
           <button className="up-kapat" aria-label="Kapat" onClick={onKapat}>
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 

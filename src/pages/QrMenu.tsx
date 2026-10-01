@@ -138,7 +138,7 @@ export default function QrMenu({ kod }: { kod: string }) {
       </main>
 
       <footer className="qr-dip">
-        <UtensilsCrossed size={15} /> RayoPOS
+        <UtensilsCrossed size={16} /> RayoPOS
       </footer>
     </div>
   );
@@ -240,7 +240,7 @@ function Kart({ urun, acik, ac, dar }: UrunOzellikleri & { dar?: boolean }) {
           {urun.aciklama && !acik && <p className="qr-tanitim">{urun.aciklama}</p>}
           <div className="qr-kart-alt">
             <Fiyatlar porsiyonlar={urun.porsiyonlar} />
-            {acilir && <ChevronDown className="qr-ok" size={18} />}
+            {acilir && <ChevronDown className="qr-ok" size={16} />}
           </div>
         </div>
       </button>
@@ -261,7 +261,7 @@ function Satir({ urun, acik, ac }: UrunOzellikleri) {
           {urun.aciklama && !acik && <p className="qr-tanitim">{urun.aciklama}</p>}
         </span>
         <Fiyatlar porsiyonlar={urun.porsiyonlar} />
-        {acilir && <ChevronDown className="qr-ok" size={18} />}
+        {acilir && <ChevronDown className="qr-ok" size={16} />}
       </button>
       {acik && <Detay urun={urun} />}
     </article>

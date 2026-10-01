@@ -349,7 +349,7 @@ export default function TopluDuzenle({
                   : "Sipariş türüne göre ayrı fiyat"
             }
           >
-            {acik ? <Undo2 size={15} /> : <SplitSquareHorizontal size={15} />}
+            {acik ? <Undo2 size={16} /> : <SplitSquareHorizontal size={16} />}
           </button>
         </div>
       </td>
@@ -441,7 +441,7 @@ export default function TopluDuzenle({
           />
           {arama && (
             <button className="arama-temizle" onClick={() => setArama("")} title="Temizle">
-              <X size={15} />
+              <X size={16} />
             </button>
           )}
         </div>
@@ -524,15 +524,15 @@ export default function TopluDuzenle({
         <table className="toplu-tablo">
           <thead>
             <tr>
-              <th className="sol">{basligi(<Package size={15} />, "Ürün")}</th>
-              <th className="s-kod">{basligi(<Hash size={15} />, "Kod")}</th>
+              <th className="sol">{basligi(<Package size={16} />, "Ürün")}</th>
+              <th className="s-kod">{basligi(<Hash size={16} />, "Kod")}</th>
               {!!kdvler.length && (
-                <th className="s-kdv">{basligi(<Percent size={15} />, "KDV")}</th>
+                <th className="s-kdv">{basligi(<Percent size={16} />, "KDV")}</th>
               )}
-              <th className="s-porsiyon">{basligi(<Scale size={15} />, "Porsiyon")}</th>
-              <th className="s-para sag">{basligi(<Tag size={15} />, "Fiyat (masa)")}</th>
-              <th className="s-para sag">{basligi(<Wallet size={15} />, "Maliyet")}</th>
-              <th className="s-imler">{basligi(<Eye size={15} />, "Görünürlük")}</th>
+              <th className="s-porsiyon">{basligi(<Scale size={16} />, "Porsiyon")}</th>
+              <th className="s-para sag">{basligi(<Tag size={16} />, "Fiyat (masa)")}</th>
+              <th className="s-para sag">{basligi(<Wallet size={16} />, "Maliyet")}</th>
+              <th className="s-imler">{basligi(<Eye size={16} />, "Görünürlük")}</th>
             </tr>
           </thead>
 

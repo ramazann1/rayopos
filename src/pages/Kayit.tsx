@@ -50,7 +50,7 @@ export default function Kayit({ onGeri }: { onGeri: () => void }) {
           <span className="giris-alt">Birkaç dakikada satışa hazır ol</span>
 
           <label className="giris-satir">
-            <Store size={18} />
+            <Store size={16} />
             <input
               value={isletme}
               onChange={(e) => setIsletme(e.target.value)}
@@ -60,7 +60,7 @@ export default function Kayit({ onGeri }: { onGeri: () => void }) {
           </label>
 
           <label className="giris-satir">
-            <User size={18} />
+            <User size={16} />
             <input
               value={ad}
               onChange={(e) => setAd(e.target.value)}
@@ -71,7 +71,7 @@ export default function Kayit({ onGeri }: { onGeri: () => void }) {
           {/* Numara hem iletişim bilgisi hem giriş anahtarı; sonradan Personel
               ekranından değiştirilebiliyor. */}
           <label className="giris-satir">
-            <Phone size={18} />
+            <Phone size={16} />
             <input
               value={telefon}
               onChange={(e) => setTelefon(e.target.value)}
@@ -81,7 +81,7 @@ export default function Kayit({ onGeri }: { onGeri: () => void }) {
           </label>
 
           <label className="giris-satir">
-            <Lock size={18} />
+            <Lock size={16} />
             <input
               type={sifreGorunsun ? "text" : "password"}
               value={sifre}
@@ -93,7 +93,7 @@ export default function Kayit({ onGeri }: { onGeri: () => void }) {
               className="giris-goz"
               onClick={() => setSifreGorunsun((g) => !g)}
             >
-              {sifreGorunsun ? <EyeOff size={18} /> : <Eye size={18} />}
+              {sifreGorunsun ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </label>
 
@@ -101,7 +101,7 @@ export default function Kayit({ onGeri }: { onGeri: () => void }) {
             <ul className="sifre-kurallar">
               {kurallar.map((k) => (
                 <li key={k.metin} className={k.tamam ? "tamam" : undefined}>
-                  {k.tamam ? <Check size={13} /> : <Circle size={13} />}
+                  {k.tamam ? <Check size={14} /> : <Circle size={14} />}
                   {k.metin}
                 </li>
               ))}
@@ -118,7 +118,7 @@ export default function Kayit({ onGeri }: { onGeri: () => void }) {
           </button>
 
           <button type="button" className="giris-mod" onClick={onGeri}>
-            <ArrowLeft size={15} /> Hesabım var, giriş yapayım
+            <ArrowLeft size={16} /> Hesabım var, giriş yapayım
           </button>
         </form>
       </div>

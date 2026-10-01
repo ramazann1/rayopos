@@ -132,7 +132,7 @@ function MasaKutusu({
       <strong>{masa.ad}</strong>
       {masa.kapasite ? (
         <span className="ayar-masa-kapasite">
-          <Users size={13} /> {masa.kapasite}
+          <Users size={14} /> {masa.kapasite}
         </span>
       ) : null}
     </div>
@@ -161,7 +161,7 @@ function MasaPaneli({ masa, onKapat, onKaydet, onSil }: MasaPaneliProps) {
       alt={
         <>
           <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-            <Trash2 size={17} />
+            <Trash2 size={16} />
           </button>
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button
@@ -175,7 +175,7 @@ function MasaPaneli({ masa, onKapat, onKaydet, onSil }: MasaPaneliProps) {
               })
             }
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -237,7 +237,7 @@ function TopluEklePaneli({
         <>
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button className="pnc-kaydet" disabled={!gecerli} onClick={() => onEkle(onEk.trim(), sayi, sekil)}>
-            <Check size={17} /> Ekle
+            <Check size={16} /> Ekle
           </button>
         </>
       }
@@ -303,12 +303,12 @@ function BolgePaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button className="pnc-kaydet" disabled={!ad.trim()} onClick={() => onKaydet(ad.trim())}>
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -355,7 +355,7 @@ function OdemeTipiPaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
@@ -364,7 +364,7 @@ function OdemeTipiPaneli({
             disabled={!ad.trim()}
             onClick={() => onKaydet({ ad: ad.trim(), renk, sinif, acikHesap, aktif, kasayaGirer })}
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -462,7 +462,7 @@ function IndirimPaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
@@ -471,7 +471,7 @@ function IndirimPaneli({
             disabled={!gecerli}
             onClick={() => onKaydet({ ad: ad.trim(), tip, deger: sayi, sira: tanim?.sira ?? 0, aktif })}
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -559,7 +559,7 @@ function ServisPaneli({
             disabled={!gecerli}
             onClick={() => onKaydet({ ad: ad.trim(), tip, deger: sayi, otomatik })}
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -730,11 +730,11 @@ function QrMenuBolumu({
             <strong>{bagAdresi}</strong>
             <div className="qr-ayar-dugmeler">
               <button onClick={kopyala}>
-                {kopyalandi ? <Check size={15} /> : <Copy size={15} />}
+                {kopyalandi ? <Check size={16} /> : <Copy size={16} />}
                 {kopyalandi ? "Kopyalandı" : "Adresi kopyala"}
               </button>
               <button onClick={yazdir} disabled={!karekod}>
-                <Printer size={15} /> Karekodu yazdır
+                <Printer size={16} /> Karekodu yazdır
               </button>
             </div>
           </div>
@@ -1000,15 +1000,15 @@ export default function IsletmeAyarlari() {
           {masalarBolumu && (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><LayoutGrid size={17} /> Bölgeler ve Masalar</h2>
+              <h2><LayoutGrid size={20} /> Bölgeler ve Masalar</h2>
               <button className="ayar-ekle" onClick={() => setBolgePaneli(null)}>
-                <Plus size={15} /> Bölge ekle
+                <Plus size={16} /> Bölge ekle
               </button>
             </div>
 
             {bolgeler.length === 0 ? (
               <div className="ayar-bos">
-                <LayoutGrid size={30} />
+                <LayoutGrid size={24} />
                 <p>Henüz bölge yok. Bahçe, salon veya teras gibi bir bölge ekleyerek başlayın.</p>
               </div>
             ) : (
@@ -1040,7 +1040,7 @@ export default function IsletmeAyarlari() {
                             <ChevronRight size={14} />
                           </button>
                           <button onClick={() => setBolgePaneli(b)} title="Bölgeyi düzenle">
-                            <Pencil size={13} />
+                            <Pencil size={14} />
                           </button>
                         </span>
                       )}
@@ -1050,10 +1050,10 @@ export default function IsletmeAyarlari() {
 
                 <div className="masa-islem-serit">
                   <button className="ayar-ekle" onClick={masaEklePanelsiz}>
-                    <Plus size={15} /> Masa ekle
+                    <Plus size={16} /> Masa ekle
                   </button>
                   <button className="ayar-ekle ikincil" onClick={() => setTopluAcik(true)}>
-                    <LayoutGrid size={15} /> Toplu masa ekle
+                    <LayoutGrid size={16} /> Toplu masa ekle
                   </button>
 
                   <div className="gorunum-sec">
@@ -1061,19 +1061,19 @@ export default function IsletmeAyarlari() {
                       className={gorunum === "liste" ? "aktif" : ""}
                       onClick={() => setGorunum("liste")}
                     >
-                      <List size={15} /> Liste
+                      <List size={16} /> Liste
                     </button>
                     <button
                       className={gorunum === "plan" ? "aktif" : ""}
                       onClick={planaGec}
                     >
-                      <Map size={15} /> Plan
+                      <Map size={16} /> Plan
                     </button>
                   </div>
 
                   {gorunum === "plan" && masalar.length > 0 && (
                     <button className="ayar-ekle ikincil" onClick={otomatikDizVeKaydet}>
-                      <Grid3x3 size={15} /> Otomatik diz
+                      <Grid3x3 size={16} /> Otomatik diz
                     </button>
                   )}
                 </div>
@@ -1133,7 +1133,7 @@ export default function IsletmeAyarlari() {
                 <label>İşletme</label>
                 <strong>{isletmeAdi() || "—"}</strong>
                 <p>
-                  <Lock size={13} /> İşletme adı ve kodu kayıt sırasında
+                  <Lock size={14} /> İşletme adı ve kodu kayıt sırasında
                   belirlenir, sonradan değiştirilemez.
                 </p>
               </div>
@@ -1182,7 +1182,7 @@ export default function IsletmeAyarlari() {
                     disabled={!kasaTaslak}
                     onClick={() => setKasaOnay(true)}
                   >
-                    <Check size={17} />
+                    <Check size={16} />
                   </button>
                 )}
               </div>
@@ -1479,7 +1479,7 @@ export default function IsletmeAyarlari() {
               <span className="ayar-satir-sag">
                 {indirimler.length > 0 && <i className="ayar-sayi">{indirimler.length}</i>}
                 <button className="ayar-satir-ekle" onClick={() => setIndirimPaneli(null)}>
-                  <Plus size={15} /> Ekle
+                  <Plus size={16} /> Ekle
                 </button>
               </span>
             </AyarSatiri>
@@ -1504,9 +1504,9 @@ export default function IsletmeAyarlari() {
           {odemeBolumu && (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><Wallet size={17} /> Ödeme Tipleri</h2>
+              <h2><Wallet size={20} /> Ödeme Tipleri</h2>
               <button className="ayar-ekle" onClick={() => setOdemePaneli(null)}>
-                <Plus size={15} /> Ödeme tipi ekle
+                <Plus size={16} /> Ödeme tipi ekle
               </button>
             </div>
 
@@ -1535,7 +1535,7 @@ export default function IsletmeAyarlari() {
 
             {odemeTipleri.length === 0 ? (
               <div className="ayar-bos">
-                <Wallet size={30} />
+                <Wallet size={24} />
                 <p>Henüz ödeme tipi yok. Nakit ve kredi kartı ekleyerek başlayın.</p>
               </div>
             ) : (
@@ -1560,7 +1560,7 @@ export default function IsletmeAyarlari() {
                         onClick={() => odemeTasi(t, -1)}
                         title="Yukarı al"
                       >
-                        <ChevronUp size={15} />
+                        <ChevronUp size={16} />
                       </button>
                       <button
                         disabled={
@@ -1569,7 +1569,7 @@ export default function IsletmeAyarlari() {
                         onClick={() => odemeTasi(t, 1)}
                         title="Aşağı al"
                       >
-                        <ChevronDown size={15} />
+                        <ChevronDown size={16} />
                       </button>
                       <button onClick={() => setOdemePaneli(t)} title="Düzenle">
                         <Pencil size={14} />

@@ -120,7 +120,7 @@ function MasasizKart({
     <div className={adisyon.adet > 0 ? "masasiz-kart dolu" : "masasiz-kart"}>
       <button className="masasiz-govde" onClick={onAc}>
         <span className="masasiz-tip">
-          {paket ? <Bike size={15} /> : <ShoppingBag size={15} />}
+          {paket ? <Bike size={16} /> : <ShoppingBag size={16} />}
           {masasizEtiketi(adisyon.tip, adisyon.gunlukNo)}
           {adisyon.bekliyor ? <em>Gönderilmedi</em> : !adisyon.gunlukNo && <em>#{adisyon.no}</em>}
         </span>
@@ -137,7 +137,7 @@ function MasasizKart({
         )}
 
         <span className={gecikti ? "masasiz-sure gecikti" : "masasiz-sure"}>
-          <Clock size={13} /> {sure}
+          <Clock size={14} /> {sure}
         </span>
       </button>
 
@@ -440,7 +440,7 @@ export default function Salon() {
     setIslem(null);
     setOnay({
       baslik: hedefOnayBasligi(tip),
-      ikon: tasima ? <ArrowRightLeft size={22} /> : <Combine size={22} />,
+      ikon: tasima ? <ArrowRightLeft size={20} /> : <Combine size={20} />,
       mesaj: hedefOnayMesaji(tip, kaynak.ad, hedef.ad),
       onayMetni: tasima ? "Taşı" : "Birleştir",
       onOnay: async () => {
@@ -670,7 +670,7 @@ export default function Salon() {
           <div className="yukleniyor"><div className="cember" /></div>
         ) : okunamadi ? (
           <div className="ayar-bos">
-            <CloudOff size={30} />
+            <CloudOff size={24} />
             <p>
               Masalar yüklenemedi. Sunucuya ulaşılamıyor; bağlantı gelince yeniden deneyin.
             </p>
@@ -680,7 +680,7 @@ export default function Salon() {
           </div>
         ) : bolgeler.length === 0 ? (
           <div className="ayar-bos">
-            <LayoutGrid size={30} />
+            <LayoutGrid size={24} />
             <p>
               Henüz masa tanımlanmamış. İşletme Ayarları ekranından bölge ve masalarınızı
               ekleyerek başlayın.
@@ -718,7 +718,7 @@ export default function Salon() {
                   className={seciliId === "masasiz" ? "masasiz-sekme aktif" : "masasiz-sekme"}
                   onClick={() => { setSeciliId("masasiz"); setMasasizTip(tekTip); }}
                 >
-                  <ShoppingBag size={15} />
+                  <ShoppingBag size={16} />
                   {masasizBaslik}
                   {masasizlar.length > 0 && <em>{masasizlar.length}</em>}
                 </button>
@@ -767,7 +767,7 @@ export default function Salon() {
               <section className="bolge">
                 <h2 className="masasiz-baslik">
                   <button className="masasiz-geri" onClick={() => setMasasizTip(null)}>
-                    <ChevronLeft size={18} />
+                    <ChevronLeft size={16} />
                   </button>
                   {masasizTip === "paket" ? "Paket" : "Gel Al"}
                   <span>{listelenen.length}</span>
@@ -775,7 +775,7 @@ export default function Salon() {
 
                 <div className="masa-grid">
                   <button className="masasiz-yeni" onClick={() => setYeniSiparis(true)}>
-                    <Plus size={22} />
+                    <Plus size={20} />
                     Yeni sipariş
                   </button>
 
@@ -966,7 +966,7 @@ export default function Salon() {
             baslik={
               adisyonIslem.tip === "iptal" ? "Adisyon iptal edilsin mi?" : "Adisyon ikram edilsin mi?"
             }
-            ikon={adisyonIslem.tip === "iptal" ? <Ban size={18} /> : <Gift size={18} />}
+            ikon={adisyonIslem.tip === "iptal" ? <Ban size={16} /> : <Gift size={16} />}
             tehlikeli={adisyonIslem.tip === "iptal"}
             mesaj={
               adisyonIslem.tip === "iptal"

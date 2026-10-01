@@ -410,8 +410,12 @@ export async function oncekiAdisyonlar(f: AnalizFiltre): Promise<AnalizAdisyon[]
   return adisyonlariCek(aralik.bas, aralik.bit, f);
 }
 
+// Sunucu tek seferde en çok bin satır veriyor; fazlası sessizce kesiliyordu.
+// Uzun dönemde liste parça parça çekiliyor.
+const PARCA = 500;
+
 async function adisyonlariCek(bas: Date, bit: Date, f: AnalizFiltre) {
-  const [{ data }, varsayilanKdv] = await Promise.all([
+  const parcaCek = (bas: Date, bit: Date, i: number) =>
     supabase
       .from("adisyonlar")
       .select(alanlar())
@@ -420,11 +424,20 @@ async function adisyonlariCek(bas: Date, bit: Date, f: AnalizFiltre) {
           `and(kapanis.is.null,acilis.gte.${bas.toISOString()},acilis.lt.${bit.toISOString()})`
       )
       .order("acilis", { ascending: false })
-      .limit(2000),
-    varsayilanKdvOrani(),
-  ]);
+      .order("id", { ascending: false })
+      .range(i, i + PARCA - 1);
 
-  const satirlar = ((data as any[]) ?? []).map((s) => satiraCevir(s, varsayilanKdv));
+  const kdvSozu = varsayilanKdvOrani();
+  const ham: any[] = [];
+  for (let i = 0; ; i += PARCA) {
+    const { data } = await parcaCek(bas, bit, i);
+    const parca = (data as any[]) ?? [];
+    ham.push(...parca);
+    if (parca.length < PARCA) break;
+  }
+  const varsayilanKdv = await kdvSozu;
+
+  const satirlar = ham.map((s) => satiraCevir(s, varsayilanKdv));
   return satirlar.filter((a) => uyuyor(a, f));
 }
 
@@ -435,6 +448,14 @@ async function adisyonlariCek(bas: Date, bit: Date, f: AnalizFiltre) {
  */
 export function tamamiIkram(a: { toplam: number; ikram: number; durum: string }) {
   return a.durum === "kapali" && a.ikram > 0 && a.toplam <= 0;
+}
+
+/** Listede ve dışa aktarılan dosyada aynı kelime yazsın diye tek yerde. */
+export function durumMetni(a: AnalizAdisyon) {
+  if (a.durum === "acik") return "Açık";
+  if (a.durum === "iptal") return "İptal";
+  if (tamamiIkram(a)) return "İkram";
+  return a.kalan > 0 ? "Eksik tahsilat" : "Kapandı";
 }
 
 // Tarih dışındaki süzgeçler veritabanında değil burada çalışıyor: aynı liste
@@ -644,7 +665,7 @@ export type AnalizOzeti = {
   net: number;
 };
 
-const TIP_ADLARI: Record<AdisyonTipi, string> = {
+export const TIP_ADLARI: Record<AdisyonTipi, string> = {
   masa: "Masa",
   gelal: "Gel Al",
   paket: "Paket",
@@ -779,6 +800,82 @@ export function zamanSerisi(adisyonlar: AnalizAdisyon[], bas: Date, bit: Date): 
     k.adet += 1;
   }
   return { birim, noktalar: [...kutular.values()] };
+}
+
+export type YogunlukHucresi = { adet: number; tutar: number };
+export type YogunlukSatiri = {
+  etiket: string;
+  baslik: string;
+  hucreler: YogunlukHucresi[];
+  adet: number;
+};
+export type Yogunluk = {
+  saatler: number[];
+  satirlar: YogunlukSatiri[];
+  enCok: number;
+  /** İki haftayı aşan dönemde satır günler değil haftanın günleri. */
+  haftalik: boolean;
+};
+
+const HAFTA_GUNLERI = [
+  ["Pazartesi", "Pzt"],
+  ["Salı", "Sal"],
+  ["Çarşamba", "Çar"],
+  ["Perşembe", "Per"],
+  ["Cuma", "Cum"],
+  ["Cumartesi", "Cmt"],
+  ["Pazar", "Paz"],
+];
+
+/**
+ * Gün × saat tablosu: hangi gün hangi saatte kaç adisyon açıldı. Kalabalık
+ * hesabın kapandığı değil masanın açıldığı saatte; iptal edilenler sayılmıyor,
+ * açık masalar sayılıyor.
+ *
+ * Bir aylık dönemde otuz satır okunmuyor; iki haftayı aşınca satırlar haftanın
+ * yedi gününe toplanıyor — "cumartesi akşamları dolu" sorusu da zaten bu.
+ * Sütunlar kasa günü sırasında ve her zaman 24 saat — dönemden döneme tablo aynı kalsın.
+ */
+export function yogunlukTablosu(adisyonlar: AnalizAdisyon[], bas: Date, bit: Date): Yogunluk {
+  const sira = kasaSaatSirasi();
+  const yeri = new Map(sira.map((saat, i) => [saat, i]));
+  const gunSayisi = Math.round((bit.getTime() - bas.getTime()) / 86400000);
+  const haftalik = gunSayisi > 14;
+
+  const bosHucreler = () => sira.map(() => ({ adet: 0, tutar: 0 }));
+  const satirlar = new Map<string, YogunlukSatiri>();
+
+  if (haftalik) {
+    HAFTA_GUNLERI.forEach(([ad, kisa], i) =>
+      satirlar.set(String(i), { etiket: kisa, baslik: ad, hucreler: bosHucreler(), adet: 0 })
+    );
+  } else {
+    for (let gun = kasaGunuBasi(bas); gun < bit; gun = gunEkle(gun, 1)) {
+      satirlar.set(gun.toDateString(), {
+        etiket: `${HAFTA_GUNLERI[(gun.getDay() + 6) % 7][1]} ${String(gun.getDate()).padStart(2, "0")}.${String(gun.getMonth() + 1).padStart(2, "0")}`,
+        baslik: gun.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" }),
+        hucreler: bosHucreler(),
+        adet: 0,
+      });
+    }
+  }
+
+  for (const a of adisyonlar) {
+    if (a.durum === "iptal") continue;
+    const an = new Date(a.acilis);
+    const gun = kasaGunuBasi(an);
+    const satir = satirlar.get(haftalik ? String((gun.getDay() + 6) % 7) : gun.toDateString());
+    if (!satir) continue;
+    const hucre = satir.hucreler[yeri.get(an.getHours()) ?? 0];
+    hucre.adet += 1;
+    hucre.tutar += a.toplam;
+    satir.adet += 1;
+  }
+
+  const liste = [...satirlar.values()];
+  const enCok = Math.max(0, ...liste.flatMap((s) => s.hucreler.map((h) => h.adet)));
+  if (enCok === 0) return { saatler: [], satirlar: [], enCok, haftalik };
+  return { saatler: sira, satirlar: liste, enCok, haftalik };
 }
 
 export type UrunSatiri = {

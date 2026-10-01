@@ -62,7 +62,7 @@ function OdenmezPaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
@@ -71,7 +71,7 @@ function OdenmezPaneli({
             disabled={!ad.trim()}
             onClick={() => onKaydet({ ad, unvan, aktif })}
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -247,12 +247,12 @@ export default function Odenmezler() {
         ) : (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><Gift size={17} /> Ödenmezler</h2>
+              <h2><Gift size={20} /> Ödenmezler</h2>
               <button className="satir-tus" onClick={aktar}>
-                <Users size={15} /> Personelden aktar
+                <Users size={16} /> Personelden aktar
               </button>
               <button className="satir-tus" onClick={indir} disabled={!liste.length}>
-                <Download size={15} /> Excel indir
+                <Download size={16} /> Excel indir
               </button>
               <input
                 ref={dosyaSecici}
@@ -262,16 +262,16 @@ export default function Odenmezler() {
                 onChange={(e) => dosyaSecildi(e.target.files?.[0])}
               />
               <button className="satir-tus" onClick={() => dosyaSecici.current?.click()}>
-                <Upload size={15} /> Excel'den yükle
+                <Upload size={16} /> Excel'den yükle
               </button>
               <button className="ayar-ekle" onClick={() => setPanel(null)}>
-                <Plus size={15} /> Ödenmez ekle
+                <Plus size={16} /> Ödenmez ekle
               </button>
             </div>
 
             {liste.length === 0 ? (
               <div className="ayar-bos">
-                <Gift size={30} />
+                <Gift size={24} />
                 <p>
                   Henüz kayıt yok. "Personelden aktar" ile çalışanlarınızı tek
                   seferde ekleyebilirsiniz.
@@ -279,7 +279,7 @@ export default function Odenmezler() {
               </div>
             ) : gorunen.length === 0 ? (
               <div className="ayar-bos">
-                <Gift size={30} />
+                <Gift size={24} />
                 <p>"{ara}" ile eşleşen kayıt yok.</p>
               </div>
             ) : (
@@ -329,7 +329,7 @@ export default function Odenmezler() {
       {plan && (
         <OnayModal
           baslik="Dosyadan yüklenecekler"
-          ikon={<Upload size={17} />}
+          ikon={<Upload size={16} />}
           mesaj={planOzeti(plan)}
           onayMetni={yaziliyor ? "Yazılıyor…" : "Yaz"}
           onOnay={planiYaz}

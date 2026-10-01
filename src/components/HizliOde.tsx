@@ -104,10 +104,10 @@ export default function HizliOde({
     <div className="up-fon" onClick={onKapat}>
       <div className="up-modal tam hizli-ode" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <Zap size={18} className="hizli-simge" />
+          <Zap size={20} className="hizli-simge" />
           <h3>Hızlı Öde — {baslik}</h3>
           <button className="up-kapat" aria-label="Kapat" onClick={onKapat}>
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -167,7 +167,7 @@ export default function HizliOde({
           />
           {indirimYapabilir() && (
             <button className="hizli-indirim" onClick={() => setIndirimAcik(true)}>
-              <Percent size={15} />
+              <Percent size={16} />
               İndirim
             </button>
           )}

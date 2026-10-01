@@ -49,11 +49,11 @@ export default function Bildirim({
       onClick={onKapat}
     >
       <span className="bildirim-im">
-        <Ikon size={15} />
+        <Ikon size={16} />
       </span>
       <p>{mesaj}</p>
       <button className="bildirim-kapat" aria-label="Kapat" onClick={onKapat}>
-        <X size={15} />
+        <X size={16} />
       </button>
       {/* Süre çubuğu: kutunun neden kaybolacağını gösteriyor. */}
       <i className="bildirim-sure" style={{ animationDuration: `${sure}ms` }} />

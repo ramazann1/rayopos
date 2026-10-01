@@ -20,14 +20,14 @@ export default function IslemPenceresi({
       <div className="up-modal ip-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust ip-ust">
           <span className="ip-simge">
-            <LayoutGrid size={18} />
+            <LayoutGrid size={20} />
           </span>
           <div className="ip-baslik">
             <h3>{baslik}</h3>
             {ozet && <span className="ip-ozet">{ozet}</span>}
           </div>
           <button className="up-kapat" onClick={onKapat} aria-label="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 

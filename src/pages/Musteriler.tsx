@@ -87,7 +87,7 @@ function AdresBolumu({ musteriId }: { musteriId: number }) {
       <div className="adres-liste">
         {liste.map((a) => (
           <div key={a.id} className="adres-satir">
-            <MapPin size={15} />
+            <MapPin size={16} />
             <span className="adres-metin">
               <strong>
                 {a.baslik}
@@ -107,7 +107,7 @@ function AdresBolumu({ musteriId }: { musteriId: number }) {
 
       {acik === undefined ? (
         <button className="satir-tus" onClick={() => formaAl(null)}>
-          <Plus size={15} /> Adres ekle
+          <Plus size={16} /> Adres ekle
         </button>
       ) : (
         <div className="adres-form">
@@ -173,10 +173,10 @@ function MusteriPaneli({
       <div className="up-modal mp-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <span className="mp-im">
-            {musteri ? <UserRound size={18} /> : <UserRoundPlus size={18} />}
+            {musteri ? <UserRound size={20} /> : <UserRoundPlus size={20} />}
           </span>
           <h3>{musteri ? `${tamAd(musteri)} · #${musteri.no}` : "Yeni müşteri"}</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="mp-govde musteri-form">
@@ -267,7 +267,7 @@ function MusteriPaneli({
         <footer className="mp-alt">
           {onSil && (
             <button className="mp-sil" onClick={onSil}>
-              <Trash2 size={15} /> Sil
+              <Trash2 size={16} /> Sil
             </button>
           )}
           <button className="cd-vazgec" onClick={onKapat}>Vazgeç</button>
@@ -465,7 +465,7 @@ export default function Musteriler() {
         ) : (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><UsersRound size={17} /> Müşteriler</h2>
+              <h2><UsersRound size={20} /> Müşteriler</h2>
               <div className="cip-secim">
                 <button
                   className={yalnizAcikHesap ? "aktif" : ""}
@@ -483,7 +483,7 @@ export default function Musteriler() {
               {duzenleyebilir && (
                 <>
                   <button className="satir-tus" onClick={indir} disabled={!liste.length}>
-                    <Download size={15} /> Excel indir
+                    <Download size={16} /> Excel indir
                   </button>
                   <input
                     ref={dosyaSecici}
@@ -493,10 +493,10 @@ export default function Musteriler() {
                     onChange={(e) => dosyaSecildi(e.target.files?.[0])}
                   />
                   <button className="satir-tus" onClick={() => dosyaSecici.current?.click()}>
-                    <Upload size={15} /> Excel'den yükle
+                    <Upload size={16} /> Excel'den yükle
                   </button>
                   <button className="ayar-ekle" onClick={() => setPanel(null)}>
-                    <Plus size={15} /> Müşteri ekle
+                    <Plus size={16} /> Müşteri ekle
                   </button>
                 </>
               )}
@@ -519,12 +519,12 @@ export default function Musteriler() {
 
             {liste.length === 0 ? (
               <div className="ayar-bos">
-                <UsersRound size={30} />
+                <UsersRound size={24} />
                 <p>Henüz müşteri yok. Sık gelen misafirlerinizi ekleyerek başlayın.</p>
               </div>
             ) : gorunen.length === 0 ? (
               <div className="ayar-bos">
-                <UsersRound size={30} />
+                <UsersRound size={24} />
                 <p>Süzgece uyan müşteri yok.</p>
               </div>
             ) : (
@@ -610,7 +610,7 @@ export default function Musteriler() {
       {plan && (
         <OnayModal
           baslik="Dosyadan yüklenecekler"
-          ikon={<Upload size={17} />}
+          ikon={<Upload size={16} />}
           mesaj={planOzeti(plan)}
           onayMetni={yaziliyor ? "Yazılıyor…" : "Yaz"}
           onOnay={planiYaz}

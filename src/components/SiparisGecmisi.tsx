@@ -30,17 +30,17 @@ const gunSaat = (t: string) =>
  * ikonla çizilseydi "ne oldu" sorusunun cevabı yalnız yazıda kalırdı.
  */
 const DENETIM_IKONLARI: Record<string, React.ReactNode> = {
-  kalem_iptal: <Ban size={15} />,
-  kalem_iptal_geri: <Undo2 size={15} />,
-  kalem_ikram: <Gift size={15} />,
-  kalem_ikram_geri: <Undo2 size={15} />,
-  adisyon_iptal: <Ban size={15} />,
-  adisyon_ikram: <Gift size={15} />,
-  tahsilat_sil: <Trash2 size={15} />,
-  tahsilat_tip_duzelt: <Pencil size={15} />,
-  hesap_eksik_kapat: <TriangleAlert size={15} />,
-  adisyon_masa_degisti: <ArrowRightLeft size={15} />,
-  adisyon_birlestirildi: <Merge size={15} />,
+  kalem_iptal: <Ban size={16} />,
+  kalem_iptal_geri: <Undo2 size={16} />,
+  kalem_ikram: <Gift size={16} />,
+  kalem_ikram_geri: <Undo2 size={16} />,
+  adisyon_iptal: <Ban size={16} />,
+  adisyon_ikram: <Gift size={16} />,
+  tahsilat_sil: <Trash2 size={16} />,
+  tahsilat_tip_duzelt: <Pencil size={16} />,
+  hesap_eksik_kapat: <TriangleAlert size={16} />,
+  adisyon_masa_degisti: <ArrowRightLeft size={16} />,
+  adisyon_birlestirildi: <Merge size={16} />,
 };
 
 /** Defter satırının altına yazılan tek cümle: neye, ne kadar, niçin. */
@@ -87,11 +87,11 @@ export default function SiparisGecmisi({
       <div className="up-modal gecmis-pencere" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <h3>
-            <History size={18} />
+            <History size={20} />
             {baslik ? `${baslik} · Sipariş geçmişi` : "Sipariş geçmişi"}
           </h3>
           <button className="up-kapat" onClick={onKapat}>
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -135,20 +135,20 @@ export function ZamanCizelgesi({
   const olaylar: Olay[] = [
     {
       zaman: detay.acilis,
-      ikon: <DoorOpen size={15} />,
+      ikon: <DoorOpen size={16} />,
       kisi: detay.garson,
       baslik: "Sipariş açıldı",
     },
     ...detay.turlar.map((tur) => ({
       zaman: tur.saat,
-      ikon: <Plus size={15} />,
+      ikon: <Plus size={16} />,
       kisi: tur.garson,
       baslik: "Yeni ürün eklendi",
       alt: tur.kalemler.map((k) => `${adetGoster(k.adet)} × ${k.ad}`).join(" · "),
     })),
     ...detay.tahsilatlar.map((t) => ({
       zaman: t.olusturma,
-      ikon: <Banknote size={15} />,
+      ikon: <Banknote size={16} />,
       kisi: t.kisi,
       baslik: "Ödeme yapıldı",
       alt: `${t.tip} · ${paraGoster(t.tutar)}`,
@@ -158,7 +158,7 @@ export function ZamanCizelgesi({
     // aynı hatta, kendi zamanlarında duruyorlar.
     ...kayitlar.map((k) => ({
       zaman: k.zaman,
-      ikon: DENETIM_IKONLARI[k.islem] ?? <History size={15} />,
+      ikon: DENETIM_IKONLARI[k.islem] ?? <History size={16} />,
       kisi: k.kisi === "—" ? "" : k.kisi,
       baslik: k.islemAd,
       alt: denetimAlt(k),
@@ -169,7 +169,7 @@ export function ZamanCizelgesi({
   if (detay.kapanis) {
     olaylar.push({
       zaman: detay.kapanis,
-      ikon: <Clock size={15} />,
+      ikon: <Clock size={16} />,
       kisi: detay.kapatan,
       baslik: "Sipariş kapatıldı",
       alt: paraGoster(detay.toplam),

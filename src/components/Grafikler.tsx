@@ -316,7 +316,7 @@ export function Halka({
               <span>{gizli} kategori daha</span>
               <b>
                 Tümünü gör
-                <ChevronRight size={15} />
+                <ChevronRight size={16} />
               </b>
             </button>
           </li>

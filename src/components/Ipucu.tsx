@@ -21,7 +21,7 @@ export default function Ipucu({
 }) {
   return (
     <span className="ipucu" tabIndex={0} role="note">
-      <Info size={13} />
+      <Info size={14} />
       <span className="ipucu-balon">
         {baslik && (
           <span className="ipucu-baslik">

@@ -15,13 +15,13 @@ type Props = {
 export default function SecimHapi({ tip, ad, onVazgec }: Props) {
   return (
     <div className="secim-hapi">
-      {tip === "birlestir" ? <Combine size={17} /> : <ArrowRightLeft size={17} />}
+      {tip === "birlestir" ? <Combine size={16} /> : <ArrowRightLeft size={16} />}
       <strong>
         {ad} {tip === "birlestir" ? "birleştiriliyor" : "taşınıyor"}
       </strong>
       <em>· masa seçin</em>
       <button aria-label="Vazgeç" onClick={onVazgec}>
-        <X size={15} />
+        <X size={16} />
       </button>
     </div>
   );

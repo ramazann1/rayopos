@@ -74,7 +74,7 @@ export default function MasasizSiparis({
                 })
               }
             >
-              <Check size={17} /> {mevcut ? "Kaydet" : "Siparişi aç"}
+              <Check size={16} /> {mevcut ? "Kaydet" : "Siparişi aç"}
             </button>
           </>
         }
@@ -116,7 +116,7 @@ export default function MasasizSiparis({
               autoFocus
             />
             <button className="satir-tus musteri-sec" onClick={() => setSeciciAcik(true)}>
-              <UserRound size={15} />
+              <UserRound size={16} />
               {musteriId ? "Başka müşteri seç" : "Kayıtlı müşteriden seç"}
             </button>
           </div>

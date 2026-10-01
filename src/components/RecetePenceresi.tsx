@@ -145,7 +145,7 @@ export default function RecetePenceresi({
         <header className="up-ust">
           <h3>Reçete{porsiyonAd ? ` · ${porsiyonAd}` : ""}</h3>
           <button className="up-kapat" onClick={onKapat} title="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -155,7 +155,7 @@ export default function RecetePenceresi({
               /* Bilgi kutusu yerine kendi boş ekranı: tek satırlık bir kutu
                  pencerenin geri kalanını boşlukta bırakıyordu. */
               <div className="rcp-yok">
-                <ChefHat size={30} />
+                <ChefHat size={24} />
                 <strong>Bu porsiyonun reçetesi yok</strong>
                 <p>Sağdaki listeden malzeme seçin, sonra ne kadar harcandığını yazın.</p>
               </div>
@@ -217,7 +217,7 @@ export default function RecetePenceresi({
                         title="Satırı çıkar"
                         onClick={() => degistir(satirlar.filter((_, j) => j !== i))}
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   );
@@ -238,7 +238,7 @@ export default function RecetePenceresi({
           <aside className="rcp-sag">
             <div className="rcp-sag-basi">Malzeme ekle</div>
             <div className="rcp-arama">
-              <Search size={15} />
+              <Search size={16} />
               <input
                 value={arama}
                 onChange={(e) => setArama(e.target.value)}

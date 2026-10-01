@@ -49,7 +49,7 @@ export default function AyarBasligi({
                 className={pathname === b.yol ? "alt-sekme aktif" : "alt-sekme"}
                 onClick={() => navigate(b.yol)}
               >
-                {Ikon && <Ikon size={15} />}
+                {Ikon && <Ikon size={16} />}
                 {b.ad}
               </button>
             );

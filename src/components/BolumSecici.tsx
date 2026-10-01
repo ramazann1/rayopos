@@ -65,7 +65,7 @@ export default function BolumSecici({
         className={s.kod === secili ? "bs-kart secili" : "bs-kart"}
         onClick={() => git(s.kod)}
       >
-        <span className="bs-kart-im">{SIkon && <SIkon size={19} />}</span>
+        <span className="bs-kart-im">{SIkon && <SIkon size={20} />}</span>
         <span className="bs-kart-ad">{s.ad}</span>
         {s.sayi !== undefined && <em className="bs-kart-sayi">{s.sayi}</em>}
       </button>
@@ -77,9 +77,9 @@ export default function BolumSecici({
       <button className="bs-dugme" onClick={() => setAcik(true)}>
         <span className="bs-ust">{baslik}</span>
         <span className="bs-simdiki">
-          {Ikon && <Ikon size={19} />}
+          {Ikon && <Ikon size={20} />}
           {simdiki?.ad}
-          <ChevronDown size={18} />
+          <ChevronDown size={16} />
         </span>
       </button>
 
@@ -89,7 +89,7 @@ export default function BolumSecici({
             <header className="up-ust">
               <h3>{baslik}</h3>
               <button className="up-kapat" aria-label="Kapat" onClick={() => setAcik(false)}>
-                <X size={19} />
+                <X size={20} />
               </button>
             </header>
 

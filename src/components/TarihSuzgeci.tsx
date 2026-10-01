@@ -148,9 +148,9 @@ export function DonemPenceresi({
     <div className="up-fon ust" onClick={onKapat}>
       <div className="up-modal ts-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <span className="stok-modal-im"><CalendarDays size={17} /></span>
+          <span className="stok-modal-im"><CalendarDays size={20} /></span>
           <h3>Tarihe göre süz</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="ts-hazir">
@@ -176,7 +176,7 @@ export function DonemPenceresi({
                   aria-label={ayListesi ? "Önceki yıl" : "Önceki ay"}
                   onClick={() => ayKaydir(ayListesi ? -12 : -1)}
                 >
-                  <ChevronLeft size={18} />
+                  <ChevronLeft size={16} />
                 </button>
                 <button className="ts-ay-ad" onClick={() => setAyListesi(!ayListesi)}>
                   {ayListesi
@@ -187,7 +187,7 @@ export function DonemPenceresi({
                   aria-label={ayListesi ? "Sonraki yıl" : "Sonraki ay"}
                   onClick={() => ayKaydir(ayListesi ? 12 : 1)}
                 >
-                  <ChevronRight size={18} />
+                  <ChevronRight size={16} />
                 </button>
               </div>
               {ayListesi ? (

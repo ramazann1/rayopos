@@ -267,7 +267,7 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
             yoksa menü açılınca altındaki bütün satırlar aşağı kayıyordu. */}
         {isletmeAdi() && (
           <div className="menu-isletme" title={isletmeAdi()}>
-            <Store size={15} />
+            <Store size={16} />
             <div className="menu-isletme-yazi">
               <strong>{isletmeAdi()}</strong>
               {isletmeKodu() > 0 && (
@@ -371,12 +371,12 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
                               if (!torunAcik) gorunureGetir(dugme);
                             }}
                           >
-                            {a.ikon && <a.ikon size={15} />}
+                            {a.ikon && <a.ikon size={16} />}
                             <span>{a.ad}</span>
                             {torunlar && (
                               <ChevronDown
                                 className={torunAcik ? "menu-ok acik" : "menu-ok"}
-                                size={15}
+                                size={16}
                               />
                             )}
                           </button>
@@ -394,7 +394,7 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
                                   }
                                   onClick={() => git(t.yol)}
                                 >
-                                  {t.ikon && <t.ikon size={15} />}
+                                  {t.ikon && <t.ikon size={16} />}
                                   <span>{t.ad}</span>
                                 </button>
                               ))}
@@ -446,7 +446,7 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
       {cikisYolu && (
         <OnayModal
           baslik="Kaydedilmemiş değişiklik var"
-          ikon={<TriangleAlert size={22} />}
+          ikon={<TriangleAlert size={20} />}
           mesaj="Bu sayfada yaptığınız değişiklikler henüz kaydedilmedi. Çıkarsanız kaybolacak."
           tehlikeli
           onayMetni="Evet, çık"
@@ -463,7 +463,7 @@ export default function Duzen({ children }: { children: React.ReactNode }) {
       {oturumSor && (
         <OnayModal
           baslik="Oturum kapatılsın mı?"
-          ikon={<LogOut size={22} />}
+          ikon={<LogOut size={20} />}
           mesaj={`*${oturum?.ad}* oturumu kapanacak, ekran giriş ekranına döner.`}
           onayMetni="Evet, çık"
           onOnay={oturumuKapat}

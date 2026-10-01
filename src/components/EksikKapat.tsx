@@ -40,7 +40,7 @@ export default function EksikKapat({
         <div className="onay-ust">
           <span className="onay-im"><HandCoins size={20} /></span>
           <h3>Eksik kapat</h3>
-          <button className="panel-kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="panel-kapat" onClick={onKapat}><X size={20} /></button>
         </div>
 
         <div className="eksik-tutar">

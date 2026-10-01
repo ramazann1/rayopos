@@ -131,7 +131,7 @@ function YaziciPaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
@@ -155,7 +155,7 @@ function YaziciPaneli({
               })
             }
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -235,7 +235,7 @@ function YaziciPaneli({
                       className={cihaz ? "yz-cip" : "yz-cip secili"}
                       onClick={() => setCihaz("")}
                     >
-                      {!cihaz && <Check size={13} />}
+                      {!cihaz && <Check size={14} />}
                       Fark etmez
                     </button>
                     {kasalar.map((k) => (
@@ -244,7 +244,7 @@ function YaziciPaneli({
                         className={cihaz === k.cihaz ? "yz-cip secili" : "yz-cip"}
                         onClick={() => setCihaz(k.cihaz)}
                       >
-                        {cihaz === k.cihaz && <Check size={13} />}
+                        {cihaz === k.cihaz && <Check size={14} />}
                         {k.cihaz}
                       </button>
                     ))}
@@ -262,7 +262,7 @@ function YaziciPaneli({
                     className={kagit === mm ? "yz-cip secili" : "yz-cip"}
                     onClick={() => setKagit(mm)}
                   >
-                    {kagit === mm && <Check size={13} />}
+                    {kagit === mm && <Check size={14} />}
                     {mm} mm
                   </button>
                 ))}
@@ -288,7 +288,7 @@ function YaziciPaneli({
                     className={secili ? "yz-secim-kutu secili" : "yz-secim-kutu"}
                   >
                     <button className="yz-secim" onClick={() => turDegis(t.kod, !secili)}>
-                      <span className="yz-secim-ikon"><Ikon size={18} /></span>
+                      <span className="yz-secim-ikon"><Ikon size={16} /></span>
                       <span className="yz-secim-yazi">
                         <strong>{t.ad} fişi</strong>
                         <em>{turAciklama[t.kod]}</em>
@@ -314,7 +314,7 @@ function YaziciPaneli({
                                   className={acik ? "yz-cip secili" : "yz-cip"}
                                   onClick={() => istasyonDegis(i.id, !acik)}
                                 >
-                                  {acik && <Check size={13} />}
+                                  {acik && <Check size={14} />}
                                   {i.ad}
                                 </button>
                               );
@@ -385,7 +385,7 @@ function IstasyonPaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
@@ -394,7 +394,7 @@ function IstasyonPaneli({
             disabled={!ad.trim()}
             onClick={() => onKaydet({ ad, pisirme, paketleme })}
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -483,19 +483,19 @@ function KopruHesaplari({
     <section className="ayar-bolum">
       <div className="ayar-bolum-ust">
         <h2>
-          <Server size={17} /> Kasa köprüleri
+          <Server size={16} /> Kasa köprüleri
           <Ipucu>Köprüyü kurduğunuz bilgisayarda gördüğünüz 6 haneli kodu buraya yazın; köprü bir daha giriş sormaz.</Ipucu>
         </h2>
         {yetkili && (
           <button className="ayar-ekle" onClick={() => setEkleAcik(true)}>
-            <Plus size={15} /> Köprü ekle
+            <Plus size={16} /> Köprü ekle
           </button>
         )}
       </div>
 
       {hesaplar.length === 0 ? (
         <div className="ayar-bos">
-          <Server size={30} />
+          <Server size={24} />
           <p>Bağlı köprü yok.</p>
         </div>
       ) : (
@@ -650,15 +650,15 @@ export default function Yazicilar() {
         ) : istasyonBolumu ? (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><ChefHat size={17} /> İstasyonlar</h2>
+              <h2><ChefHat size={20} /> İstasyonlar</h2>
               <button className="ayar-ekle" onClick={() => setIstasyonPaneli(null)}>
-                <Plus size={15} /> İstasyon ekle
+                <Plus size={16} /> İstasyon ekle
               </button>
             </div>
 
             {istasyonlar.length === 0 ? (
               <div className="ayar-bos">
-                <ChefHat size={30} />
+                <ChefHat size={24} />
                 <p>Henüz istasyon yok. Mutfak ve Bar ile başlayabilirsiniz.</p>
               </div>
             ) : (
@@ -694,9 +694,9 @@ export default function Yazicilar() {
           <>
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><Printer size={17} /> Yazıcılar</h2>
+              <h2><Printer size={20} /> Yazıcılar</h2>
               <button className="ayar-ekle" onClick={() => setYaziciPaneli(null)}>
-                <Plus size={15} /> Yazıcı ekle
+                <Plus size={16} /> Yazıcı ekle
               </button>
             </div>
 
@@ -707,7 +707,7 @@ export default function Yazicilar() {
 
             {yazicilar.length === 0 ? (
               <div className="ayar-bos">
-                <Printer size={30} />
+                <Printer size={24} />
                 <p>Henüz yazıcı tanımlanmadı. Kasa yazıcısıyla başlayın.</p>
               </div>
             ) : (
@@ -735,14 +735,14 @@ export default function Yazicilar() {
                         onClick={() => yaziciTasi(y, -1)}
                         title="Yukarı al"
                       >
-                        <ChevronUp size={15} />
+                        <ChevronUp size={16} />
                       </button>
                       <button
                         disabled={i === yazicilar.length - 1}
                         onClick={() => yaziciTasi(y, 1)}
                         title="Aşağı al"
                       >
-                        <ChevronDown size={15} />
+                        <ChevronDown size={16} />
                       </button>
                       <button onClick={() => setYaziciPaneli(y)} title="Düzenle">
                         <Pencil size={14} />

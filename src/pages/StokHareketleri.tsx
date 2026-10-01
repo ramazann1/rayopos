@@ -197,7 +197,7 @@ export default function StokHareketleri() {
                 className={suzgec === "tumu" ? "alt-sekme aktif" : "alt-sekme"}
                 onClick={() => setSuzgec("tumu")}
               >
-                <History size={15} /> Tümü
+                <History size={16} /> Tümü
                 <em className="stok-serit-sayi">{fisler.length}</em>
               </button>
               {HAREKET_TIPLERI.map((t) => (
@@ -214,7 +214,7 @@ export default function StokHareketleri() {
 
             <div className="ayar-bolum-ust">
               <h2>
-                <History size={17} /> Hareketler
+                <History size={16} /> Hareketler
                 <Ipucu baslik="Hareket defteri">
                   Stok yalnız buradaki kayıtlarla değişir. Bir hareketi
                   düzenlediğinizde ya da sildiğinizde o malzemenin geçmişi
@@ -234,14 +234,14 @@ export default function StokHareketleri() {
               </button>
               {yonetebilir && (
                 <button className="ayar-ekle" onClick={() => setPencere(true)}>
-                  <Plus size={15} /> Yeni hareket
+                  <Plus size={16} /> Yeni hareket
                 </button>
               )}
             </div>
 
             {gorunen.length === 0 ? (
               <div className="ayar-bos">
-                <History size={30} />
+                <History size={24} />
                 <p>
                   {ara
                     ? `"${ara}" ile eşleşen hareket yok.`
@@ -253,7 +253,7 @@ export default function StokHareketleri() {
                 </p>
                 {yonetebilir && hareketler.length === 0 && donem.kod === "tumu" && (
                   <button className="ayar-ekle" onClick={() => setPencere(true)}>
-                    <Plus size={15} /> İlk hareketi gir
+                    <Plus size={16} /> İlk hareketi gir
                   </button>
                 )}
               </div>
@@ -273,20 +273,20 @@ export default function StokHareketleri() {
                       </span>
                       <span className="sfis-kalemler">{kalemOzeti(f)}</span>
                       <span className="sfis-kunye">
-                        <span><CalendarDays size={13} /> {gunMetni(f.zaman)}</span>
-                        <span><Clock size={13} /> {saatMetni(f.zaman)}</span>
-                        {f.kisi && <span><UserRound size={13} /> {f.kisi}</span>}
+                        <span><CalendarDays size={14} /> {gunMetni(f.zaman)}</span>
+                        <span><Clock size={14} /> {saatMetni(f.zaman)}</span>
+                        {f.kisi && <span><UserRound size={14} /> {f.kisi}</span>}
                       </span>
                     </span>
 
                     <span className="sfis-sag">
-                      <span className="sfis-sayi"><Layers size={13} /> {f.kalemler.length} kalem</span>
+                      <span className="sfis-sayi"><Layers size={14} /> {f.kalemler.length} kalem</span>
                       {f.tip === "giris" && f.tutar != null && (
                         <b className="sfis-tutar">{paraGoster(f.tutar)}</b>
                       )}
                     </span>
 
-                    <ChevronRight size={18} className="sfis-ok" />
+                    <ChevronRight size={16} className="sfis-ok" />
                   </button>
                 ))}
               </div>
@@ -407,7 +407,7 @@ function FisPenceresi({
           <div className="sfis-ust-yazi">
             <h3>{tipAdi(fis.tip)} fişi</h3>
           </div>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="sfis-kunye genis">
@@ -418,7 +418,7 @@ function FisPenceresi({
         </div>
 
         {fis.aciklama && (
-          <p className="sfis-not"><StickyNote size={15} /> {fis.aciklama}</p>
+          <p className="sfis-not"><StickyNote size={16} /> {fis.aciklama}</p>
         )}
 
         <div className="sfis-liste">
@@ -427,7 +427,7 @@ function FisPenceresi({
             return (
               <div key={h.id} className="sfis-kalem">
                 <span className="sfis-kalem-ad">
-                  <Package size={15} /> {h.malzemeAd}
+                  <Package size={16} /> {h.malzemeAd}
                   {h.bagli && <small className="sfis-bagli">tariften</small>}
                 </span>
 
@@ -453,7 +453,7 @@ function FisPenceresi({
                 {duzenlenir && !h.bagli && (
                   <span className="sfis-kalem-islem">
                     <button onClick={() => onDuzenle(h)} title="Düzenle" aria-label="Düzenle">
-                      <Pencil size={15} />
+                      <Pencil size={16} />
                     </button>
                     <button
                       className="tehlike"
@@ -461,7 +461,7 @@ function FisPenceresi({
                       title="Sil"
                       aria-label="Sil"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={16} />
                     </button>
                   </span>
                 )}
@@ -471,7 +471,7 @@ function FisPenceresi({
         </div>
 
         <footer className="sfis-alt">
-          <span><Layers size={15} /> {fis.kalemler.length} kalem</span>
+          <span><Layers size={16} /> {fis.kalemler.length} kalem</span>
           {fis.tip === "giris" && fis.tutar != null && (
             <span className="sfis-toplam">
               Toplam <b>{paraGoster(fis.tutar)}</b>
@@ -630,7 +630,7 @@ function HareketPenceresi({
         <header className="up-ust">
           <span className="stok-modal-im"><TipIkonu tip={tip} /></span>
           <h3>Yeni stok hareketi</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="stok-modal-govde">
@@ -742,7 +742,7 @@ function HareketPenceresi({
                     disabled={satirlar.length === 1}
                     onClick={() => setSatirlar((s) => s.filter((_, j) => j !== i))}
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               );
@@ -924,7 +924,7 @@ function DuzenlePenceresi({
         <header className="up-ust">
           <span className="stok-modal-im"><TipIkonu tip={hareket.tip} /></span>
           <h3>{hareket.malzemeAd} — {bilgi.ad.toLocaleLowerCase("tr")} düzelt</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="stok-modal-govde">
@@ -998,7 +998,7 @@ function DuzenlePenceresi({
               kaydedildikten sonra listede görünüyor. */}
           <div className="stok-panel-durum">
             <span>
-              <History size={15} /> Bu satırın sonucu
+              <History size={16} /> Bu satırın sonucu
               <b>
                 {yeniMiktar === null ? "—" : miktarGoster(yeniMiktar, hareket.birim)}
               </b>
@@ -1064,7 +1064,7 @@ function MalzemeSecici({
 
   return (
     <div className="hrk-secici">
-      <Search size={15} />
+      <Search size={16} />
       <input
         value={acik ? yazi : secili?.ad ?? ""}
         placeholder="Malzeme ara"
@@ -1081,7 +1081,7 @@ function MalzemeSecici({
         <div className="hrk-oneriler">
           {gorunen.map((m) => (
             <button key={m.id} onMouseDown={() => secildi(m)}>
-              <Package size={15} />
+              <Package size={16} />
               <span>
                 {m.ad}
                 <small>{m.grupAd || "Grupsuz"}</small>

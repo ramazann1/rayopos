@@ -69,11 +69,11 @@ export default function IndirimModal({ baslik, araToplam, mevcutIndirim, onKapat
       <div className="up-modal ind-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <span className="ind-simge">
-            <BadgePercent size={18} />
+            <BadgePercent size={20} />
           </span>
           <h3>{baslik ?? "İndirim uygula"}</h3>
           <button className="up-kapat" onClick={onKapat} aria-label="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -144,7 +144,7 @@ export default function IndirimModal({ baslik, araToplam, mevcutIndirim, onKapat
           <button className="ind-vazgec" onClick={onKapat}>Vazgeç</button>
           {serbest && (
             <button className="ind-uygula" onClick={uygula}>
-              <Check size={17} />
+              <Check size={16} />
               Uygula
             </button>
           )}

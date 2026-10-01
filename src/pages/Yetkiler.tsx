@@ -69,7 +69,7 @@ function KisiYetkiPaneli({
             disabled={durumlar === null}
             onClick={() => durumlar && onKaydet(durumlar)}
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -233,7 +233,7 @@ export default function YetkilerEkrani() {
                   bulmak için süzgeç. Başlıkla aynı hizada ama sağ uçta değil:
                   tablonun üstünde göz zaten ortaya bakıyor. */}
               <div className="ayar-bolum-ust yetki-ust">
-                <h2><ShieldCheck size={17} /> Genel Yetkiler</h2>
+                <h2><ShieldCheck size={20} /> Genel Yetkiler</h2>
                 <AramaKutusu deger={ara} degistir={setAra} yer="İşlem ara" />
               </div>
 
@@ -245,7 +245,7 @@ export default function YetkilerEkrani() {
                       {roller.map((r) => (
                         <th key={r.id}>
                           <span>{r.ad}</span>
-                          {r.id === yoneticiId && <Lock size={12} />}
+                          {r.id === yoneticiId && <Lock size={14} />}
                         </th>
                       ))}
                     </tr>
@@ -283,7 +283,7 @@ export default function YetkilerEkrani() {
                                     }
                                     onClick={() => kutuDegis(r.id, y.id)}
                                   >
-                                    {kilitli ? <Lock size={12} /> : acikMi && <Check size={15} />}
+                                    {kilitli ? <Lock size={14} /> : acikMi && <Check size={16} />}
                                   </button>
                                 </td>
                               );
@@ -301,12 +301,12 @@ export default function YetkilerEkrani() {
             {!genelBolum && (
             <section className="ayar-bolum">
               <div className="ayar-bolum-ust">
-                <h2><KeyRound size={17} /> Kişiye Özel Yetkiler</h2>
+                <h2><KeyRound size={20} /> Kişiye Özel Yetkiler</h2>
               </div>
 
               {personel.length === 0 ? (
                 <div className="ayar-bos">
-                  <UserRound size={30} />
+                  <UserRound size={24} />
                   <p>Henüz personel yok. Personel ekranından çalışanlarınızı tanımlayın.</p>
                 </div>
               ) : (

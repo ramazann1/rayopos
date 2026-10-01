@@ -5,6 +5,21 @@
 
 > **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" bölümü — önce bütün kalanları say.**
 >
+> **BİTTİ (2 Eki 2026):**
+> - **İkon boyut standardı:** 14 satır içi, 16 düğme/liste, 20 başlık ve ikon düğmesi,
+>   24 sekme/boş ekran. Mobil masa kartındaki üç nokta yarı saydam kutuda, dokunma
+>   alanı kutudan geniş.
+> - **Analiz › Excel'e indir:** her sekme kendi sayfalarıyla .xlsx (`analizExcel.ts`),
+>   rakamlar sayı, alt satırda toplam, üstte rapor adı ve dönem.
+> - **Analiz › Özet › Yoğunluk:** gün × 24 saat ısı tablosu (açılış saati, iptal hariç),
+>   iki haftayı aşan dönemde haftanın günlerine toplanıyor (`yogunlukTablosu`).
+> - Analiz'de dönem/filtre şeridi yapışkan.
+> - **Rapor hızı:** okuma kuralları sorgu başına bir kez (`sql/2026-10-02-adisyon-okuma-hizi.sql`),
+>   sekmeye özel veri yalnız o sekmede çekiliyor, canlı haber yüklemeyi kesmiyor,
+>   adisyonlar 500'lük parçalarla (1000 satır kesintisi kalktı). Ocak–Ekim 14,6 sn → 0,6 sn.
+> - Adisyo'da iki yeni rapor görüldü (Rapor Sihirbazı, Maliyet-Kârlılık), ikisi de Pro
+>   paket; Kârlılık bizde var, sihirbaz gerek görülmedi.
+>
 > **BİTTİ (1 Eki 2026, üçüncü seans):**
 > - Telefonda ürün taşıma hızı Ramazan'ca yeterli bulundu; iyimser güncellemeye gerek yok.
 > - **Müşteri yetkisiyle geçmiş adisyon:** `cari.gor` olan kişi, müşteriye bağlı
@@ -189,22 +204,24 @@
 > **YENİ SEANSTA İLK İŞ (Ramazan'ın isteği):** aşağıdaki kalan işlerin TAMAMINI
 > Ramazan'a say (gruplu, kısa), sonra 1. maddeyle başla. Küçük işler bitti.
 >
-> 1. **İkon boyut standardı** — 14/16/20/24; bütün ekranlar tek tek gezilecek
->    (ayrıntı `pos-yol-haritasi.md` Faz 3).
-> 2. **Gelişmiş raporların eksiği** — Personel/Kârlılık/Mutfak var; saatlik ciro ve
->    dönem karşılaştırması var mı bakılacak, eksikse yapılacak.
-> 3. **QR menünün kalanı** — kategori/kapak görselleri, masadan sipariş, garson
->    çağırma, masa başına karekod.
-> 4. **Kurye atama ve teslimat takibi** — önce Adisyo'da canlı tur.
-> 5. **Sadakat programı** (puan, kampanya) — önce Adisyo'da canlı tur.
-> 6. **Çoklu şube** — merkezi menü, şube karşılaştırma.
-> Satıştan önce: kayıt ekranına CAPTCHA (durumu belirsiz, Ramazan hesap açacak),
+> 1. **Küçük rapor eklemeleri** (2 Eki 2026 Adisyo karşılaştırmasından): ürünün
+>    saatlik satışı, seçenek bazında satış, masa bazlı satış, gün gün ciro tablosu
+>    (ödeme tipleri sütun), garsonun ürün kırılımı. Excel indirme ve yoğunluk bitti.
+> 2. **Kurye atama ve teslimat takibi** — önce Adisyo'da canlı tur.
+> 3. **Sadakat programı** (puan, kampanya) — önce Adisyo'da canlı tur.
+> 4. **Çoklu şube** — merkezi menü, şube karşılaştırma.
+> Satıştan önce: **QR menünün kalanı** (kategori/kapak görselleri, masadan sipariş,
+> garson çağırma, masa başına karekod — büyük iş, Ramazan buraya aldı 2 Eki 2026),
+> kayıt ekranına CAPTCHA (durumu belirsiz, Ramazan hesap açacak),
 > köprü exe imzası, GitHub deposu gizliye, mağaza paketlemesi (Capacitor),
-> abonelik/ödeme sistemi.
+> abonelik/ödeme sistemi. **Analiz hesapları sunucuya** (2 Eki 2026): rapor bugün
+> bütün adisyonları kalemleriyle tarayıcıya çekip orada sayıyor; 500'lük parçalarla
+> hepsi geliyor ama yılda 100 bin adisyonda yavaş ve ağır olur. Toplamlar (ciro,
+> ürün, personel, yoğunluk) veritabanında hesaplanıp hazır gelecek.
 > Dış firmaya bağlı: ÖKC ("zamanı gelince", firma yazışması; o güne kadar sahte ÖKC
 > ile akış kurulabilir), e-Fatura/e-Arşiv/e-Adisyon, Yemeksepeti/Getir/Trendyol,
 > muhasebe ve açık API.
-> Açık soru: gel al ve paket tek günlük sayaç mı (şu an tek), ayrı mı — Ramazan'a sor.
+> Gel al ve paket tek günlük sayacı paylaşıyor — Ramazan onayladı (2 Eki 2026).
 >
 > **BİTTİ (29 Eyl 2026): canlıya geçiş.**
 > - 15000-15002 deneme işletmeleri silindi (`sql/2026-09-29-diger-isletmeleri-sil.sql`).

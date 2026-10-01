@@ -32,7 +32,7 @@ export default function OrtaPencere({
             <h3>{baslik}</h3>
             {aciklama && <p>{aciklama}</p>}
           </div>
-          <button className="pnc-kapat" onClick={onKapat} aria-label="Kapat"><X size={18} /></button>
+          <button className="pnc-kapat" onClick={onKapat} aria-label="Kapat"><X size={20} /></button>
         </header>
         <div className="pnc-govde">{children}</div>
         {alt && <footer className="pnc-alt">{alt}</footer>}

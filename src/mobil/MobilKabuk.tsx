@@ -42,7 +42,7 @@ export default function MobilKabuk({ children }: { children: React.ReactNode }) 
             const secili = pathname === s.yol || pathname.startsWith(s.yol + "/");
             return (
               <NavLink key={s.yol} to={s.yol} className={secili ? "m-sekme secili" : "m-sekme"} aria-label={s.ad}>
-                <Ikon size={22} />
+                <Ikon size={20} />
                 <span>{s.ad}</span>
               </NavLink>
             );

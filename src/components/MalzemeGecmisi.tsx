@@ -71,7 +71,7 @@ export default function MalzemeGecmisi({
             <button className="stok-yan-tus" onClick={() => setDonemPenceresi(true)}>
               <CalendarDays size={16} /> {donemAdi(donem)}
             </button>
-            <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+            <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
           </header>
 
           {toplamlar.length > 0 && (
@@ -103,13 +103,13 @@ export default function MalzemeGecmisi({
                       {s.kisi && (
                         <>
                           {" · "}
-                          <UserRound size={12} /> {s.kisi}
+                          <UserRound size={14} /> {s.kisi}
                         </>
                       )}
                       {sebepAdi(s.tip, s.sebep) && (
                         <>
                           {" · "}
-                          <Tag size={12} /> {sebepAdi(s.tip, s.sebep)}
+                          <Tag size={14} /> {sebepAdi(s.tip, s.sebep)}
                         </>
                       )}
                     </small>

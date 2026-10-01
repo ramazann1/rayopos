@@ -43,7 +43,7 @@ export default function Giris() {
           <span className="giris-alt">Telefon numaran veya e-postanla</span>
 
           <label className="giris-satir">
-            <AtSign size={18} />
+            <AtSign size={16} />
             <input
               value={telefon}
               onChange={(e) => setTelefon(e.target.value)}
@@ -53,7 +53,7 @@ export default function Giris() {
           </label>
 
           <label className="giris-satir">
-            <Lock size={18} />
+            <Lock size={16} />
             <input
               type={sifreGorunsun ? "text" : "password"}
               value={sifre}
@@ -65,7 +65,7 @@ export default function Giris() {
               className="giris-goz"
               onClick={() => setSifreGorunsun((g) => !g)}
             >
-              {sifreGorunsun ? <EyeOff size={18} /> : <Eye size={18} />}
+              {sifreGorunsun ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </label>
 
@@ -78,7 +78,7 @@ export default function Giris() {
               onChange={(e) => setHatirla(e.target.checked)}
             />
             <em>
-              <Check size={13} strokeWidth={3.5} />
+              <Check size={14} strokeWidth={3.5} />
             </em>
             <span>Beni hatırla</span>
           </label>

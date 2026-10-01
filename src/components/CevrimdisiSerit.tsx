@@ -28,7 +28,7 @@ export default function CevrimdisiSerit() {
   if (uyari) {
     return (
       <div className="cevrimdisi-serit" role="status">
-        <TriangleAlert size={17} />
+        <TriangleAlert size={16} />
         <strong>Hesap kapandıktan sonra gelen sipariş</strong>
         <span>{uyari}</span>
         <button className="serit-kapat" onClick={kuyrukUyarisiniKapat} aria-label="Kapat">
@@ -45,7 +45,7 @@ export default function CevrimdisiSerit() {
   if (cevrimici) {
     return (
       <div className="cevrimdisi-serit" role="status">
-        {hata ? <TriangleAlert size={17} /> : <CloudUpload size={17} />}
+        {hata ? <TriangleAlert size={16} /> : <CloudUpload size={16} />}
         <strong>{hata ? "Sipariş yazılamadı" : "Bekleyen kayıt gönderiliyor"}</strong>
         <span>{hata ?? `${bekleyenMetni} sunucuya yazılıyor.`}</span>
       </div>
@@ -54,7 +54,7 @@ export default function CevrimdisiSerit() {
 
   return (
     <div className="cevrimdisi-serit" role="status">
-      <CloudOff size={17} />
+      <CloudOff size={16} />
       <strong>Bağlantı yok</strong>
       <span>
         {bekleyen > 0

@@ -196,7 +196,7 @@ export default function KampanyaSekmesi({
     <div className="kmp-duzen">
       <aside className="kmp-liste">
         <header className="kmp-liste-ust">
-          <span className="kmp-im"><Sparkles size={17} /></span>
+          <span className="kmp-im"><Sparkles size={16} /></span>
           <h3>Kampanyalı menüler</h3>
           <span className="kmp-sayi">{kampanyalar.length}</span>
         </header>
@@ -210,7 +210,7 @@ export default function KampanyaSekmesi({
             >
               <span className="kmp-satir-ad">{u.ad}</span>
               <span className="kmp-satir-alt">
-                <Layers size={13} />
+                <Layers size={14} />
                 {u.menuGruplari.length} grup
                 <b>₺{menuFiyati(u)}</b>
               </span>
@@ -262,7 +262,7 @@ export default function KampanyaSekmesi({
                   className="kmp-ekle"
                   onClick={() => setGruplar([...gruplar, { baslik: "", secilebilir: 1, satirlar: [] }])}
                 >
-                  <Plus size={15} /> Grup
+                  <Plus size={16} /> Grup
                 </button>
               </div>
 
@@ -371,7 +371,7 @@ export default function KampanyaSekmesi({
                     onClick={() => satirEkle(gi)}
                     disabled={!icerikAdaylari.length}
                   >
-                    <Plus size={15} /> Ürün
+                    <Plus size={16} /> Ürün
                   </button>
                 </div>
               ))}
@@ -422,24 +422,24 @@ export default function KampanyaSekmesi({
             {temizGruplar.length > 0 && (
               <div className="kmp-ozet">
                 <div className="kmp-kutu">
-                  <span><Receipt size={15} /> Ayrı ayrı satılsa</span>
+                  <span><Receipt size={16} /> Ayrı ayrı satılsa</span>
                   <strong>₺{ayriTutar}</strong>
                 </div>
                 <div className="kmp-kutu">
-                  <span><Tag size={15} /> Menü fiyatı</span>
+                  <span><Tag size={16} /> Menü fiyatı</span>
                   <strong>₺{satisFiyati}</strong>
                 </div>
                 <div className="kmp-kutu kazanc">
-                  <span><Gift size={15} /> Müşterinin kazancı</span>
+                  <span><Gift size={16} /> Müşterinin kazancı</span>
                   <strong>₺{indirimTutari}</strong>
                 </div>
                 <div className="kmp-kutu">
-                  <span><Coins size={15} /> Maliyet</span>
+                  <span><Coins size={16} /> Maliyet</span>
                   <strong>{maliyetGirilmemis ? "—" : `₺${maliyet}`}</strong>
                 </div>
                 {satisFiyati > 0 && !maliyetGirilmemis && (
                   <div className="kmp-kutu kar">
-                    <span><TrendingUp size={15} /> Kâr</span>
+                    <span><TrendingUp size={16} /> Kâr</span>
                     <strong>₺{satisFiyati - maliyet}</strong>
                   </div>
                 )}

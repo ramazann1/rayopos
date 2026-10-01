@@ -127,7 +127,7 @@ export default function AktarSekmesi({
       <section className="ax-kart">
         <header className="ax-kart-bas">
           <span className="ax-ikon">
-            <Download size={19} />
+            <Download size={20} />
           </span>
           <div>
             <h2>Menüyü indir</h2>
@@ -147,7 +147,7 @@ export default function AktarSekmesi({
         </p>
 
         <button className="ax-buton" onClick={disariAktar}>
-          <Download size={17} />
+          <Download size={16} />
           Menüyü indir
         </button>
       </section>
@@ -155,7 +155,7 @@ export default function AktarSekmesi({
       <section className="ax-kart">
         <header className="ax-kart-bas">
           <span className="ax-ikon">
-            <Upload size={19} />
+            <Upload size={20} />
           </span>
           <div>
             <h2>Dosyadan yükle</h2>
@@ -183,11 +183,11 @@ export default function AktarSekmesi({
         />
         <div className="ax-dugmeler">
           <button className="ax-buton" onClick={() => dosyaSecici.current?.click()}>
-            <Upload size={17} />
+            <Upload size={16} />
             Dosya seç
           </button>
           <button className="ax-buton ikincil" onClick={ornekIndir}>
-            <FileSpreadsheet size={17} />
+            <FileSpreadsheet size={16} />
             Örnek dosyayı indir
           </button>
         </div>

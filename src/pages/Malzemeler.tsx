@@ -152,7 +152,7 @@ export default function Malzemeler() {
         ) : liste.length === 0 ? (
           <section className="ayar-bolum">
             <div className="ayar-bos">
-              <Package size={30} />
+              <Package size={24} />
               <p>
                 Henüz malzeme yok. Mutfakta kullandığınız hammaddeleri ekleyin —
                 un, süt, kahve çekirdeği gibi. Reçeteler ve stok düşümü bu listeye
@@ -160,7 +160,7 @@ export default function Malzemeler() {
               </p>
               {yonetebilir && (
                 <button className="ayar-ekle" onClick={() => setPanel(null)}>
-                  <Plus size={15} /> İlk malzemeyi ekle
+                  <Plus size={16} /> İlk malzemeyi ekle
                 </button>
               )}
             </div>
@@ -201,7 +201,7 @@ export default function Malzemeler() {
                 className={grupSuzgec === "tumu" ? "alt-sekme aktif" : "alt-sekme"}
                 onClick={() => setGrupSuzgec("tumu")}
               >
-                <Boxes size={15} /> Tümü
+                <Boxes size={16} /> Tümü
                 <em className="stok-serit-sayi">{liste.length}</em>
               </button>
               {kritikler.length > 0 && (
@@ -209,7 +209,7 @@ export default function Malzemeler() {
                   className={grupSuzgec === "kritik" ? "alt-sekme aktif" : "alt-sekme"}
                   onClick={() => setGrupSuzgec("kritik")}
                 >
-                  <TriangleAlert size={15} /> Kritik
+                  <TriangleAlert size={16} /> Kritik
                   <em className="stok-serit-sayi">{kritikler.length}</em>
                 </button>
               )}
@@ -228,7 +228,7 @@ export default function Malzemeler() {
                   için sayfanın en değerli yerini kaplıyordu. Aynı bilgi
                   başlığın yanındaki işarette — duruyor ama yer tutmuyor. */}
               <h2>
-                <Package size={17} /> Malzemeler
+                <Package size={16} /> Malzemeler
                 <Ipucu baslik="Malzeme nedir">
                   Mutfağın hammaddesidir; menüdeki ürünlerden ayrı durur ve
                   satılmaz. Miktarını yalnız stok hareketi değiştirir.
@@ -254,7 +254,7 @@ export default function Malzemeler() {
                     <TriangleAlert size={16} /> Kritik seviyeler
                   </button>
                   <button className="ayar-ekle" onClick={() => setPanel(null)}>
-                    <Plus size={15} /> Malzeme ekle
+                    <Plus size={16} /> Malzeme ekle
                   </button>
                 </>
               )}
@@ -262,7 +262,7 @@ export default function Malzemeler() {
 
             {gorunen.length === 0 ? (
               <div className="ayar-bos">
-                <Package size={30} />
+                <Package size={24} />
                 <p>{ara ? `"${ara}" ile eşleşen malzeme yok.` : "Bu süzgeçte malzeme yok."}</p>
               </div>
             ) : (
@@ -283,13 +283,13 @@ export default function Malzemeler() {
                     >
                       <span className="stok-im">
                         {eksi ? (
-                          <PackageX size={18} />
+                          <PackageX size={16} />
                         ) : kritik ? (
-                          <TriangleAlert size={18} />
+                          <TriangleAlert size={16} />
                         ) : m.tarifMiktari != null ? (
-                          <CookingPot size={18} />
+                          <CookingPot size={16} />
                         ) : (
-                          <Package size={18} />
+                          <Package size={16} />
                         )}
                       </span>
 
@@ -337,9 +337,9 @@ export default function Malzemeler() {
 
                       <span className="stok-durum">
                         {eksi ? (
-                          <b className="stok-rozet tehlike"><PackageX size={13} /> Eksi stok</b>
+                          <b className="stok-rozet tehlike"><PackageX size={14} /> Eksi stok</b>
                         ) : kritik ? (
-                          <b className="stok-rozet uyari"><TriangleAlert size={13} /> Azaldı</b>
+                          <b className="stok-rozet uyari"><TriangleAlert size={14} /> Azaldı</b>
                         ) : null}
                       </span>
 
@@ -347,19 +347,19 @@ export default function Malzemeler() {
                           görebilen kişi de "süt neden eksik" sorusunu sorabilsin. */}
                       <span className="stok-islem">
                         <button onClick={() => setGecmis(m)} title="Geçmiş">
-                          <History size={15} />
+                          <History size={16} />
                         </button>
                         {yonetebilir && (
                           <>
                             <button onClick={() => setPanel(m)} title="Düzenle">
-                              <Pencil size={15} />
+                              <Pencil size={16} />
                             </button>
                             <button
                               className="tehlike"
                               onClick={() => setSilinecek(m)}
                               title="Sil"
                             >
-                              <Trash2 size={15} />
+                              <Trash2 size={16} />
                             </button>
                           </>
                         )}
@@ -476,20 +476,20 @@ function GrupSuzgeci({
           </>
         ) : (
           <>
-            <Layers size={15} /> Grup
+            <Layers size={16} /> Grup
           </>
         )}
-        <ChevronDown size={15} />
+        <ChevronDown size={16} />
       </button>
 
       {acik && (
         <div className="up-fon ust" onClick={() => setAcik(false)}>
           <div className="up-modal stok-modal" onClick={(e) => e.stopPropagation()}>
             <header className="up-ust">
-              <span className="stok-modal-im"><Layers size={17} /></span>
+              <span className="stok-modal-im"><Layers size={20} /></span>
               <h3>Gruba göre süz</h3>
               <button className="up-kapat" aria-label="Kapat" onClick={() => setAcik(false)}>
-                <X size={19} />
+                <X size={20} />
               </button>
             </header>
 
@@ -509,7 +509,7 @@ function GrupSuzgeci({
                 className={secili === null ? "bs-kart secili" : "bs-kart"}
                 onClick={() => git(null)}
               >
-                <span className="bs-kart-im"><Boxes size={19} /></span>
+                <span className="bs-kart-im"><Boxes size={20} /></span>
                 <span className="bs-kart-ad">Tüm gruplar</span>
               </button>
               {gorunen.map((g) => (
@@ -608,9 +608,9 @@ function MalzemePaneli({
     <div className="up-fon" onClick={onKapat}>
       <div className="up-modal stok-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <span className="stok-modal-im"><Package size={17} /></span>
+          <span className="stok-modal-im"><Package size={20} /></span>
           <h3>{malzeme ? "Malzemeyi düzenle" : "Yeni malzeme"}</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="stok-modal-govde">
@@ -703,11 +703,11 @@ function MalzemePaneli({
           {malzeme && (
             <div className="stok-panel-durum">
               <span>
-                <Boxes size={15} /> Mevcut stok
+                <Boxes size={16} /> Mevcut stok
                 <b>{miktarGoster(malzeme.miktar, malzeme.birim)}</b>
               </span>
               <span>
-                <Wallet size={15} /> Ortalama maliyet
+                <Wallet size={16} /> Ortalama maliyet
                 <b>
                   {malzeme.ortalamaMaliyet == null
                     ? "Fiyat yok"
@@ -715,7 +715,7 @@ function MalzemePaneli({
                 </b>
               </span>
               <span>
-                <ReceiptText size={15} /> Son alış fiyatı
+                <ReceiptText size={16} /> Son alış fiyatı
                 <b>
                   {malzeme.sonAlisFiyati == null
                     ? "Fiyat yok"
@@ -728,8 +728,8 @@ function MalzemePaneli({
               </p>
               {onGecmis && (
                 <button type="button" className="stok-panel-gecmis" onClick={onGecmis}>
-                  <History size={15} /> Geçmişi gör
-                  <ChevronRight size={15} />
+                  <History size={16} /> Geçmişi gör
+                  <ChevronRight size={16} />
                 </button>
               )}
             </div>
@@ -750,7 +750,7 @@ function MalzemePaneli({
         <footer className="up-alt">
           {onSil && (
             <button className="up-tus sil" onClick={onSil}>
-              <Trash2 size={15} /> Sil
+              <Trash2 size={16} /> Sil
             </button>
           )}
           <button className="up-tus vazgec" onClick={onKapat}>Vazgeç</button>
@@ -886,7 +886,7 @@ function TarifBolumu({
                       title="Tariften çıkar"
                       onClick={() => satirlarDegis(satirlar.filter((_, j) => j !== i))}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 );
@@ -944,7 +944,7 @@ function RenkNoktasi({
         style={{ background: renk ?? "transparent" }}
         onClick={() => setAcik(true)}
       >
-        {!renk && <Ban size={13} />}
+        {!renk && <Ban size={14} />}
       </button>
 
       {acik && (
@@ -953,7 +953,7 @@ function RenkNoktasi({
             <header className="up-ust">
               <h3>Grup rengi</h3>
               <button className="up-kapat" aria-label="Kapat" onClick={() => setAcik(false)}>
-                <X size={19} />
+                <X size={20} />
               </button>
             </header>
             <div className="stok-renk-izgara">
@@ -965,7 +965,7 @@ function RenkNoktasi({
                   setAcik(false);
                 }}
               >
-                <Ban size={15} />
+                <Ban size={16} />
               </button>
               {renkler.map((r) => (
                 <button
@@ -1042,9 +1042,9 @@ function GrupPenceresi({
     <div className="up-fon ust" onClick={onKapat}>
       <div className="up-modal gp-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <span className="stok-modal-im"><Layers size={17} /></span>
+          <span className="stok-modal-im"><Layers size={20} /></span>
           <h3>Gruplar</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="gp-liste">
@@ -1089,7 +1089,7 @@ function GrupPenceresi({
                   </button>
                   <span className="gp-sayi">{sayi(g.id)}</span>
                   <button className="gp-islem" title="Sil" onClick={() => setSilinecek(g)}>
-                    <Trash2 size={15} />
+                    <Trash2 size={16} />
                   </button>
                 </>
               )}
@@ -1108,7 +1108,7 @@ function GrupPenceresi({
               onKeyDown={(e) => e.key === "Enter" && ekle()}
             />
             <button className="gp-onay" title="Ekle" disabled={!yeni.trim()} onClick={ekle}>
-              <Plus size={17} />
+              <Plus size={16} />
             </button>
           </div>
         </div>
@@ -1188,9 +1188,9 @@ function KritikPenceresi({
     <div className="up-fon ust" onClick={onKapat}>
       <div className="up-modal stok-modal stok-kritik-panel" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
-          <span className="stok-modal-im"><TriangleAlert size={17} /></span>
+          <span className="stok-modal-im"><TriangleAlert size={20} /></span>
           <h3>Kritik seviyeler</h3>
-          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={19} /></button>
+          <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
         <div className="stok-modal-govde">
@@ -1231,7 +1231,7 @@ function KritikPenceresi({
             ))}
             {gorunen.length === 0 && (
               <p className="stok-bos-satir">
-                <CircleAlert size={15} /> Eşleşen malzeme yok.
+                <CircleAlert size={16} /> Eşleşen malzeme yok.
               </p>
             )}
           </div>

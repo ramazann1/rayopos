@@ -117,14 +117,14 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
       <div className="up-modal us-pencere" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <span className="us-simge">
-            <UtensilsCrossed size={18} />
+            <UtensilsCrossed size={20} />
           </span>
           <div className="us-baslik">
             <h3>{urun.ad}</h3>
             {porsiyon && <span>{paraGoster(porsiyonFiyat(porsiyon, tur))}</span>}
           </div>
           <button className="up-kapat" aria-label="Kapat" onClick={onKapat}>
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -144,7 +144,7 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
                       className={secili ? "us-secenek secili" : "us-secenek"}
                       onClick={() => porsiyonSec(p)}
                     >
-                      <span className="us-isaret">{secili && <Check size={13} />}</span>
+                      <span className="us-isaret">{secili && <Check size={14} />}</span>
                       <span className="us-ad">{p.ad}</span>
                       <em>{paraGoster(porsiyonFiyat(p, tur))}</em>
                     </button>
@@ -175,7 +175,7 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
                         onClick={() => sec(grup, secenek.id!)}
                       >
                         <span className={grup.tekli ? "us-isaret yuvarlak" : "us-isaret"}>
-                          {secili && <Check size={13} />}
+                          {secili && <Check size={14} />}
                         </span>
                         <span className="us-ad">{secenek.ad}</span>
                         {secenek.ekFiyat > 0 && <em>+{paraGoster(secenek.ekFiyat)}</em>}
@@ -202,7 +202,7 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
                       className={secili ? "us-secenek cikan" : "us-secenek"}
                       onClick={() => setCikan((l) => degistir(l, d.malzemeId))}
                     >
-                      <span className="us-isaret">{secili && <X size={13} />}</span>
+                      <span className="us-isaret">{secili && <X size={14} />}</span>
                       <span className="us-ad">{d.ad}</span>
                     </button>
                   );
@@ -226,7 +226,7 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
                       className={secili ? "us-secenek secili" : "us-secenek"}
                       onClick={() => setEklenen((l) => degistir(l, d.malzemeId))}
                     >
-                      <span className="us-isaret">{secili && <Check size={13} />}</span>
+                      <span className="us-isaret">{secili && <Check size={14} />}</span>
                       <span className="us-ad">{d.ad}</span>
                       <em>{d.ekFiyat > 0 ? `+${paraGoster(d.ekFiyat)}` : "Ücretsiz"}</em>
                     </button>
@@ -256,7 +256,7 @@ export default function UrunSecim({ urun, gruplar, tur = "masa", onEkle, onKapat
               })
             }
           >
-            <Check size={17} /> Ekle
+            <Check size={16} /> Ekle
           </button>
         </footer>
       </div>

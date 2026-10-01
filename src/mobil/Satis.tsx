@@ -141,7 +141,7 @@ function KendiSatisim() {
         <div className="m-bos">
           <p>{cevrimici ? "Satışlar okunamadı." : "Bağlantı yok, satışlar okunamıyor."}</p>
           <button className="m-dugme" onClick={() => oku()}>
-            {cevrimici ? <RotateCw size={18} /> : <CloudOff size={18} />}
+            {cevrimici ? <RotateCw size={16} /> : <CloudOff size={16} />}
             Yeniden dene
           </button>
         </div>
@@ -163,14 +163,14 @@ function KendiSatisim() {
             <div className="ks-ek">
               {ozet.ikram > 0 && (
                 <div className="ks-ek-kart">
-                  <Gift size={18} />
+                  <Gift size={16} />
                   <span>İkram</span>
                   <b>{paraGoster(ozet.ikram)}</b>
                 </div>
               )}
               {ozet.iptal > 0 && (
                 <div className="ks-ek-kart iptal">
-                  <Ban size={18} />
+                  <Ban size={16} />
                   <span>İptal</span>
                   <b>{paraGoster(ozet.iptal)}</b>
                 </div>
@@ -182,7 +182,7 @@ function KendiSatisim() {
             <p className="m-alt-baslik">Sattığım ürünler</p>
             {ozet.urunler.length === 0 ? (
               <div className="ks-bos">
-                <Coffee size={26} />
+                <Coffee size={24} />
                 <p>Bugün henüz ürün girmediniz.</p>
               </div>
             ) : (
@@ -272,7 +272,7 @@ function IsletmeSatisi() {
           {/* Bayat ciro yanlış bilgidir: rakam gösterilmiyor, durum söyleniyor. */}
           <p>{cevrimici ? "Satışlar okunamadı." : "Bağlantı yok, satışlar okunamıyor."}</p>
           <button className="m-dugme" onClick={() => oku()}>
-            {cevrimici ? <RotateCw size={18} /> : <CloudOff size={18} />}
+            {cevrimici ? <RotateCw size={16} /> : <CloudOff size={16} />}
             Yeniden dene
           </button>
         </div>
@@ -298,7 +298,7 @@ function IsletmeSatisi() {
                 yarısı orada; ikisi ayrı yazılıp altta toplanıyor. */}
             <div className="m-kutu-satir">
               <span>
-                <Utensils size={17} />
+                <Utensils size={16} />
                 Açık masa
               </span>
               <span className="m-kutu-deger">
@@ -320,7 +320,7 @@ function IsletmeSatisi() {
                   return (
                     <div key={o.ad} className="m-pay">
                       <span className="m-pay-ad">
-                        <OdemeIkon ad={o.ad} size={17} />
+                        <OdemeIkon ad={o.ad} size={16} />
                         {o.ad}
                         <small>{o.adet} tahsilat</small>
                       </span>

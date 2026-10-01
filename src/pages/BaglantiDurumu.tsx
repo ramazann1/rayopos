@@ -132,9 +132,9 @@ export default function BaglantiDurumu() {
 
         <section className="ayar-bolum">
           <div className="ayar-bolum-ust">
-            <h2><Laptop size={17} /> Kasa Köprüsü</h2>
+            <h2><Laptop size={20} /> Kasa Köprüsü</h2>
             <button className="ayar-ekle" onClick={oku}>
-              <RefreshCw size={15} /> Yenile
+              <RefreshCw size={16} /> Yenile
             </button>
           </div>
 
@@ -147,7 +147,7 @@ export default function BaglantiDurumu() {
             <div className="yukleniyor"><div className="cember" /></div>
           ) : kopruler.length === 0 ? (
             <div className="ayar-bos">
-              <Laptop size={30} />
+              <Laptop size={24} />
               <p>Hiçbir kasada köprü çalışmamış.</p>
             </div>
           ) : (
@@ -155,7 +155,7 @@ export default function BaglantiDurumu() {
               {kopruler.map((k) => (
                 <div key={k.cihaz} className="durum-satir">
                   <span className={k.calisiyor ? "durum-isik acik" : "durum-isik kapali"}>
-                    {k.calisiyor ? <CheckCircle2 size={17} /> : <XCircle size={17} />}
+                    {k.calisiyor ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
                   </span>
                   <span className="durum-ad">
                     <strong>{k.cihaz}</strong>
@@ -174,7 +174,7 @@ export default function BaglantiDurumu() {
                   <span className="durum-bilgi">
                     {!k.calisiyor && (
                       <button className="ayar-ekle" onClick={() => setSilinecek(k.cihaz)}>
-                        <Trash2 size={15} /> Sil
+                        <Trash2 size={16} /> Sil
                       </button>
                     )}
                   </span>
@@ -186,12 +186,12 @@ export default function BaglantiDurumu() {
 
         <section className="ayar-bolum">
           <div className="ayar-bolum-ust">
-            <h2><Printer size={17} /> Yazıcılar</h2>
+            <h2><Printer size={20} /> Yazıcılar</h2>
           </div>
 
           {yazicilar.length === 0 ? (
             <div className="ayar-bos">
-              <Printer size={30} />
+              <Printer size={24} />
               <p>Henüz yazıcı tanımlanmadı.</p>
             </div>
           ) : (
@@ -204,7 +204,7 @@ export default function BaglantiDurumu() {
                 return (
                   <div key={y.id} className={y.aktif ? "durum-satir" : "durum-satir kapali"}>
                     <span className={sorunlu ? "durum-isik kapali" : "durum-isik acik"}>
-                      <Ikon size={17} />
+                      <Ikon size={16} />
                     </span>
 
                     <span className="durum-ad">
@@ -247,7 +247,7 @@ export default function BaglantiDurumu() {
                     <span className="durum-bilgi">
                       {d?.bekleyen ? (
                         <span className="durum-etiket bekleyen">
-                          <Clock size={13} /> {d.bekleyen} fiş sırada
+                          <Clock size={14} /> {d.bekleyen} fiş sırada
                         </span>
                       ) : null}
                       <Ipucu>{kuyrukBilgisi(d)}</Ipucu>
@@ -265,11 +265,11 @@ export default function BaglantiDurumu() {
                     >
                       {denenen === y.id ? (
                         <>
-                          <Loader2 size={15} className="doner" /> Deneniyor
+                          <Loader2 size={16} className="doner" /> Deneniyor
                         </>
                       ) : (
                         <>
-                          <Printer size={15} /> Dene
+                          <Printer size={16} /> Dene
                         </>
                       )}
                     </button>

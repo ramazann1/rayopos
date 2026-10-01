@@ -269,7 +269,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
         ) : !sayabilir ? (
           <section className="ayar-bolum">
             <div className="ayar-bos">
-              <ClipboardList size={30} />
+              <ClipboardList size={24} />
               <p>Sayım yapma yetkiniz yok.</p>
             </div>
           </section>
@@ -279,7 +279,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
             <section className="ayar-bolum">
               <div className="ayar-bolum-ust">
                 <h2>
-                  <ClipboardList size={17} /> Sayım
+                  <ClipboardList size={16} /> Sayım
                   <Ipucu>Fark raporda çıkar, stok onaydan sonra değişir.</Ipucu>
                 </h2>
               </div>
@@ -289,7 +289,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                   className={kapsam === "tumu" ? "sayim-kart secili" : "sayim-kart"}
                   onClick={() => setKapsam("tumu")}
                 >
-                  <ListChecks size={17} />
+                  <ListChecks size={16} />
                   <b>Tüm malzemeler</b>
                   <small>{sayilar.tumu} malzeme</small>
                 </button>
@@ -297,7 +297,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                   className={kapsam === "grup" ? "sayim-kart secili" : "sayim-kart"}
                   onClick={() => setKapsam("grup")}
                 >
-                  <FolderOpen size={17} />
+                  <FolderOpen size={16} />
                   <b>Grup seç</b>
                   <small>
                     {secilenGruplar.length > 0
@@ -309,7 +309,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                   className={kapsam === "kritik" ? "sayim-kart secili" : "sayim-kart"}
                   onClick={() => setKapsam("kritik")}
                 >
-                  <TriangleAlert size={17} />
+                  <TriangleAlert size={16} />
                   <b>Yalnız kritikler</b>
                   <small>{sayilar.kritik} malzeme</small>
                 </button>
@@ -350,7 +350,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                 disabled={kapsam === "grup" && secilenGruplar.length === 0}
                 onClick={basla}
               >
-                <Play size={15} /> Sayımı başlat
+                <Play size={16} /> Sayımı başlat
               </button>
             </section>
 
@@ -358,7 +358,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
               <section className="ayar-bolum sayim-gecmis-kutu">
                 <div className="ayar-bolum-ust">
                   <h2>
-                    <History size={17} /> Geçmiş sayımlar
+                    <History size={16} /> Geçmiş sayımlar
                     <Ipucu>Onaylı sayımın rakamları ay sonu maliyet hesabının kapanışıdır.</Ipucu>
                   </h2>
                   {aralikMetni && <span className="sayim-gecmis-aralik">{aralikMetni}</span>}
@@ -426,11 +426,11 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
               <h2>
-                <ClipboardList size={17} /> Sayım raporu
+                <ClipboardList size={16} /> Sayım raporu
                 <Ipucu>Yalnız farkı olan malzemeye hareket yazılır.</Ipucu>
               </h2>
               <button className="stok-yan-tus" onClick={() => setRapor(null)}>
-                <ArrowLeft size={15} /> Sayıma dön
+                <ArrowLeft size={16} /> Sayıma dön
               </button>
             </div>
 
@@ -457,7 +457,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                 kalıyor, ayrıntı pencerede açılıyor. */}
             {(sapanlar.length > 0 || sayilmayan.length > 0) && (
               <button className="sayim-detay-tus" onClick={() => setDetay(true)}>
-                <TriangleAlert size={15} />
+                <TriangleAlert size={16} />
                 {[
                   sapanlar.length > 0 &&
                     `${sapanlar.length} malzemede %${Math.round(SAPMA_SINIRI * 100)}'i geçen sapma`,
@@ -473,10 +473,10 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
 
             <div className="sayim-alt">
               <button className="stok-yan-tus" onClick={() => setIptalEdilecek(true)}>
-                <X size={15} /> Sayımı iptal et
+                <X size={16} /> Sayımı iptal et
               </button>
               <button className="ayar-ekle" onClick={() => setOnaylanacak(true)}>
-                <Check size={15} /> Onayla ve stoğa işle
+                <Check size={16} /> Onayla ve stoğa işle
               </button>
             </div>
           </section>
@@ -485,7 +485,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
               <h2>
-                <ClipboardList size={17} /> Sayım
+                <ClipboardList size={16} /> Sayım
                 <Ipucu>Sistemdeki miktar gizli; ne saydıysanız onu yazın.</Ipucu>
               </h2>
               <AramaKutusu deger={ara} degistir={setAra} yer="Malzeme ara" />
@@ -493,7 +493,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                   dönüşü olmayan eylem raporun sonundaki onay — mercan orada
                   duruyor, burada da dursa ikisi birbirini bastırıyor. */}
               <button className="stok-yan-tus sayim-bitir" onClick={raporuAc}>
-                <Check size={15} /> Bitir ve raporu gör
+                <Check size={16} /> Bitir ve raporu gör
               </button>
             </div>
 
@@ -553,7 +553,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                     <em>{olcuKisa(s.birim)}</em>
                   </span>
                   <span className="sayim-im">
-                    {s.sayilan != null && <Check size={17} />}
+                    {s.sayilan != null && <Check size={16} />}
                   </span>
                 </div>
               ))}
@@ -569,14 +569,14 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
             onClick={(e) => e.stopPropagation()}
           >
             <header className="up-ust">
-              <span className="stok-modal-im"><TriangleAlert size={17} /></span>
+              <span className="stok-modal-im"><TriangleAlert size={20} /></span>
               <h3>Rapor detayı</h3>
               <button
                 className="up-kapat"
                 aria-label="Kapat"
                 onClick={() => setDetay(false)}
               >
-                <X size={19} />
+                <X size={20} />
               </button>
             </header>
 
@@ -634,7 +634,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
       {onaylanacak && (
         <OnayModal
           baslik="Sayımı onayla"
-          ikon={<Check size={18} />}
+          ikon={<Check size={16} />}
           mesaj={`*${farkli.length} malzemede* fark bulundu, net tutar *${paraGoster(netTutar / 100)}*. Onaylarsanız bu farklar stok hareketi olarak yazılır ve sayım kapanır.`}
           onayMetni="Onayla"
           onOnay={onayla}
@@ -645,7 +645,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
       {iptalEdilecek && (
         <OnayModal
           baslik="Sayımı iptal et"
-          ikon={<X size={18} />}
+          ikon={<X size={20} />}
           tehlikeli
           mesaj="Sayım kapanır ve *girilen rakamlar stoğa işlenmez*. Stokta hiçbir şey değişmez."
           onayMetni="İptal et"
@@ -673,7 +673,7 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
             onClick={(e) => e.stopPropagation()}
           >
             <header className="up-ust">
-              <span className="stok-modal-im"><History size={17} /></span>
+              <span className="stok-modal-im"><History size={20} /></span>
               <h3>
                 {gecmisZamani(acilanGecmis.sayim.baslangic)} sayımı
                 <small>
@@ -686,14 +686,14 @@ export default function StokSayim({ mobil = false }: { mobil?: boolean }) {
                 aria-label="Kapat"
                 onClick={() => setAcilanGecmis(null)}
               >
-                <X size={19} />
+                <X size={20} />
               </button>
             </header>
 
             <div className="stok-modal-govde">
               {acilanGecmis.sayim.durum === "iptal" && (
                 <p className="sayim-gecmis-not">
-                  <Ban size={15} /> Bu sayım iptal edildi; rakamlar stoğa işlenmedi.
+                  <Ban size={16} /> Bu sayım iptal edildi; rakamlar stoğa işlenmedi.
                 </p>
               )}
               {acilanGecmis.rapor ? (

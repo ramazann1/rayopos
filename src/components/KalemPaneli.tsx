@@ -152,7 +152,7 @@ export default function KalemPaneli({
         <header className="up-ust">
           {kip && (
             <button className="kp-geri" onClick={() => setKip(null)} aria-label="Geri">
-              <ArrowLeft size={18} />
+              <ArrowLeft size={20} />
             </button>
           )}
           <div className="kp-baslik">
@@ -178,7 +178,7 @@ export default function KalemPaneli({
             </div>
           </div>
           <button className="up-kapat" onClick={onKapat} aria-label="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -204,7 +204,7 @@ export default function KalemPaneli({
                       disabled={kipAdet <= 1}
                       onClick={() => setKipAdet((a) => Math.max(1, a - 1))}
                     >
-                      <Minus size={17} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
@@ -222,7 +222,7 @@ export default function KalemPaneli({
                       disabled={kipAdet >= kalem.adet}
                       onClick={() => setKipAdet((a) => Math.min(kalem.adet, a + 1))}
                     >
-                      <Plus size={17} />
+                      <Plus size={16} />
                     </button>
                   </div>
                   <button
@@ -292,7 +292,7 @@ export default function KalemPaneli({
                       disabled={adet <= altSinir}
                       onClick={() => setAdet((a) => Math.max(altSinir, a - 1))}
                     >
-                      <Minus size={17} />
+                      <Minus size={16} />
                     </button>
                     <input
                       type="number"
@@ -301,7 +301,7 @@ export default function KalemPaneli({
                       onChange={(e) => setAdet(Math.max(altSinir, Number(e.target.value) || altSinir))}
                     />
                     <button aria-label="Artır" onClick={() => setAdet((a) => a + 1)}>
-                      <Plus size={17} />
+                      <Plus size={16} />
                     </button>
                   </div>
                 ) : (

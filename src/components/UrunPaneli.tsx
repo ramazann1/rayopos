@@ -390,7 +390,7 @@ export default function UrunPaneli({
         <header className="up-ust">
           <h3>{urun.id ? "Ürünü düzenle" : "Yeni ürün"}</h3>
           <button className="up-kapat" onClick={onKapat} title="Kapat">
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -398,7 +398,7 @@ export default function UrunPaneli({
           <aside className="up-raf">
             <div className="up-onizleme">
               <div className="up-yuvarlak" style={renk ? { background: renk } : undefined}>
-                <CupSoda size={28} />
+                <CupSoda size={24} />
               </div>
               <div className="up-onizleme-ad">{ad.trim() || "Yeni ürün"}</div>
               {onizlemeBirim && <div className="up-onizleme-birim">{onizlemeBirim}</div>}
@@ -526,7 +526,7 @@ export default function UrunPaneli({
                     className={i === secili ? "up-psek secili" : "up-psek"}
                     onClick={() => setSecili(i)}
                   >
-                    {t.varsayilan && <Star size={13} className="up-yildiz" fill="currentColor" />}
+                    {t.varsayilan && <Star size={14} className="up-yildiz" fill="currentColor" />}
                     {t.ad || "Porsiyon"}
                     {porsiyonlar.length > 1 && (
                       <span
@@ -537,7 +537,7 @@ export default function UrunPaneli({
                           porsiyonSil(i);
                         }}
                       >
-                        <X size={12} />
+                        <X size={14} />
                       </span>
                     )}
                   </button>
@@ -632,7 +632,7 @@ export default function UrunPaneli({
 
                     {!turAcik.includes(secili) && turAyrisik(p) && (
                       <button className="up-tur-uyari" onClick={() => turKatla(secili)}>
-                        <Info size={15} />
+                        <Info size={16} />
                         Bu porsiyonda kayıtlı tür fiyatı var:
                         {p.gelalFiyat && p.gelalFiyat !== p.fiyat ? ` Gel Al ₺${p.gelalFiyat}` : ""}
                         {p.paketFiyat && p.paketFiyat !== p.fiyat ? ` Paket ₺${p.paketFiyat}` : ""}
@@ -685,13 +685,13 @@ export default function UrunPaneli({
                               onClick={() => grupDegis(secili, id)}
                               title="Bağlantıyı kaldır"
                             >
-                              <X size={12} />
+                              <X size={14} />
                             </button>
                           </span>
                         );
                       })}
                       <button className="up-cip-ekle" onClick={() => setGrupPencere(secili)}>
-                        <Plus size={13} /> Grup bağla
+                        <Plus size={14} /> Grup bağla
                       </button>
                     </div>
                   </div>
@@ -723,7 +723,7 @@ export default function UrunPaneli({
                 className="up-katlanir-basi tek"
                 onClick={() => setKategoriAcik(!kategoriAcik)}
               >
-                {kategoriAcik ? <Minus size={15} /> : <Plus size={15} />}
+                {kategoriAcik ? <Minus size={16} /> : <Plus size={16} />}
                 <span>Kategoriler</span>
                 <small>{seciliKategoriAdlari || "seçilmedi"}</small>
               </button>
@@ -745,7 +745,7 @@ export default function UrunPaneli({
                           <button className="up-agac-ok" onClick={() => altKatla(k.id)} title="Alt kategoriler">
                             {seciliAlt > 0 && <em className="up-agac-rozet">{seciliAlt}</em>}
                             <ChevronDown
-                              size={17}
+                              size={16}
                               className={altAcik.includes(k.id) ? "bolum-ok donuk" : "bolum-ok"}
                             />
                           </button>
@@ -772,7 +772,7 @@ export default function UrunPaneli({
 
             <section>
               <button className="up-katlanir-basi tek" onClick={() => setMenuAcik(!menuAcik)}>
-                {menuAcik ? <Minus size={15} /> : <Plus size={15} />}
+                {menuAcik ? <Minus size={16} /> : <Plus size={16} />}
                 <span>QR menü görünümü</span>
                 <small>
                   {menuAlan.medya.length
@@ -784,7 +784,7 @@ export default function UrunPaneli({
               </button>
               {!menuAcik && (
                 <div className="up-bilgi">
-                  <Info size={15} />
+                  <Info size={16} />
                   <span>
                     Açıklama, görsel, alerjen ve kalori bilgisi burada. Yalnız karekodlu
                     menüde görünür, satış ekranını etkilemez.
@@ -805,7 +805,7 @@ export default function UrunPaneli({
         <footer className="up-alt">
           {urun.id && onSil && (
             <button className="up-tus sil" onClick={onSil}>
-              <Trash2 size={15} /> Ürünü sil
+              <Trash2 size={16} /> Ürünü sil
             </button>
           )}
           <button className="up-tus vazgec" onClick={onKapat}>Vazgeç</button>
@@ -830,7 +830,7 @@ export default function UrunPaneli({
             <header className="up-ust">
               <h3>Seçenek grupları</h3>
               <button className="up-kapat" onClick={() => setGrupPencere(null)} title="Kapat">
-                <X size={19} />
+                <X size={20} />
               </button>
             </header>
             <div className="up-grup-govde">

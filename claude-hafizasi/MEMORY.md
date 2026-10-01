@@ -45,3 +45,4 @@
 - [Köprü yayını GitHub Release](rayopos-kopru-yayini-github-release.md) — gh ile Claude yükler, sabit indirme adresi; paketi kurulum-dosyasi/'na kopyala.
 - [Vite son düzenlemeyi kaçırır](rayopos-vite-son-duzenlemeyi-kacirir.md) — beyaz sayfa/eski görünüm: sunulan metne bak, dosyaya dokun.
 - [Tarayıcıda önce hesabı söyle](rayopos-tarayicida-once-hesabi-soyle.md) — Chrome'da işlemden önce açık hesap/işletmeyi yaz; tıklama sepete yazabilir.
+- [RLS sorgu başına bir kez](rayopos-rls-sorgu-basina-bir-kez.md) — politikada kişiye bağlı fonksiyon (select ...) içinde; satır başına çalışınca rapor dakikalar sürüyor.

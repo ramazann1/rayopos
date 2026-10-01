@@ -81,7 +81,7 @@ export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onCl
           hangi masaya girmemesi gerektiğini görüyor. */}
       {mesgul && (
         <span className="masa-mesgul">
-          <LockKeyhole size={15} />
+          <LockKeyhole size={16} />
           {mesgul}
         </span>
       )}
@@ -119,7 +119,7 @@ export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onCl
                 ürün girilince işaret kalkıyor, kâğıttaki tutar artık tutmuyor. */}
             {durum.fisBasildi && (
               <span className="masa-fis" title="Hesap fişi basıldı">
-                <Printer size={13} />
+                <Printer size={14} />
               </span>
             )}
           </span>
@@ -132,17 +132,17 @@ export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onCl
                 kopyada gönderilmemiş bir kayıt yok, bilgi eski olabilir. */}
             {durum.bekliyor ? (
               <span className="masa-bekliyor">
-                <CloudUpload size={13} />
+                <CloudUpload size={14} />
                 Gönderilmedi
               </span>
             ) : durum.kopyaSaati ? (
               <span className="masa-bekliyor kopya">
-                <CloudOff size={13} />
+                <CloudOff size={14} />
                 {durum.kopyaSaati} hâli
               </span>
             ) : (
               <span className="masa-sure">
-                <Clock size={12} />
+                <Clock size={14} />
                 {durum.sure}
               </span>
             )}
@@ -152,7 +152,7 @@ export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onCl
               satır akışına girmiyor ki kart düzeni masadan masaya kaymasın. */}
           {!!durum.kisiSayisi && (
             <span className="masa-kisi">
-              <Users size={13} />
+              <Users size={14} />
               {durum.kisiSayisi}
             </span>
           )}
@@ -192,7 +192,7 @@ export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onCl
             aria-label={`${masa.ad} işlemleri`}
             onClick={() => setMenuAcik((a) => !a)}
           >
-            <MoreVertical size={18} />
+            <MoreVertical size={20} />
           </button>
 
           {menuAcik && (

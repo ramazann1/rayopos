@@ -8,10 +8,10 @@ import { CircleCheck, Info, PackageX, Trash2, TriangleAlert } from "lucide-react
 export type OnayTuru = "bilgi" | "uyari" | "tehlike" | "basarili";
 
 const turIkonu: Record<OnayTuru, React.ReactNode> = {
-  bilgi: <Info size={22} />,
-  uyari: <TriangleAlert size={22} />,
-  tehlike: <Trash2 size={22} />,
-  basarili: <CircleCheck size={22} />,
+  bilgi: <Info size={20} />,
+  uyari: <TriangleAlert size={20} />,
+  tehlike: <Trash2 size={20} />,
+  basarili: <CircleCheck size={20} />,
 };
 
 /**

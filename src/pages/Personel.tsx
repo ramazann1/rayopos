@@ -126,12 +126,12 @@ function PersonelPaneli({
         <>
           {onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button className="pnc-kaydet" disabled={!gecerli} onClick={kaydet}>
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -196,7 +196,7 @@ function PersonelPaneli({
               <ul className="sifre-kurallar">
                 {kurallar.map((k) => (
                   <li key={k.metin} className={k.tamam ? "tamam" : undefined}>
-                    {k.tamam ? <Check size={13} /> : <Circle size={13} />}
+                    {k.tamam ? <Check size={14} /> : <Circle size={14} />}
                     {k.metin}
                   </li>
                 ))}
@@ -375,22 +375,22 @@ export default function PersonelEkrani() {
         ) : (
           <section className="ayar-bolum">
             <div className="ayar-bolum-ust">
-              <h2><UserRound size={17} /> Personel</h2>
+              <h2><UserRound size={20} /> Personel</h2>
               {/* Aranan kişi bulunamayınca eklenecek: kutu ekleme düğmesinin yanında. */}
               <AramaKutusu deger={ara} degistir={setAra} yer="Personel ara" />
               <button className="ayar-ekle" onClick={() => setPanel(null)}>
-                <Plus size={15} /> Personel ekle
+                <Plus size={16} /> Personel ekle
               </button>
             </div>
 
             {liste.length === 0 ? (
               <div className="ayar-bos">
-                <UserRound size={30} />
+                <UserRound size={24} />
                 <p>Henüz personel yok. Kendinizi ekleyerek başlayın.</p>
               </div>
             ) : gorunen.length === 0 ? (
               <div className="ayar-bos">
-                <UserRound size={30} />
+                <UserRound size={24} />
                 <p>"{ara}" ile eşleşen personel yok.</p>
               </div>
             ) : (

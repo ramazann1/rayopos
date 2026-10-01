@@ -105,7 +105,7 @@ export default function MenuGorunumu({
             {m.tur === "video" ? (
               <>
                 <video src={medyaAdresi(m.yol)} muted playsInline preload="metadata" />
-                <Play size={18} className="medya-video-im" />
+                <Play size={16} className="medya-video-im" />
               </>
             ) : (
               <img src={medyaAdresi(m.yol)} alt="" />

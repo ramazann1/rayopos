@@ -233,7 +233,7 @@ function LogoAlani({
 
       <div className="fis-logo-dugmeler">
         <label className="ayar-ekle">
-          <ImagePlus size={15} /> {logo ? "Logoyu değiştir" : "Logo yükle"}
+          <ImagePlus size={16} /> {logo ? "Logoyu değiştir" : "Logo yükle"}
           <input
             type="file"
             accept="image/*"
@@ -246,7 +246,7 @@ function LogoAlani({
         </label>
         {logo && (
           <button className="sil-buton" onClick={() => degistir("")}>
-            <Trash2 size={15} /> Kaldır
+            <Trash2 size={16} /> Kaldır
           </button>
         )}
       </div>
@@ -363,18 +363,18 @@ export default function FisTasarimi() {
               className={tip === "adisyon" ? "aktif" : ""}
               onClick={() => setTip("adisyon")}
             >
-              <Receipt size={15} /> Adisyon Fişi
+              <Receipt size={16} /> Adisyon Fişi
             </button>
             <button
               className={tip === "mutfak" ? "aktif" : ""}
               onClick={() => setTip("mutfak")}
             >
-              <ChefHat size={15} /> Mutfak Fişi
+              <ChefHat size={16} /> Mutfak Fişi
             </button>
           </div>
 
           <button className="ayar-ekle" disabled={!degisti} onClick={kaydet}>
-            <Save size={15} /> Kaydet
+            <Save size={16} /> Kaydet
           </button>
         </div>
 
@@ -392,7 +392,7 @@ export default function FisTasarimi() {
                       className={bolum === b.kod ? "aktif" : ""}
                       onClick={() => setBolum(b.kod)}
                     >
-                      <Ikon size={15} /> {b.ad}
+                      <Ikon size={16} /> {b.ad}
                     </button>
                   );
                 })}

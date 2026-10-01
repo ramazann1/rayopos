@@ -20,7 +20,7 @@ export default function AramaKutusu({
       />
       {deger && (
         <button onClick={() => degistir("")} title="Aramayı temizle">
-          <X size={15} />
+          <X size={16} />
         </button>
       )}
     </div>

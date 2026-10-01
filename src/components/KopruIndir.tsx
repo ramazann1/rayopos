@@ -13,7 +13,7 @@ export default function KopruIndir() {
   const icerik = (
     <>
       <span className="ki-im">
-        {yayinda ? <MonitorDown size={18} /> : <Clock size={18} />}
+        {yayinda ? <MonitorDown size={16} /> : <Clock size={16} />}
       </span>
       <span className="ki-metin">
         Yazıcı programı

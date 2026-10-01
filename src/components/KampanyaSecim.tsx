@@ -88,11 +88,11 @@ export default function KampanyaSecim({
       <div className="up-modal ka-modal" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <span className="ka-im">
-            <UtensilsCrossed size={18} />
+            <UtensilsCrossed size={20} />
           </span>
           <h3>{urun.ad}</h3>
           <button className="up-kapat" aria-label="Kapat" onClick={onKapat}>
-            <X size={19} />
+            <X size={20} />
           </button>
         </header>
 
@@ -104,11 +104,11 @@ export default function KampanyaSecim({
               <section className="ka-grup" key={gi}>
                 <div className="ka-grup-ust">
                   <span className="ka-grup-im">
-                    <LayoutList size={15} />
+                    <LayoutList size={16} />
                   </span>
                   <span className="ka-grup-ad">{g.baslik}</span>
                   <span className={tamam ? "ka-sayac tamam" : "ka-sayac"}>
-                    {tamam && <Check size={13} />}
+                    {tamam && <Check size={14} />}
                     {secili.length}/{g.secilebilir}
                   </span>
                 </div>
@@ -129,7 +129,7 @@ export default function KampanyaSecim({
                         </span>
                         {s.ekFiyat > 0 && (
                           <span className="ka-ek">
-                            <Plus size={12} />
+                            <Plus size={14} />
                             {paraGoster(s.ekFiyat)}
                           </span>
                         )}
@@ -158,7 +158,7 @@ export default function KampanyaSecim({
             </span>
           </div>
           <button className="ka-ekle" disabled={eksikler.length > 0} onClick={() => onEkle(toplam, secimAdlari)}>
-            <Plus size={17} />
+            <Plus size={16} />
             Ekle · {paraGoster(toplam)}
           </button>
         </footer>

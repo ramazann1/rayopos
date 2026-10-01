@@ -147,9 +147,9 @@ export default function MobilIstasyon() {
                   {isaretli.includes(i.id) && <Check size={16} />}
                 </button>
                 <button onClick={() => setSeciliIdler([i.id])}>
-                  <ChefHat size={19} />
+                  <ChefHat size={20} />
                   <span>{i.ad}</span>
-                  <ChevronRight size={18} />
+                  <ChevronRight size={16} />
                 </button>
               </div>
             ))}
@@ -298,7 +298,7 @@ function Ekran({
           {cokIstasyon ? (
             <button className="m-istasyon-ad" onClick={onDegistir}>
               <h1>{istasyonlar.map((i) => i.ad).join(" + ")}</h1>
-              <ChevronRight size={19} />
+              <ChevronRight size={20} />
             </button>
           ) : (
             <h1>{istasyonlar.map((i) => i.ad).join(" + ")}</h1>
@@ -335,7 +335,7 @@ function Ekran({
       ) : sekme === "bekleyen" ? (
         bekleyen.length === 0 ? (
           <div className="m-bos">
-            <CircleCheckBig size={30} />
+            <CircleCheckBig size={24} />
             <p>Tezgâh boş. Yeni sipariş geldiğinde kendiliğinden görünecek.</p>
           </div>
         ) : (
@@ -355,7 +355,7 @@ function Ekran({
         )
       ) : hazirlanan.length === 0 ? (
         <div className="m-bos">
-          <Check size={30} />
+          <Check size={24} />
           <p>Bu vardiyada henüz hazırlanan yok.</p>
         </div>
       ) : (
@@ -368,7 +368,7 @@ function Ekran({
               </header>
               {kart.kalemler.map((k) => (
                 <div key={k.id} className="m-hazir-satir">
-                  <Check size={17} />
+                  <Check size={16} />
                   <span>
                     {k.adet !== 1 && `${adetGoster(k.adet)} × `}
                     {k.ad}
@@ -376,7 +376,7 @@ function Ekran({
                   </span>
                   {k.hazirAt && <time>{saat(k.hazirAt)}</time>}
                   <button onClick={() => geriAl([k.id], "hazir")} aria-label="Geri al">
-                    <Undo2 size={17} />
+                    <Undo2 size={16} />
                   </button>
                 </div>
               ))}
@@ -389,7 +389,7 @@ function Ekran({
         <div className="m-geri-serit">
           <span>{ASAMA_ADI[geriAlinabilir.asama].gecmis}.</span>
           <button onClick={() => geriAl(geriAlinabilir.idler, geriAlinabilir.asama)}>
-            <Undo2 size={17} /> Geri al
+            <Undo2 size={16} /> Geri al
           </button>
         </div>
       )}
@@ -431,14 +431,14 @@ function Kart({
           {kart.garson ? <em>{kart.garson}</em> : null}
         </span>
         <span className="m-kart-sure">
-          <Clock size={15} />
+          <Clock size={16} />
           {gecenSure(kart.olusturma)}
         </span>
       </header>
 
       {kart.not && (
         <p className="m-kart-not">
-          <MessageSquareText size={15} />
+          <MessageSquareText size={16} />
           {kart.not}
         </p>
       )}
@@ -480,7 +480,7 @@ function Kart({
 
       {enGeri && (
         <button className="m-dugme genis" onClick={() => onTumu(toplu.map((k) => k.id), enGeri)}>
-          {enGeri === "hazir" ? <CircleCheckBig size={18} /> : <AsamaIkonu asama={enGeri} />}
+          {enGeri === "hazir" ? <CircleCheckBig size={16} /> : <AsamaIkonu asama={enGeri} />}
           {enGeri === "hazir" ? "Tümü hazır" : `Tümü ${ASAMA_ADI[enGeri].simdi.toLowerCase()}`}
         </button>
       )}

@@ -130,7 +130,7 @@ function KategoriPenceresi({
               })
             }
           >
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -286,12 +286,12 @@ function GrupPaneli({
         <>
           {grup && onSil && (
             <button className="pnc-sil" onClick={onSil} aria-label="Grubu sil">
-              <Trash2 size={17} />
+              <Trash2 size={16} />
             </button>
           )}
           <button className="pnc-vazgec" onClick={onKapat}>Vazgeç</button>
           <button className="pnc-kaydet" disabled={!gecerli} onClick={kaydet}>
-            <Check size={17} /> Kaydet
+            <Check size={16} /> Kaydet
           </button>
         </>
       }
@@ -345,7 +345,7 @@ function GrupPaneli({
                 disabled={liste.length < 2}
                 onClick={() => setSiralama(true)}
               >
-                <ArrowUpDown size={15} /> Sırala
+                <ArrowUpDown size={16} /> Sırala
               </button>
               <button onClick={() => setListe([...liste, { ad: "", ekFiyat: 0 }])}><Plus size={14} /> Seçenek</button>
             </div>
@@ -365,10 +365,10 @@ function GrupPaneli({
                   onClick={() => varsayilanDegis(i)}
                   title="Önceden işaretli gelsin"
                 >
-                  <Star size={15} />
+                  <Star size={16} />
                 </button>
                 <button className="satir-sil" onClick={() => satirSil(i)} disabled={liste.length === 1}>
-                  <X size={15} />
+                  <X size={16} />
                 </button>
               </div>
             ))}
@@ -466,7 +466,7 @@ function BirimlerSekmesi({
           className="ms-urun-ekle"
           onClick={() => setListe([...liste, { ad: "", varsayilan: false }])}
         >
-          <Plus size={15} /> Birim
+          <Plus size={16} /> Birim
         </button>
       </div>
 
@@ -493,7 +493,7 @@ function BirimlerSekmesi({
               placeholder="Tam"
             />
             <span className="birim-sayac">{b.id ? `${kullanim(b.id)} porsiyon` : "yeni"}</span>
-            <button className="satir-sil" title="Sil" onClick={() => satirSil(i)}><Trash2 size={15} /></button>
+            <button className="satir-sil" title="Sil" onClick={() => satirSil(i)}><Trash2 size={16} /></button>
           </div>
         ))}
       </div>
@@ -604,7 +604,7 @@ function KdvSekmesi({
             setListe([...liste, { ad: "", oran: 0, varsayilan: false, oranMetin: "" }])
           }
         >
-          <Plus size={15} /> KDV Grubu
+          <Plus size={16} /> KDV Grubu
         </button>
       </div>
 
@@ -638,7 +638,7 @@ function KdvSekmesi({
               placeholder="10"
             />
             <span className="birim-sayac">%{k.id ? ` · ${kullanim(k.id)} ürün` : " · yeni"}</span>
-            <button className="satir-sil" title="Sil" onClick={() => satirSil(i)}><Trash2 size={15} /></button>
+            <button className="satir-sil" title="Sil" onClick={() => satirSil(i)}><Trash2 size={16} /></button>
           </div>
         ))}
       </div>
@@ -1121,7 +1121,7 @@ export default function MenuStudyosu() {
     if (gorunum === "toplu" && topluDegisiklik > 0) {
       setOnaySor({
         baslik: "Kaydedilmemiş değişiklik var",
-        ikon: <TriangleAlert size={22} />,
+        ikon: <TriangleAlert size={20} />,
         mesaj: `*${topluDegisiklik} üründe* yaptığınız değişiklikler kaydedilmedi. Çıkarsanız kaybolacak.`,
         devam: () => {
           setTopluDegisiklik(0);
@@ -1220,7 +1220,7 @@ export default function MenuStudyosu() {
             <div className="ms-urun-ust">
               <h2>Seçenek Grupları</h2>
               <span>{gruplar.length} grup</span>
-              <button className="ms-urun-ekle" onClick={() => setGrupPencere({})}><Plus size={15} /> Seçenek Grubu</button>
+              <button className="ms-urun-ekle" onClick={() => setGrupPencere({})}><Plus size={16} /> Seçenek Grubu</button>
             </div>
 
             <div className="menu-urunler">
@@ -1252,7 +1252,7 @@ export default function MenuStudyosu() {
           <div className="ms-duzen">
             <div className="ms-kategoriler">
               <div className="ms-kat-ust">
-                <button className="ms-ekle" onClick={() => setPencere({})}><Plus size={15} /> Kategori</button>
+                <button className="ms-ekle" onClick={() => setPencere({})}><Plus size={16} /> Kategori</button>
                 <button
                   className="ms-sirala"
                   title={siralamaBasligi}
@@ -1287,14 +1287,14 @@ export default function MenuStudyosu() {
                       title="Düzenle"
                       onClick={(e) => { e.stopPropagation(); setPencere({ kategori: k }); }}
                     >
-                      <Pencil size={13} />
+                      <Pencil size={14} />
                     </button>
                     <button
                       className="ms-islem"
                       title="Sil"
                       onClick={(e) => { e.stopPropagation(); kategoriyiSil(k); }}
                     >
-                      <X size={15} />
+                      <X size={16} />
                     </button>
                     {altlar.length > 0 && (
                       <span
@@ -1305,7 +1305,7 @@ export default function MenuStudyosu() {
                           setAcikGrupId(acikGrupId === k.id ? null : k.id);
                         }}
                       >
-                        <ChevronDown size={18} className={acikGrupId === k.id ? "donuk" : ""} />
+                        <ChevronDown size={16} className={acikGrupId === k.id ? "donuk" : ""} />
                       </span>
                     )}
                   </div>
@@ -1329,14 +1329,14 @@ export default function MenuStudyosu() {
                           title="Düzenle"
                           onClick={(e) => { e.stopPropagation(); setPencere({ kategori: a }); }}
                         >
-                          <Pencil size={13} />
+                          <Pencil size={14} />
                         </button>
                         <button
                           className="ms-islem"
                           title="Sil"
                           onClick={(e) => { e.stopPropagation(); kategoriyiSil(a); }}
                         >
-                          <X size={15} />
+                          <X size={16} />
                         </button>
                       </div>
                     ))}
@@ -1366,9 +1366,9 @@ export default function MenuStudyosu() {
                       disabled={listelenenUrunler.length < 2 || kapsam !== "kategori" || !!aranan}
                       onClick={() => setSiralama("urun")}
                     >
-                      <ArrowUpDown size={15} /> Sırala
+                      <ArrowUpDown size={16} /> Sırala
                     </button>
-                    <button className="ms-urun-ekle" onClick={() => setPanel(yeniUrun())}><Plus size={15} /> Ürün</button>
+                    <button className="ms-urun-ekle" onClick={() => setPanel(yeniUrun())}><Plus size={16} /> Ürün</button>
                   </div>
 
                   <div className="ms-arama">
@@ -1380,7 +1380,7 @@ export default function MenuStudyosu() {
                       />
                       {arama && (
                         <button className="arama-temizle" onClick={() => setArama("")} title="Temizle">
-                          <X size={15} />
+                          <X size={16} />
                         </button>
                       )}
                     </div>
