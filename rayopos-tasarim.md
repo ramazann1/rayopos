@@ -5,6 +5,17 @@
 
 > **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" bölümü — önce bütün kalanları say.**
 >
+> **BİTTİ (2 Eki 2026, ikinci seans): küçük rapor eklemeleri.**
+> - Özet › **Gün gün ciro** (`gunlukCiro`): kasa günü satır, ödeme tipleri sütun,
+>   tahsil edilmeyen ayrı sütun; tek günlük dönemde gizli.
+> - Ürünler › **Masalar** (bölge · masa, adisyon, ortalama) ve **Seçenekler**
+>   (seçenek × ürün, yalnız adet — seçenek fiyatı ürün fiyatının içinde) kartları;
+>   rapor artık kalemin `secimler` alanını da çekiyor.
+> - Ürün tablosunda satıra tıklayınca o ürünün saatlik satış penceresi.
+> - Personel satırına tıklayınca kişinin sattığı ürünler (indirim payı düşülmüş ciro).
+> - Excel: Gün gün, Masalar, Seçenekler, Personel ürünleri sayfaları.
+> - Kurye işi Adisyo'da bakıldı, "Satıştan önce" grubuna taşındı (aşağıda).
+>
 > **BİTTİ (2 Eki 2026):**
 > - **İkon boyut standardı:** 14 satır içi, 16 düğme/liste, 20 başlık ve ikon düğmesi,
 >   24 sekme/boş ekran. Mobil masa kartındaki üç nokta yarı saydam kutuda, dokunma
@@ -204,13 +215,19 @@
 > **YENİ SEANSTA İLK İŞ (Ramazan'ın isteği):** aşağıdaki kalan işlerin TAMAMINI
 > Ramazan'a say (gruplu, kısa), sonra 1. maddeyle başla. Küçük işler bitti.
 >
-> 1. **Küçük rapor eklemeleri** (2 Eki 2026 Adisyo karşılaştırmasından): ürünün
->    saatlik satışı, seçenek bazında satış, masa bazlı satış, gün gün ciro tablosu
->    (ödeme tipleri sütun), garsonun ürün kırılımı. Excel indirme ve yoğunluk bitti.
-> 2. **Kurye atama ve teslimat takibi** — önce Adisyo'da canlı tur.
-> 3. **Sadakat programı** (puan, kampanya) — önce Adisyo'da canlı tur.
-> 4. **Çoklu şube** — merkezi menü, şube karşılaştırma.
-> Satıştan önce: **QR menünün kalanı** (kategori/kapak görselleri, masadan sipariş,
+> 1. **Sadakat programı** (puan, kampanya) — önce Adisyo'da canlı tur.
+> 2. **Çoklu şube** — merkezi menü, şube karşılaştırma.
+> Satıştan önce: **Kurye atama ve teslimat takibi** (2 Eki 2026: Ramazan'ın
+> işletmesinde paket servis yok, satıştan önceye alındı). Adisyo'da temel kısım
+> pakete dahil: Siparişler panosunda "Teslimata Çıkanlar" sütunu, Kurye rolü,
+> "kurye yalnız kendine atananı görsün / atanmamışta adres gizli" yetkileri.
+> Uygulama Mağazası › Kurye Entegrasyonları ücretli (her biri 565 ₺/ay): Adisyo
+> Harita (canlı harita), Hemen Yolda, Fiyuu, Vigo (dış kurye firması çağırma).
+> Bizim kapsam: paket adisyona kurye seçme, hazırlanıyor → yolda → teslim edildi,
+> kurye telefonda yalnız kendi siparişi + adres, tahsilat teslimatta, kurye
+> raporu. Harita ve dış firmalar sonraya. Atama ekranı canlı görülmedi —
+> başlamadan önce Adisyo'da paket sipariş akışına bir tur daha.
+> **QR menünün kalanı** (kategori/kapak görselleri, masadan sipariş,
 > garson çağırma, masa başına karekod — büyük iş, Ramazan buraya aldı 2 Eki 2026),
 > kayıt ekranına CAPTCHA (durumu belirsiz, Ramazan hesap açacak),
 > köprü exe imzası, GitHub deposu gizliye, mağaza paketlemesi (Capacitor),

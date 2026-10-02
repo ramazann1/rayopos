@@ -5,6 +5,7 @@ import {
   donemMetni,
   durumMetni,
   yogunlukTablosu,
+  gunlukCiro,
   type AnalizAdisyon,
   type AnalizFiltre,
   type AnalizOzeti,
@@ -82,6 +83,7 @@ async function sayfalar(bolum: string, v: AnalizVerisi): Promise<Sayfa[]> {
       const o = v.ozet;
       const { bas, bit } = donemAraligi(v.filtre);
       const yogunluk = yogunlukTablosu(v.adisyonlar, bas, bit);
+      const gunluk = gunlukCiro(v.adisyonlar, bas, bit);
       return [
         {
           ad: "Özet",
@@ -156,6 +158,18 @@ async function sayfalar(bolum: string, v: AnalizVerisi): Promise<Sayfa[]> {
             ...s.hucreler.map((h) => h.adet || null),
             s.adet,
           ]),
+          toplam: true,
+        },
+        {
+          ad: "Gün gün",
+          sutunlar: [
+            { ad: "Gün", genislik: 18 },
+            { ad: "Adisyon", genislik: 10, tur: "sayi" },
+            ...gunluk.tipler.map((t): Sutun => ({ ad: t, genislik: 14, tur: "para" })),
+            { ad: "Tahsil edilmedi", genislik: 15, tur: "para" },
+            { ad: "Ciro", genislik: 14, tur: "para" },
+          ],
+          satirlar: gunluk.satirlar.map((s) => [s.etiket, s.adisyon, ...s.odemeler, s.eksik, s.ciro]),
           toplam: true,
         },
       ];
@@ -262,6 +276,25 @@ async function sayfalar(bolum: string, v: AnalizVerisi): Promise<Sayfa[]> {
           ],
           satirlar: v.urunler.bolgeler.map((b) => [b.ad, b.adet, b.tutar]),
           toplam: true,
+        },
+        {
+          ad: "Masalar",
+          sutunlar: [
+            { ad: "Masa", genislik: 24 },
+            { ad: "Adisyon", genislik: 10, tur: "sayi" },
+            { ad: "Ciro", genislik: 14, tur: "para" },
+            { ad: "Ortalama", genislik: 14, tur: "para" },
+          ],
+          satirlar: v.urunler.masalar.map((m) => [m.ad, m.adet, m.tutar, m.adet ? m.tutar / m.adet : 0]),
+        },
+        {
+          ad: "Seçenekler",
+          sutunlar: [
+            { ad: "Seçenek", genislik: 24 },
+            { ad: "Ürün", genislik: 26 },
+            { ad: "Adet", genislik: 10, tur: "sayi" },
+          ],
+          satirlar: v.urunler.secenekler.map((s) => [s.ad, s.urun, s.adet]),
         },
         {
           ad: "Satılmayanlar",
@@ -400,6 +433,17 @@ async function sayfalar(bolum: string, v: AnalizVerisi): Promise<Sayfa[]> {
             s.ikram,
             s.iptal,
           ]),
+          toplam: true,
+        },
+        {
+          ad: "Personel ürünleri",
+          sutunlar: [
+            { ad: "Personel", genislik: 22 },
+            { ad: "Ürün", genislik: 26 },
+            { ad: "Adet", genislik: 9, tur: "sayi" },
+            { ad: "Ciro", genislik: 14, tur: "para" },
+          ],
+          satirlar: v.personel.satirlar.flatMap((s) => s.urunler.map((u) => [s.ad, u.ad, u.adet, u.ciro])),
           toplam: true,
         },
       ];

@@ -1,9 +1,12 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  Armchair,
+  ListChecks,
   ArrowDown,
   ArrowUp,
   BarChart3,
+  CalendarDays,
   CalendarX2,
   ChefHat,
   CircleHelp,
@@ -49,6 +52,7 @@ import { CizgiGrafik, Degisim, Halka } from "../components/Grafikler";
 import AramaKutusu from "../components/AramaKutusu";
 import Bilgi from "../components/Bilgi";
 import Ipucu from "../components/Ipucu";
+import OrtaPencere from "../components/OrtaPencere";
 import AdisyonDetay from "../components/AdisyonDetay";
 import { yolaGirebilir } from "../rotaYetkileri";
 import { paraGoster } from "../para";
@@ -74,6 +78,9 @@ import {
   durumMetni,
   yogunlukTablosu,
   TIP_ADLARI,
+  gunlukCiro,
+  type GunlukCiro,
+  type SecenekSatiri,
   type Yogunluk,
   type AnalizAdisyon,
   type AnalizFiltre as Filtre,
@@ -242,6 +249,11 @@ export default function Analiz() {
     return yogunlukTablosu(adisyonlar, bas, bit);
   }, [adisyonlar, filtre]);
 
+  const gunluk = useMemo(() => {
+    const { bas, bit } = donemAraligi(filtre);
+    return gunlukCiro(adisyonlar, bas, bit);
+  }, [adisyonlar, filtre]);
+
   const [indiriliyor, setIndiriliyor] = useState(false);
   const indir = async () => {
     setIndiriliyor(true);
@@ -309,6 +321,7 @@ export default function Analiz() {
             seri={seri}
             oncekiSeri={oncekiSeri}
             yogunluk={yogunluk}
+            gunluk={gunluk}
             onEksigeGit={() => {
               setSadeceEksik(true);
               navigate("/analiz/adisyonlar");
@@ -703,6 +716,7 @@ function Ozet({
   oncekiSeri,
   onEksigeGit,
   yogunluk,
+  gunluk,
 }: {
   ozet: AnalizOzeti;
   onceki: AnalizOzeti | null;
@@ -710,6 +724,7 @@ function Ozet({
   oncekiSeri: ZamanSerisi | null;
   onEksigeGit: () => void;
   yogunluk: Yogunluk;
+  gunluk: GunlukCiro;
 }) {
   const kdvDahil = ayarlar().kdvDahil;
 
@@ -941,6 +956,20 @@ function Ozet({
         </div>
         <YogunlukTablosu yogunluk={yogunluk} />
       </section>
+
+      {gunluk.satirlar.length > 1 ? (
+        <section className="ayar-bolum">
+          <div className="ayar-bolum-ust">
+            <h2>
+              <CalendarDays size={16} /> Gün gün ciro
+              <Ipucu baslik="Gün gün ciro">
+                Her kasa gününün kapanan cirosu, ödeme tiplerine ayrılmış hâliyle.
+              </Ipucu>
+            </h2>
+          </div>
+          <GunlukCiroTablosu gunluk={gunluk} />
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -1013,7 +1042,8 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
   const [arama, setArama] = useState("");
   const [kategoriArama, setKategoriArama] = useState("");
   const [kategoriPenceresi, setKategoriPenceresi] = useState(false);
-  const [cevapPenceresi, setCevapPenceresi] = useState<"tasiyan" | "birlikte" | null>(null);
+  const [cevapPenceresi, setCevapPenceresi] = useState<"tasiyan" | "birlikte" | "masa" | "secenek" | null>(null);
+  const [urunSaati, setUrunSaati] = useState<UrunSatiri | null>(null);
 
   // İki kutu iki ayrı listeyi süzüyor: kategori kartı ile ürün tablosu birbirini
   // etkilemiyor, aynı ekranda iki farklı soru sorulabiliyor.
@@ -1183,6 +1213,55 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
         </div>
       ) : null}
 
+      {ozet.masalar.length || ozet.secenekler.length ? (
+        <div className="urun-cevaplar">
+          {ozet.masalar.length ? (
+            <section className="ayar-bolum urun-cevap">
+              <div className="ayar-bolum-ust">
+                <h2>
+                  <Armchair size={16} /> Masalar
+                  <Ipucu baslik="Masalar">
+                    Masada kapanan hesapların cirosu; gel al ve paket siparişler bu listeye girmiyor.
+                  </Ipucu>
+                </h2>
+              </div>
+              <ul className="cevap-liste">
+                {ozet.masalar.slice(0, CEVAP_SATIRI).map((m, i) => (
+                  <MasaSatir key={m.ad} masa={m} sira={i + 1} />
+                ))}
+              </ul>
+              <CevapDevam
+                kalan={ozet.masalar.length - CEVAP_SATIRI}
+                birim="masa"
+                onTumu={() => setCevapPenceresi("masa")}
+              />
+            </section>
+          ) : null}
+          {ozet.secenekler.length ? (
+            <section className="ayar-bolum urun-cevap">
+              <div className="ayar-bolum-ust">
+                <h2>
+                  <ListChecks size={16} /> Seçenekler
+                  <Ipucu baslik="Seçenekler">
+                    Siparişte hangi seçeneğin kaç kez seçildiği; seçeneğin fiyatı ürünün cirosunda.
+                  </Ipucu>
+                </h2>
+              </div>
+              <ul className="cevap-liste">
+                {ozet.secenekler.slice(0, CEVAP_SATIRI).map((s, i) => (
+                  <SecenekSatir key={`${s.ad}|${s.urun}`} secenek={s} sira={i + 1} />
+                ))}
+              </ul>
+              <CevapDevam
+                kalan={ozet.secenekler.length - CEVAP_SATIRI}
+                birim="seçenek"
+                onTumu={() => setCevapPenceresi("secenek")}
+              />
+            </section>
+          ) : null}
+        </div>
+      ) : null}
+
       <section className="ayar-bolum">
         <div className="analiz-liste-ust">
           <h2>
@@ -1223,6 +1302,7 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
                       kiyasVar={kiyasVar}
                       ikramVar={ikramVar}
                       iptalVar={iptalVar}
+                      onSec={() => setUrunSaati(s)}
                     />
                     {esikSirasi === i + 1 && esikSirasi < satirlar.length ? (
                       <tr className="urun-esik">
@@ -1299,6 +1379,38 @@ function Urunler({ ozet }: { ozet: UrunOzeti }) {
           onKapat={() => setCevapPenceresi(null)}
         />
       ) : null}
+
+      {cevapPenceresi === "masa" ? (
+        <CevapPenceresi
+          baslik={
+            <>
+              <Armchair size={16} /> {ozet.masalar.length} masa
+            </>
+          }
+          liste={ozet.masalar}
+          ad={(m) => m.ad}
+          yer="Masa ara"
+          satir={(m, i) => <MasaSatir key={m.ad} masa={m} sira={i + 1} />}
+          onKapat={() => setCevapPenceresi(null)}
+        />
+      ) : null}
+
+      {cevapPenceresi === "secenek" ? (
+        <CevapPenceresi
+          baslik={
+            <>
+              <ListChecks size={16} /> {ozet.secenekler.length} seçenek
+            </>
+          }
+          liste={ozet.secenekler}
+          ad={(s) => `${s.ad} ${s.urun}`}
+          yer="Seçenek ya da ürün ara"
+          satir={(s, i) => <SecenekSatir key={`${s.ad}|${s.urun}`} secenek={s} sira={i + 1} />}
+          onKapat={() => setCevapPenceresi(null)}
+        />
+      ) : null}
+
+      {urunSaati ? <UrunSaatPenceresi satir={urunSaati} onKapat={() => setUrunSaati(null)} /> : null}
     </div>
   );
 }
@@ -1418,6 +1530,49 @@ function BirlikteSatir({ cift }: { cift: BirlikteSatis }) {
   );
 }
 
+function MasaSatir({ masa, sira }: { masa: OzetDilimi; sira: number }) {
+  return (
+    <li className="cevap-satir tasiyan">
+      <b className="cevap-sira">{sira}</b>
+      <strong className="cevap-ad">{masa.ad}</strong>
+      <strong className="cevap-deger">{paraGoster(masa.tutar)}</strong>
+      <em className="cevap-alt">{sayiGoster(masa.adet)} adisyon</em>
+      <em className="cevap-alt sag">ortalama {paraGoster(masa.adet ? masa.tutar / masa.adet : 0)}</em>
+    </li>
+  );
+}
+
+function SecenekSatir({ secenek, sira }: { secenek: SecenekSatiri; sira: number }) {
+  return (
+    <li className="cevap-satir tasiyan">
+      <b className="cevap-sira">{sira}</b>
+      <strong className="cevap-ad">{secenek.ad}</strong>
+      <strong className="cevap-deger">{sayiGoster(secenek.adet)} kez</strong>
+      <em className="cevap-alt">{secenek.urun}</em>
+    </li>
+  );
+}
+
+/** Tek ürünün saat saat satışı; ürün tablosunda satıra tıklayınca açılıyor. */
+function UrunSaatPenceresi({ satir, onKapat }: { satir: UrunSatiri; onKapat: () => void }) {
+  const enCok = satir.saatler.reduce((e, s) => (s.adet > e.adet ? s : e), satir.saatler[0]);
+  return (
+    <OrtaPencere
+      ikon={Clock}
+      baslik={satir.ad}
+      aciklama={
+        enCok?.adet
+          ? `${sayiGoster(satir.miktar)} adet · en çok ${String(enCok.saat).padStart(2, "0")}:00 – ${String((enCok.saat + 1) % 24).padStart(2, "0")}:00 arası`
+          : undefined
+      }
+      genislik="genis"
+      onKapat={onKapat}
+    >
+      <Saatler saatler={satir.saatler} />
+    </OrtaPencere>
+  );
+}
+
 /** İki cevap kartının tam listesi; aramalı, kendi içinde kayan pencere. */
 function CevapPenceresi<T>({
   baslik,
@@ -1425,12 +1580,14 @@ function CevapPenceresi<T>({
   ad,
   satir,
   onKapat,
+  yer = "Ürün ara",
 }: {
   baslik: React.ReactNode;
   liste: T[];
   ad: (x: T) => string;
   satir: (x: T, i: number) => React.ReactNode;
   onKapat: () => void;
+  yer?: string;
 }) {
   const [arama, setArama] = useState("");
   const ara = arama.trim().toLocaleLowerCase("tr");
@@ -1445,7 +1602,7 @@ function CevapPenceresi<T>({
           </button>
         </header>
         <div className="cevap-pencere-icerik">
-          <AramaKutusu deger={arama} degistir={setArama} yer="Ürün ara" />
+          <AramaKutusu deger={arama} degistir={setArama} yer={yer} />
           <ul className="cevap-liste cevap-pencere-govde">
             {liste.map((x, i) =>
               !ara || ad(x).toLocaleLowerCase("tr").includes(ara) ? satir(x, i) : null
@@ -1723,17 +1880,19 @@ function UrunSatir({
   kiyasVar,
   ikramVar,
   iptalVar,
+  onSec,
 }: {
   satir: UrunSatiri;
   toplam: number;
   kiyasVar: boolean;
   ikramVar: boolean;
   iptalVar: boolean;
+  onSec: () => void;
 }) {
   const pay = toplam > 0 ? (satir.ciro / toplam) * 100 : 0;
 
   return (
-    <tr>
+    <tr className="tiklanir" onClick={onSec} title="Saatlere göre satışını gör">
       <td className="hucre-urun">{satir.ad}</td>
       <td>
         <span className="urun-kategori">
@@ -2562,6 +2721,7 @@ function Personel({ ozet }: { ozet: PersonelOzeti }) {
     alan: "ciro",
     artan: false,
   });
+  const [secili, setSecili] = useState<PersonelSatiri | null>(null);
   const [arama, setArama] = useState("");
 
   const satirlar = useMemo(() => {
@@ -2665,7 +2825,12 @@ function Personel({ ozet }: { ozet: PersonelOzeti }) {
                 satirlar.map((s) => {
                   const pay = ozet.ciro > 0 ? (s.ciro / ozet.ciro) * 100 : 0;
                   return (
-                    <tr key={s.anahtar}>
+                    <tr
+                      key={s.anahtar}
+                      className={s.urunler.length ? "tiklanir" : undefined}
+                      onClick={s.urunler.length ? () => setSecili(s) : undefined}
+                      title={s.urunler.length ? "Sattığı ürünleri gör" : undefined}
+                    >
                       <td className="hucre-urun">{s.ad}</td>
                       <td className="sag">{s.acilan || "—"}</td>
                       <td className="sag">{s.adisyon || "—"}</td>
@@ -2700,6 +2865,96 @@ function Personel({ ozet }: { ozet: PersonelOzeti }) {
           </table>
         </div>
       </section>
+
+      {secili ? (
+        <OrtaPencere
+          ikon={Users}
+          baslik={secili.ad}
+          aciklama={`${sayiGoster(secili.adet)} adet · ${paraGoster(
+            secili.urunler.reduce((t, u) => t + u.ciro, 0)
+          )} ürün cirosu`}
+          onKapat={() => setSecili(null)}
+        >
+          <table className="analiz-tablo urun-tablo">
+            <thead>
+              <tr>
+                <th>Ürün</th>
+                <th className="sag">Adet</th>
+                <th className="sag">Ciro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {secili.urunler.map((u) => (
+                <tr key={u.ad}>
+                  <td className="hucre-urun">{u.ad}</td>
+                  <td className="sag">{sayiGoster(u.adet)}</td>
+                  <td className="sag hucre-tutar">{paraGoster(u.ciro)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </OrtaPencere>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Gün gün ciro. Ödeme tipleri sütun: kasa defterine gün sonu yazılan rakamlar
+ * bunlar. Tahsil edilmemiş kısım varsa ayrı sütunda, satır toplamı ciroyu tutsun.
+ */
+function GunlukCiroTablosu({ gunluk }: { gunluk: GunlukCiro }) {
+  const { kutu, boy } = useKutuBoyu(gunluk.satirlar.length);
+  const eksikVar = gunluk.satirlar.some((s) => s.eksik > 0);
+  const topla = (f: (s: GunlukCiro["satirlar"][number]) => number) =>
+    gunluk.satirlar.reduce((t, s) => t + f(s), 0);
+  const para = (n: number) => (n ? paraGoster(n) : "—");
+
+  return (
+    <div className="tablo-kaydir tablo-kaydir-dikey" ref={kutu} style={{ maxHeight: boy || undefined }}>
+      <table className="analiz-tablo urun-tablo">
+        <thead>
+          <tr>
+            <th>Gün</th>
+            <th className="sag">Adisyon</th>
+            {gunluk.tipler.map((t) => (
+              <th key={t} className="sag">
+                {t}
+              </th>
+            ))}
+            {eksikVar && <th className="sag">Tahsil edilmedi</th>}
+            <th className="sag">Ciro</th>
+          </tr>
+        </thead>
+        <tbody>
+          {gunluk.satirlar.map((s) => (
+            <tr key={s.etiket}>
+              <td className="hucre-urun">{s.etiket}</td>
+              <td className="sag">{s.adisyon || "—"}</td>
+              {s.odemeler.map((o, i) => (
+                <td key={gunluk.tipler[i]} className="sag">
+                  {para(o)}
+                </td>
+              ))}
+              {eksikVar && <td className="sag">{para(s.eksik)}</td>}
+              <td className="sag hucre-tutar">{para(s.ciro)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>Toplam</td>
+            <td className="sag">{topla((s) => s.adisyon)}</td>
+            {gunluk.tipler.map((t, i) => (
+              <td key={t} className="sag">
+                {paraGoster(topla((s) => s.odemeler[i]))}
+              </td>
+            ))}
+            {eksikVar && <td className="sag">{paraGoster(topla((s) => s.eksik))}</td>}
+            <td className="sag hucre-tutar">{paraGoster(topla((s) => s.ciro))}</td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 }

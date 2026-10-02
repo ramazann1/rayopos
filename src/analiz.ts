@@ -288,7 +288,7 @@ const alanlar = () => `id, adisyon_no, tip, durum, iptal_sebep, acilis, kapanis,
        masa:masalar (ad, bolge_id, bolgeler (ad)),
        acan:personel!adisyonlar_acan_id_fkey (id, ad),
        turlar (garson:personel!turlar_garson_id_fkey (id, ad),
-               adisyon_kalemleri (id, urun_id, ad, satan:personel!adisyon_kalemleri_satan_id_fkey (id, ad), kategori_ad, adet, fiyat, kdv_oran, durum, indirim,
+               adisyon_kalemleri (id, urun_id, ad, secimler, satan:personel!adisyon_kalemleri_satan_id_fkey (id, ad), kategori_ad, adet, fiyat, kdv_oran, durum, indirim,
                                    odenmez:odenmez_id (ad)
                                    ${yetkiVar("stok.yonet") ? ", kalem_maliyetleri (maliyet, eksik)" : ""})),
        tahsilatlar (tip, tutar, bahsis)`;
@@ -318,6 +318,7 @@ function satiraCevir(s: any, varsayilanKdv?: number): AnalizAdisyon {
         turGarson: (k.satan ?? tur.garson)?.ad ? kisaAd((k.satan ?? tur.garson).ad) : undefined,
         ad: k.ad,
         kategoriAd: k.kategori_ad ?? undefined,
+        secimler: k.secimler?.length ? k.secimler : undefined,
         adet: Number(k.adet),
         fiyat: Number(k.fiyat),
         kdvOran: k.kdv_oran ?? undefined,
@@ -802,6 +803,57 @@ export function zamanSerisi(adisyonlar: AnalizAdisyon[], bas: Date, bit: Date): 
   return { birim, noktalar: [...kutular.values()] };
 }
 
+export type GunlukCiroSatiri = {
+  etiket: string;
+  adisyon: number;
+  /** Ödeme tipine göre tahsilat; sütun sırası `tipler` ile aynı. */
+  odemeler: number[];
+  /** Kapanmış ama tahsil edilmemiş kısım. */
+  eksik: number;
+  ciro: number;
+};
+export type GunlukCiro = { tipler: string[]; satirlar: GunlukCiroSatiri[] };
+
+/**
+ * Gün gün ciro tablosu: her kasa günü bir satır, ödeme tipleri sütun. Tipler
+ * dönemde kullanılanlardan çıkıyor, en çok tahsilat yapılan solda. Satış
+ * olmayan gün de satır olarak duruyor — kapalı geçen gün de bilgidir.
+ */
+export function gunlukCiro(adisyonlar: AnalizAdisyon[], bas: Date, bit: Date): GunlukCiro {
+  const kapanan = adisyonlar.filter((a) => a.durum === "kapali");
+
+  const tipToplami = new Map<string, number>();
+  for (const a of kapanan)
+    for (const o of a.odemeler) tipToplami.set(o.tip, (tipToplami.get(o.tip) ?? 0) + o.tutar);
+  const tipler = [...tipToplami.entries()].sort((x, y) => y[1] - x[1]).map(([t]) => t);
+  const tipYeri = new Map(tipler.map((t, i) => [t, i]));
+
+  const satirlar = new Map<string, GunlukCiroSatiri>();
+  for (let gun = kasaGunuBasi(bas); gun < bit; gun = gunEkle(gun, 1)) {
+    satirlar.set(gun.toDateString(), {
+      etiket: `${HAFTA_GUNLERI[(gun.getDay() + 6) % 7][1]} ${gun.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })}`,
+      adisyon: 0,
+      odemeler: tipler.map(() => 0),
+      eksik: 0,
+      ciro: 0,
+    });
+  }
+
+  for (const a of kapanan) {
+    const s = satirlar.get(kasaGunuBasi(new Date(a.kapanis ?? a.acilis)).toDateString());
+    if (!s) continue;
+    s.adisyon += 1;
+    s.ciro = Math.round((s.ciro + a.toplam) * 100) / 100;
+    s.eksik = Math.round((s.eksik + Math.max(0, a.kalan)) * 100) / 100;
+    for (const o of a.odemeler) {
+      const i = tipYeri.get(o.tip)!;
+      s.odemeler[i] = Math.round((s.odemeler[i] + o.tutar) * 100) / 100;
+    }
+  }
+
+  return { tipler, satirlar: [...satirlar.values()] };
+}
+
 export type YogunlukHucresi = { adet: number; tutar: number };
 export type YogunlukSatiri = {
   etiket: string;
@@ -900,6 +952,8 @@ export type UrunSatiri = {
   /** Önceki dönemdeki karşılığı; kıyas yoksa boş kalıyor, sıfır yazılmıyor. */
   oncekiCiro?: number;
   oncekiMiktar?: number;
+  /** Kasa günü sırasında saat saat satış; ürün penceresinin grafiği. */
+  saatler: { saat: number; tutar: number; adet: number }[];
 };
 
 /** Menüde durup bu dönemde hiç satılmayan ürün. */
@@ -917,6 +971,9 @@ export type UrunOzeti = {
   kategoriler: (OzetDilimi & { renk?: string })[];
   /** Hangi bölgede ne kadar satıldı; masasız adisyonlar kendi satırında. */
   bolgeler: OzetDilimi[];
+  /** Masa başına ciro; adet adisyon sayısı. Gel al ve paket girmiyor. */
+  masalar: OzetDilimi[];
+  secenekler: SecenekSatiri[];
   satilmayanlar: SatilmayanUrun[];
   birlikteler: BirlikteSatis[];
   miktar: number;
@@ -930,6 +987,9 @@ export type UrunOzeti = {
   /** İkram edilen ürünlerin malzemesi; kâra değil kayba yazılıyor. */
   ikramMaliyeti: number;
 };
+
+/** Seçeneğin fiyatı ürün fiyatının içinde; ayrı ciro yok, yalnız adet. */
+export type SecenekSatiri = { ad: string; urun: string; adet: number };
 
 /** "Salep alanların %40'ı yanında Çay da almış" cümlesinin rakamları. */
 export type BirlikteSatis = {
@@ -1058,6 +1118,11 @@ export function analizUrunleri(
     Math.max(0, Math.round((k.fiyat * k.adet - (k.indirim ?? 0)) * 100) / 100);
 
   const bolgeler = new Map<string, OzetDilimi>();
+  const masalar = new Map<number, OzetDilimi>();
+  const secenekler = new Map<string, SecenekSatiri>();
+  const saatSirasi = kasaSaatSirasi();
+  const saatYeri = new Map(saatSirasi.map((s, i) => [s, i]));
+  const bosSaatler = () => saatSirasi.map((saat) => ({ saat, tutar: 0, adet: 0 }));
 
   const satirlar = new Map<string, UrunSatiri>();
   const sepetler: string[][] = [];
@@ -1068,6 +1133,18 @@ export function analizUrunleri(
     // satırlarında toplanıyor — "salonda mı, dışarıda mı satıyoruz" sorusu.
     const bolgeAd = a.bolgeAd || (a.tip === "masa" ? "Bölgesiz" : TIP_ADLARI[a.tip] ?? "Diğer");
     const sepet = new Set<string>();
+    // Masa satırının adında bölge de var: iki salonda "Masa 1" olabiliyor.
+    if (a.masaId) {
+      const m = masalar.get(a.masaId) ?? {
+        ad: a.bolgeAd ? `${a.bolgeAd} · ${a.masaAd}` : a.masaAd,
+        tutar: 0,
+        adet: 0,
+      };
+      m.tutar += a.toplam;
+      m.adet += 1;
+      masalar.set(a.masaId, m);
+    }
+    const saat = saatYeri.get(new Date(a.kapanis ?? a.acilis).getHours()) ?? 0;
     for (const k of a.kalemler) {
       const anahtar = k.urunId ? `u${k.urunId}` : `a${k.ad}`;
       if ((k.durum ?? "normal") === "normal") sepet.add(anahtar);
@@ -1091,6 +1168,7 @@ export function analizUrunleri(
           maliyetliMiktar: 0,
           maliyetliCiro: 0,
           maliyetEksik: false,
+          saatler: bosSaatler(),
         } as UrunSatiri);
 
       if (k.durum === "ikram") {
@@ -1111,6 +1189,16 @@ export function analizUrunleri(
         b.tutar += tutar(k);
         b.adet += k.adet;
         bolgeler.set(bolgeAd, b);
+
+        satir.saatler[saat].tutar += tutar(k);
+        satir.saatler[saat].adet += k.adet;
+
+        for (const secim of k.secimler ?? []) {
+          const anahtarS = `${secim}|${anahtar}`;
+          const s = secenekler.get(anahtarS) ?? { ad: secim, urun: k.ad, adet: 0 };
+          s.adet += k.adet;
+          secenekler.set(anahtarS, s);
+        }
       }
       satirlar.set(anahtar, satir);
     }
@@ -1144,6 +1232,7 @@ export function analizUrunleri(
             maliyetliMiktar: 0,
             maliyetliCiro: 0,
             maliyetEksik: false,
+            saatler: bosSaatler(),
           } as UrunSatiri);
         hedef.oncekiCiro = (hedef.oncekiCiro ?? 0) + tutar(k);
         hedef.oncekiMiktar = (hedef.oncekiMiktar ?? 0) + k.adet;
@@ -1188,6 +1277,10 @@ export function analizUrunleri(
     satirlar: liste,
     kategoriler: [...gruplar.values()].sort((a, b) => b.tutar - a.tutar),
     bolgeler: [...bolgeler.values()].sort((a, b) => b.tutar - a.tutar),
+    masalar: [...masalar.values()].sort((a, b) => b.tutar - a.tutar),
+    secenekler: [...secenekler.values()].sort(
+      (a, b) => b.adet - a.adet || a.ad.localeCompare(b.ad, "tr")
+    ),
     satilmayanlar,
     birlikteler: birlikteSatilanlar(
       sepetler,
@@ -1218,6 +1311,8 @@ export type PersonelSatiri = {
   ciro: number;
   ikram: number;
   iptal: number;
+  /** Yazdığı ürünler; ciro hesaba verilen indirimden payını düşmüş hâli. */
+  urunler: { ad: string; adet: number; ciro: number }[];
 };
 
 export type PersonelOzeti = {
@@ -1253,6 +1348,7 @@ export function analizPersoneli(adisyonlar: AnalizAdisyon[]): PersonelOzeti {
       ciro: 0,
       ikram: 0,
       iptal: 0,
+      urunler: [],
     };
     satirlar.set(anahtar, yeni);
     return yeni;
@@ -1292,6 +1388,11 @@ export function analizPersoneli(adisyonlar: AnalizAdisyon[]): PersonelOzeti {
 
       s.ciro = Math.round((s.ciro + ham - pay) * 100) / 100;
       s.adet += k.adet;
+      const u = s.urunler.find((x) => x.ad === k.ad);
+      if (u) {
+        u.adet += k.adet;
+        u.ciro = Math.round((u.ciro + ham - pay) * 100) / 100;
+      } else s.urunler.push({ ad: k.ad, adet: k.adet, ciro: Math.round((ham - pay) * 100) / 100 });
       dokunan.add(s.anahtar);
     });
 
@@ -1310,6 +1411,7 @@ export function analizPersoneli(adisyonlar: AnalizAdisyon[]): PersonelOzeti {
     }
   }
 
+  for (const s of satirlar.values()) s.urunler.sort((a, b) => b.ciro - a.ciro);
   const liste = [...satirlar.values()].sort((a, b) => b.ciro - a.ciro);
   return {
     satirlar: liste,
