@@ -61,7 +61,13 @@ export type KuyrukIsi =
       acilis?: MasasizAcilis;
     };
 
-export type KuyrukKaydi = KuyrukIsi & { zaman: number };
+/**
+ * `canli`: kayıt bağlantı varken gönderildi, yalnız ekran beklemesin diye
+ * kuyruktan geçiyor (Gönder'e basınca salona hemen dönülüyor). Çevrimdışı
+ * siparişten iki farkı var: stok denetimi yapılıyor, ve düzeltilemeyen bir
+ * hatada sepet atılmıyor — masaya girilince geri geliyor.
+ */
+export type KuyrukKaydi = KuyrukIsi & { zaman: number; canli?: boolean };
 
 /** Aynı masanın/adisyonun kayıtları tek satırda toplansın diye. */
 function hedef(is: KuyrukIsi) {
@@ -70,12 +76,19 @@ function hedef(is: KuyrukIsi) {
   return is.tip === "masa" ? `masa-${is.masaId}` : `adisyon-${kimlikCoz(is.adisyonId)}`;
 }
 
-let kuyruk: KuyrukKaydi[] = oku();
+const DURAN_ANAHTAR = "rayopos-kuyruk-duran";
+
+let kuyruk: KuyrukKaydi[] = oku(ANAHTAR);
+// Sunucunun reddettiği çevrimiçi siparişler. Tekrar denemekle düzelmiyorlar
+// (stok yetmedi, yetki yok); kuyruğu tıkamasınlar diye ayrı duruyorlar ama
+// sepet kaybolmuyor: masaya girilince ekrana geliyor, düzeltilip yeniden
+// gönderilince buradan düşüyor.
+let duranlar: KuyrukKaydi[] = oku(DURAN_ANAHTAR);
 const dinleyiciler = new Set<() => void>();
 
-function oku(): KuyrukKaydi[] {
+function oku(anahtar: string): KuyrukKaydi[] {
   try {
-    const ham = localStorage.getItem(ANAHTAR);
+    const ham = localStorage.getItem(anahtar);
     return ham ? (JSON.parse(ham) as KuyrukKaydi[]) : [];
   } catch {
     return [];
@@ -85,13 +98,25 @@ function oku(): KuyrukKaydi[] {
 function yaz() {
   try {
     localStorage.setItem(ANAHTAR, JSON.stringify(kuyruk));
+    localStorage.setItem(DURAN_ANAHTAR, JSON.stringify(duranlar));
   } catch {
     // Yer dolduysa kuyruk yalnız bellekte kalır; sipariş yine gönderilecek.
   }
   for (const f of dinleyiciler) f();
 }
 
-export function kuyrugaEkle(is: KuyrukIsi) {
+/**
+ * Sunucuya yazılmakta olan kayıt. O masaya o sırada girilirse ekran kuyruktaki
+ * kopyayı açıp üstüne ekleme yapıyordu; ikinci gönderimde ilk ürünler bir daha
+ * yazılıyordu. Ekran artık yazımın bitmesini bekleyip sunucuyu okuyor.
+ */
+let yoldaki: { hedef: string; soz: Promise<void> } | null = null;
+
+export function yoldakiKayit(is: { tip: "masa"; masaId: number } | { tip: "masasiz"; adisyonId: number }) {
+  return yoldaki && yoldaki.hedef === hedef(is as KuyrukIsi) ? yoldaki.soz : null;
+}
+
+export function kuyrugaEkle(is: KuyrukIsi, secenek: { canli?: boolean } = {}) {
   // Geçici kimlikli adisyon bu arada sunucuya varmışsa kayıt gerçeğine yazılıyor.
   if (is.tip === "masasiz") is = { ...is, adisyonId: kimlikCoz(is.adisyonId) };
   // Açılış bilgisi ilk kayıtta duruyor; sipariş ekranının sonraki kayıtları
@@ -105,8 +130,12 @@ export function kuyrugaEkle(is: KuyrukIsi) {
   // kuyruğun arkasına ekleniyor — sırayla gidince yeni hesap olarak açılıyor.
   kuyruk = [
     ...kuyruk.filter((k) => k.kapat || hedef(k) !== hedef(is)),
-    { ...is, zaman: Date.now() },
+    { ...is, zaman: Date.now(), ...(secenek.canli ? { canli: true } : {}) },
   ];
+  // Reddedilip bekleyen sepet yeni kayıtla yerine geçti.
+  const durandi = duranlar.length;
+  duranlar = duranlar.filter((k) => hedef(k) !== hedef(is));
+  if (durandi && !duranlar.length) sonHata = null;
   yaz();
 }
 
@@ -174,7 +203,9 @@ export function bekleyenSayisi() {
 export function bekleyenKayit(is: { tip: "masa"; masaId: number } | { tip: "masasiz"; adisyonId: number }) {
   // Kapanmış hesabın kaydı sepet değildir: sipariş ekranı onu açsa ödenmiş
   // ürünler yeni siparişin içine karışırdı.
-  return kuyruk.find((k) => hedef(k) === hedef(is as KuyrukIsi) && !k.kapat)?.veri;
+  const ara = (liste: KuyrukKaydi[]) =>
+    liste.find((k) => hedef(k) === hedef(is as KuyrukIsi) && !k.kapat)?.veri;
+  return ara(kuyruk) ?? ara(duranlar);
 }
 
 /**
@@ -199,7 +230,7 @@ export function cevrimdisiHesap(is: HesapHedefi) {
  */
 export function bekleyenMasalar(): Record<number, MasaOzeti> {
   const sonuc: Record<number, MasaOzeti> = {};
-  for (const k of kuyruk) {
+  for (const k of [...duranlar, ...kuyruk]) {
     // Çevrimdışı kapatılan hesap masayı boşaltıyor; dolu göstermek garsonu
     // ödenmiş masaya geri yollardı.
     if (k.tip !== "masa" || k.kapat) continue;
@@ -216,7 +247,10 @@ export function bekleyenMasalar(): Record<number, MasaOzeti> {
       acilis: new Date(k.zaman).toISOString(),
       ad: k.veri.ad || undefined,
       kisiSayisi: k.veri.kisiSayisi || undefined,
-      bekliyor: true,
+      // Çevrimiçi gönderilen sipariş saniyeler içinde yazılıyor; kartta
+      // "Gönderilmedi" yazması yanlış alarm olurdu. Reddedilip duran sipariş
+      // ise gerçekten gönderilmedi.
+      bekliyor: !k.canli || duranlar.includes(k),
     };
   }
   return sonuc;
@@ -357,18 +391,33 @@ export async function kuyruguGonder() {
     denemeZamanlayici = null;
   }
   gonderiliyor = true;
-  sonHata = null;
+  // Reddedilip cihazda duran sipariş varsa sebebi şeritte kalıyor; başka bir
+  // masanın gönderimi onu silmesin.
+  if (!duranlar.length) sonHata = null;
 
   try {
     while (kuyruk.length) {
-      const kayit = { ...kuyruk[0], veri: { ...kuyruk[0].veri, stokDenetimsiz: true } };
+      const orijinal = kuyruk[0];
+      // Çevrimiçi gönderilen siparişte stok sorulmaya devam ediyor; çevrimdışı
+      // siparişte ürün müşteriye çoktan gitti, reddetmek yalnız kaydı kaybettirir.
+      const kayit = { ...orijinal, veri: { ...orijinal.veri, stokDenetimsiz: !orijinal.canli } };
       const paraVar = kayit.veri.tahsilatlar.some((t) => !t.id);
+      // Kaydı kuyruktan sırasına göre değil kendisine göre çıkarmak gerekiyor:
+      // yazılırken aynı masanın yeni kaydı gelirse sıradaki o olur.
+      const cikar = () => {
+        kuyruk = kuyruk.filter((k) => k !== orijinal);
+      };
+      let bitti = () => {};
+      yoldaki = { hedef: hedef(orijinal), soz: new Promise<void>((r) => (bitti = r)) };
       try {
         if (kayit.tip === "masa") {
           await adisyonKaydet(kayit.masaId, kayit.veri, kayit.kapat ?? false);
           // Sipariş cihazda beklerken hesap kapandıysa ürün yeni bir hesaba
-          // düştü ve parası alınmadı; işletmeci görsün.
-          const no = await gecKalanSiparis(kayit.masaId, kayit.zaman).catch(() => null);
+          // düştü ve parası alınmadı; işletmeci görsün. Çevrimiçi kayıt
+          // beklemedi, sorulmasına gerek yok.
+          const no = kayit.canli
+            ? null
+            : await gecKalanSiparis(kayit.masaId, kayit.zaman).catch(() => null);
           if (no) {
             const masa = kayit.masaAdi ?? "Masa";
             sonUyari = paraVar
@@ -404,14 +453,26 @@ export async function kuyruguGonder() {
         const varsayilan = paraVar
           ? "Çevrimdışı alınan ödeme sunucuya yazılamadı. Tahsilat kasaya girmedi."
           : "Bekleyen sipariş sunucuya yazılamadı.";
-        sonHata = hata instanceof Error && hata.message ? hata.message : varsayilan;
-        kuyruk = kuyruk.slice(1);
+        const sebep = hata instanceof Error && hata.message ? hata.message : varsayilan;
+        if (orijinal.canli) {
+          // Garson salona dönmüş durumda; hangi masanın kaldığını ve sepetin
+          // nerede beklediğini bilmeli.
+          const yer = orijinal.tip === "masa" ? orijinal.masaAdi ?? "Masa" : "Paket / gel al";
+          sonHata = `${yer} siparişi gönderilemedi: ${sebep} Sipariş cihazda duruyor, masaya girip yeniden gönderin.`;
+          duranlar = [...duranlar.filter((k) => hedef(k) !== hedef(orijinal)), orijinal];
+        } else {
+          sonHata = sebep;
+        }
+        cikar();
         yaz();
         continue;
+      } finally {
+        yoldaki = null;
+        bitti();
       }
       // Kayıt geçti: bir sonraki kesintide yeniden baştan, hızlı denensin.
       bekleme = ILK_BEKLEME;
-      kuyruk = kuyruk.slice(1);
+      cikar();
       yaz();
     }
   } finally {
@@ -432,6 +493,8 @@ export function useKuyruk() {
   }, []);
   return {
     bekleyen: kuyruk.length,
+    /** Şerit için: çevrimiçi gönderilip saniyeler içinde yazılanlar sayılmıyor. */
+    bekleyenCevrimdisi: kuyruk.filter((k) => !k.canli).length,
     bekleyenOdeme: bekleyenTahsilatlar().length,
     hata: sonHata,
     uyari: sonUyari,

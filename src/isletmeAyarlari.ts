@@ -1,5 +1,5 @@
 import { acikOturum } from "./oturum";
-import { hataysaFirlat, onbellekliGetir } from "./onbellek";
+import { hataysaFirlat, onbellekliGetir, onbellekOku } from "./onbellek";
 import { tazeleyiciTanit } from "./tanimAbonelik";
 import { supabase } from "./supabase";
 
@@ -15,6 +15,17 @@ export type ServisTanimi = {
   ad: string;
   tip: ServisTipi;
   deger: number;
+};
+
+/** Para puan cüzdanı: kapanan hesabın yüzdesi müşterinin cüzdanına dönüyor. */
+export type SadakatAyari = {
+  acik: boolean;
+  /** Kapanan hesabın yüzde kaçı cüzdana yazılıyor. */
+  oran: number;
+  /** Cüzdan bu tutara ulaşmadan harcanamıyor; 0 = sınır yok. */
+  altLimit: number;
+  /** Bir hesabın en fazla yüzde kaçı cüzdanla ödenebiliyor. */
+  ustOran: number;
 };
 
 export type IsletmeAyarlari = {
@@ -60,6 +71,7 @@ export type IsletmeAyarlari = {
   qrMenuKod: string;
   /** İşletmenin açık adresi; QR menünün başında görünüyor. */
   qrMenuAdres: string;
+  sadakat: SadakatAyari;
 };
 
 const VARSAYILAN: IsletmeAyarlari = {
@@ -86,6 +98,7 @@ const VARSAYILAN: IsletmeAyarlari = {
   qrMenuAcik: false,
   qrMenuKod: "",
   qrMenuAdres: "",
+  sadakat: { acik: false, oran: 5, altLimit: 0, ustOran: 100 },
 };
 
 // Ayar her hesapta lazım ama satış sırasında değişmiyor; bir kez okunup burada
@@ -144,6 +157,12 @@ async function ayarlariOku(): Promise<IsletmeAyarlari> {
     qrMenuAcik: s?.qr_menu_acik ?? VARSAYILAN.qrMenuAcik,
     qrMenuKod: s?.qr_menu_kod ?? VARSAYILAN.qrMenuKod,
     qrMenuAdres: s?.qr_menu_adres ?? VARSAYILAN.qrMenuAdres,
+    sadakat: {
+      acik: s?.sadakat_acik ?? VARSAYILAN.sadakat.acik,
+      oran: Number(s?.sadakat_oran ?? VARSAYILAN.sadakat.oran),
+      altLimit: Number(s?.sadakat_alt_limit ?? VARSAYILAN.sadakat.altLimit),
+      ustOran: Number(s?.sadakat_ust_oran ?? VARSAYILAN.sadakat.ustOran),
+    },
   };
 }
 
@@ -188,6 +207,10 @@ export async function ayarlariKaydet(degisen: Partial<IsletmeAyarlari>) {
       // Kod boşsa sütun boş kalıyor: boş metin tekil indekste çakışır.
       qr_menu_kod: yeni.qrMenuKod || null,
       qr_menu_adres: yeni.qrMenuAdres,
+      sadakat_acik: yeni.sadakat.acik,
+      sadakat_oran: yeni.sadakat.oran,
+      sadakat_alt_limit: yeni.sadakat.altLimit,
+      sadakat_ust_oran: yeni.sadakat.ustOran,
     },
     { onConflict: "isletme_id" }
   );
@@ -203,12 +226,18 @@ export async function ayarlariKaydet(degisen: Partial<IsletmeAyarlari>) {
 // yok, satır güvenliği de güncellemeye kapalı.
 let kimlik = { ad: "", kod: 0 };
 
+// Sunucu cevabı gelmeden yan menü cihazdaki kopyayla çiziliyor; yoksa açılışta
+// işletme kutusu boş başlayıp sonradan beliriyor, ekran kayıyordu. Kopya
+// işletmeye bağlı (bkz. onbellekOku), başka işletmenin adı görünmez.
+const gecerliKimlik = () =>
+  kimlik.ad ? kimlik : onbellekOku<typeof kimlik>("isletme")?.veri ?? kimlik;
+
 export function isletmeAdi() {
-  return kimlik.ad;
+  return gecerliKimlik().ad;
 }
 
 export function isletmeKodu() {
-  return kimlik.kod;
+  return gecerliKimlik().kod;
 }
 
 export async function isletmeKimliginiGetir() {
@@ -217,7 +246,7 @@ export async function isletmeKimliginiGetir() {
     hataysaFirlat(sonuc);
     const s = sonuc.data as any;
     return { ad: (s?.ad ?? "") as string, kod: (s?.kod ?? 0) as number };
-  });
+  }, true);
   return kimlik;
 }
 

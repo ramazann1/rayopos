@@ -1,5 +1,6 @@
 import { durumluModul } from "./sicakGuncelleme";
 import type { AdisyonVerisi, MasaOzeti } from "./adisyonlar";
+import { acikOturum } from "./oturum";
 
 /**
  * Açık hesabın cihazdaki son bilinen kopyası.
@@ -95,10 +96,33 @@ export function salonKopyasiYaz(masalar: Record<number, MasaOzeti>) {
   try {
     localStorage.setItem(
       SALON_ANAHTAR,
-      JSON.stringify({ zaman: Date.now(), masalar })
+      JSON.stringify({ zaman: Date.now(), isletmeId: acikOturum()?.isletmeId ?? null, masalar })
     );
   } catch {
     // Yer yoksa salon çevrimdışıyken boş görünür; başka bir şey etkilenmiyor.
+  }
+}
+
+/**
+ * Sayfa yenilenince salonun ilk çizimi. Sunucudaki özet birkaç yüz milisaniye
+ * sonra üstüne yazıyor; o arada masalar boş görünmesin. Yalnız aynı işletmenin
+ * ve birkaç dakikalık kopyası kullanılıyor, kartlara "eski hâl" işareti
+ * konmuyor — bu bir tahmin değil, saniyeler içinde doğrulanan ilk görüntü.
+ */
+export function tazeSalonKopyasi(): Record<number, MasaOzeti> {
+  try {
+    const ham = localStorage.getItem(SALON_ANAHTAR);
+    if (!ham) return {};
+    const kayit = JSON.parse(ham) as {
+      zaman: number;
+      isletmeId?: number | null;
+      masalar: Record<number, MasaOzeti>;
+    };
+    if (Date.now() - kayit.zaman > 10 * 60_000) return {};
+    if (!kayit.isletmeId || kayit.isletmeId !== acikOturum()?.isletmeId) return {};
+    return kayit.masalar ?? {};
+  } catch {
+    return {};
   }
 }
 

@@ -23,6 +23,8 @@ type Props = {
    */
   secim?: "uygun" | "kilitli";
   onClick?: () => void;
+  /** Parmak/fare basıldığı an; tıklama tamamlanmadan önce okuma başlatmak için. */
+  onBasildi?: () => void;
 };
 
 /**
@@ -30,7 +32,7 @@ type Props = {
  * dolu masada garson → masa adı → süre ve tutar. Dolu masa mercan zemin ve beyaz
  * yazı alıyor; salonun neresi çalışıyor uzaktan görünsün.
  */
-export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onClick }: Props) {
+export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onClick, onBasildi }: Props) {
   const [menuAcik, setMenuAcik] = useState(false);
   const sarmal = useRef<HTMLDivElement>(null);
 
@@ -93,7 +95,7 @@ export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onCl
         </span>
       )}
       {!durum ? (
-        <button className={sinif} disabled={kilitli} onClick={onClick}>
+        <button className={sinif} disabled={kilitli} onClick={onClick} onPointerDown={onBasildi}>
           <span className="masa-ad">{masa.ad}</span>
           {/* Seçim kipinde boş masa adisyon açmıyor, hedef oluyor: alt yazı
               da o işi söylüyor. Seçilemeyen masada hiç çıkmıyor. */}
@@ -110,7 +112,7 @@ export default function MasaKarti({ masa, durum, aksiyonlar, mesgul, secim, onCl
           </span>
         </button>
       ) : (
-        <button className={sinif} disabled={kilitli} onClick={onClick}>
+        <button className={sinif} disabled={kilitli} onClick={onClick} onPointerDown={onBasildi}>
           {/* Üst bant durum renginde: masa adı solda, kişi sayısı ve üç nokta
               sağda. Kartın geri kalanı beyaz, rakamlar düz zeminde okunuyor. */}
           <span className="masa-ust">

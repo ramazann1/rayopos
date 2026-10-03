@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Check, HandCoins, MapPin, Pencil, Phone, Scale, StickyNote, X } from "lucide-react";
+import { Check, Gift, HandCoins, MapPin, Pencil, Phone, Receipt, Scale, Sparkles, StickyNote, WalletCards, X } from "lucide-react";
+import { ayarlar } from "../isletmeAyarlari";
+import {
+  SADAKAT_HAREKET_ADI,
+  cuzdanDuzelt,
+  cuzdanOzeti,
+  sadakatHareketleri,
+  type SadakatHareketi,
+} from "../sadakat";
 import AdisyonDetay from "./AdisyonDetay";
 import Bilgi from "./Bilgi";
 import Bildirim from "./Bildirim";
@@ -30,6 +38,7 @@ const SEKMELER = [
   { kod: "ekstre", ad: "Hesap Ekstresi" },
   { kod: "adisyonlar", ad: "Adisyonlar" },
   { kod: "odemeler", ad: "Ödemeler" },
+  { kod: "cuzdan", ad: "Cüzdan" },
 ] as const;
 
 type Sekme = (typeof SEKMELER)[number]["kod"];
@@ -107,10 +116,13 @@ function OdemeAl({
 /** Bakiye düzeltme: sayıya elle dokunuluyor, o yüzden sebep zorunlu. */
 function BakiyeDuzelt({
   bakiye,
+  cuzdan,
   onKapat,
   onKaydet,
 }: {
   bakiye: number;
+  /** Sadakat cüzdanı düzeltiliyor; fark borç değil cüzdan parası. */
+  cuzdan?: boolean;
   onKapat: () => void;
   onKaydet: (yeni: number, sebep: string) => void;
 }) {
@@ -125,7 +137,7 @@ function BakiyeDuzelt({
       <div className="up-modal cd-kucuk" onClick={(e) => e.stopPropagation()}>
         <header className="up-ust">
           <span className="cd-im"><Scale size={20} /></span>
-          <h3>Bakiye düzelt</h3>
+          <h3>{cuzdan ? "Cüzdanı düzelt" : "Bakiye düzelt"}</h3>
           <button className="up-kapat" aria-label="Kapat" onClick={onKapat}><X size={20} /></button>
         </header>
 
@@ -139,15 +151,20 @@ function BakiyeDuzelt({
             <span>Yeni bakiye</span>
             <input
               value={yeni}
-              onChange={(e) => setYeni(paraYaz(e.target.value))}
+              onChange={(e) => {
+                // Borç eksi yazılıyor; cüzdan eksiye inemediği için orada işaret yok.
+                const eksi = !cuzdan && e.target.value.trim().startsWith("-");
+                setYeni((eksi ? "-" : "") + paraYaz(e.target.value));
+              }}
               inputMode="decimal"
+              placeholder={cuzdan ? undefined : "Borç eksi yazılır: -300"}
               autoFocus
             />
             {fark !== 0 && (
               <em className="cd-fark">
                 {fark > 0
-                  ? `${paraGoster(fark)} borç eklenecek`
-                  : `${paraGoster(-fark)} borç düşülecek`}
+                  ? `${paraGoster(fark)} ${cuzdan ? "cüzdana eklenecek" : "borç düşülecek"}`
+                  : `${paraGoster(-fark)} ${cuzdan ? "cüzdandan düşülecek" : "borç eklenecek"}`}
               </em>
             )}
           </label>
@@ -203,9 +220,36 @@ export default function MusteriDetay({
   const [bildirim, setBildirim] = useState("");
   const [bildirimTuru, setBildirimTuru] = useState<"basari" | "hata">("basari");
 
+  const [cuzdanHareketleri, setCuzdanHareketleri] = useState<SadakatHareketi[]>([]);
+  const [cuzdanDuzeltme, setCuzdanDuzeltme] = useState(false);
+
   const tahsilatYapabilir = yetkiVar("cari.tahsilat");
 
   const tazele = async () => setHareketler(await hareketleriGetir(musteri.id));
+  const cuzdaniTazele = async () => setCuzdanHareketleri(await sadakatHareketleri(musteri.id));
+
+  useEffect(() => {
+    sadakatHareketleri(musteri.id).then(setCuzdanHareketleri).catch(() => setCuzdanHareketleri([]));
+  }, [musteri.id]);
+
+  // Sadakat hiç kullanılmayan işletmede cüzdan sekmesi boş bir kalabalık;
+  // kapatılmış ama geçmişi olan işletmede eski hareketler görünmeye devam ediyor.
+  const cuzdanVar = ayarlar().sadakat.acik || cuzdanHareketleri.length > 0;
+  const cuzdan = cuzdanOzeti(cuzdanHareketleri);
+
+  const cuzdaniDuzelt = async (yeni: number, sebep: string) => {
+    try {
+      await cuzdanDuzelt(musteri.id, cuzdan.bakiye, yeni, sebep);
+    } catch (e) {
+      setBildirimTuru("hata");
+      setBildirim(hataMesaji(e, "Cüzdan düzeltilemedi."));
+      return;
+    }
+    setCuzdanDuzeltme(false);
+    await cuzdaniTazele();
+    setBildirimTuru("basari");
+    setBildirim("Cüzdan düzeltildi");
+  };
 
   useEffect(() => {
     (async () => {
@@ -224,7 +268,7 @@ export default function MusteriDetay({
 
   const toplamBorc = hareketler.reduce((t, h) => t + h.borc, 0);
   const toplamAlacak = hareketler.reduce((t, h) => t + h.alacak, 0);
-  const bakiye = toplamBorc - toplamAlacak;
+  const bakiye = Math.round((toplamAlacak - toplamBorc) * 100) / 100;
 
   const adisyonlar = hareketler.filter((h) => h.tip === "satis");
   const odemeler = hareketler.filter((h) => h.tip === "tahsilat");
@@ -291,10 +335,10 @@ export default function MusteriDetay({
           <aside className="cari-kimlik">
             {/* Kalan bakiye tek başına büyük duruyor: kartı açan kişinin
                 sorduğu soru bu. Toplam ve ödenen altında küçük kalıyor. */}
-            <div className={bakiye > 0 ? "cari-bakiye borclu" : "cari-bakiye"}>
-              <small>Kalan bakiye</small>
+            <div className={bakiye < 0 ? "cari-bakiye borclu" : bakiye > 0 ? "cari-bakiye alacakli" : "cari-bakiye"}>
+              <small>Bakiye</small>
               <strong>{paraGoster(bakiye)}</strong>
-              <em>{bakiye > 0 ? "müşteri borçlu" : bakiye < 0 ? "işletme borçlu" : "hesap kapalı"}</em>
+              <em>{bakiye < 0 ? "müşteri borçlu" : bakiye > 0 ? "işletme borçlu" : "hesap kapalı"}</em>
             </div>
 
             <div className="cari-sayilar">
@@ -339,16 +383,90 @@ export default function MusteriDetay({
 
           <div className="cari-icerik">
             <div className="ms-sekmeler alt">
-              {SEKMELER.map((s) => (
+              {SEKMELER.filter((s) => s.kod !== "cuzdan" || cuzdanVar).map((s) => (
                 <button
                   key={s.kod}
                   className={sekme === s.kod ? "aktif" : ""}
                   onClick={() => setSekme(s.kod)}
                 >
+                  {s.kod === "cuzdan" && <WalletCards size={16} />}
                   {s.ad}
                 </button>
               ))}
             </div>
+
+            {sekme === "cuzdan" && (
+              <div className="sdk-sekme">
+                <div className="sdk-ozet">
+                  <div className="sdk-ozet-ana">
+                    <span>
+                      <WalletCards size={16} />
+                      Cüzdan bakiyesi
+                    </span>
+                    <strong>{paraGoster(cuzdan.bakiye)}</strong>
+                    {tahsilatYapabilir && (
+                      <button className="sdk-ozet-tus" onClick={() => setCuzdanDuzeltme(true)}>
+                        <Scale size={16} /> Düzelt
+                      </button>
+                    )}
+                  </div>
+                  <div className="sdk-ozet-sayilar">
+                    <span>
+                      <small><Sparkles size={14} /> Kazanılan</small>
+                      {paraGoster(cuzdan.kazanilan)}
+                    </span>
+                    <span>
+                      <small><Gift size={14} /> Harcanan</small>
+                      {paraGoster(cuzdan.harcanan)}
+                    </span>
+                    <span>
+                      <small><Receipt size={14} /> Hesap</small>
+                      {cuzdan.ziyaret}
+                    </span>
+                  </div>
+                </div>
+
+                {cuzdanHareketleri.length === 0 ? (
+                  <p className="cari-bos">Henüz cüzdan hareketi yok.</p>
+                ) : (
+                  <table className="cari-tablo">
+                    <thead>
+                      <tr>
+                        <th>Tarih</th>
+                        <th>Hareket</th>
+                        <th>Açıklama</th>
+                        <th className="sag">Tutar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cuzdanHareketleri.map((h) => (
+                        <tr
+                          key={h.id}
+                          className={h.adisyonId ? "tiklanir" : ""}
+                          onClick={() => h.adisyonId && setAcikAdisyon(h.adisyonId)}
+                        >
+                          <td>
+                            {gunMetni(h.zaman)}
+                            <small> {saatMetni(h.zaman)}</small>
+                          </td>
+                          <td>
+                            <span className={`sdk-rozet ${h.tip}`}>{SADAKAT_HAREKET_ADI[h.tip]}</span>
+                          </td>
+                          <td>
+                            {h.aciklama || (h.adisyonNo ? `Adisyon #${h.adisyonNo}` : "—")}
+                            {h.kisi && <small> · {kisaAd(h.kisi)}</small>}
+                          </td>
+                          <td className={h.tutar > 0 ? "sag guclu sdk-arti" : "sag guclu"}>
+                            {h.tutar > 0 ? "+" : "−"}
+                            {paraGoster(Math.abs(h.tutar))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
 
             {sekme === "ekstre" && (
               hareketler.length === 0 ? (
@@ -467,7 +585,7 @@ export default function MusteriDetay({
 
       {odeme && (
         <OdemeAl
-          borc={bakiye}
+          borc={bakiye < 0 ? -bakiye : 0}
           tipler={tipler}
           onKapat={() => setOdeme(false)}
           onKaydet={tahsilEt}
@@ -494,6 +612,15 @@ export default function MusteriDetay({
           bakiye={bakiye}
           onKapat={() => setDuzeltme(false)}
           onKaydet={duzelt}
+        />
+      )}
+
+      {cuzdanDuzeltme && (
+        <BakiyeDuzelt
+          bakiye={cuzdan.bakiye}
+          cuzdan
+          onKapat={() => setCuzdanDuzeltme(false)}
+          onKaydet={cuzdaniDuzelt}
         />
       )}
     </div>

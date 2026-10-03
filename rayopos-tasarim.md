@@ -1,8 +1,57 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (2 Eki 2026 güncellendi — küçük işler bitti)
+## 0. SIRADAKİ İŞ (3 Eki 2026 güncellendi)
 
+> **YENİ SEANSIN İLK İŞİ (Ramazan'ın isteği): hız taramasına devam — "başka yavaş
+> yer var mı".** Yöntem bu seansta kuruldu: Chrome'da Deneme (15003), ekranlar
+> arası `history.pushState` + `popstate` ile geçiş, dönen çember (`.cember`)
+> süresi ve `performance.getEntriesByType("resource")` ile istek listesi.
+> Bekleme Web Worker zamanlayıcısıyla (arka sekmede `setTimeout` dakikalara
+> uzuyor; Ramazan sekmeyi öne alırsa daha gerçekçi). **Dev sunucusunda React
+> StrictMode her ekranı iki kez açıyor — istek sayıları canlının iki katı.**
+> Bakılmamış yerler: tahsilat penceresi açılışı ve ödeme alma/hesap kapatma,
+> masa taşıma/birleştirme, kasa açma/kapama, Menü Stüdyosu'nda ürün kaydetme,
+> Analiz'in uzun dönemleri, mobil Satış/Mutfak/Sayım işlemleri, paket/gel al
+> açma. Kalan bilinen yavaşlar: Fiş Tasarımı önizlemesi 0,8 sn (bekletmiyor),
+> müşteri listesi bütün cari hareketleri çekiyor (çok müşteride sunucuya).
+> Sonra "Sonrakiler" listesi (Sadakat 1b seviyelerden devam).
+>
+> **BİTTİ (3 Eki 2026): sadakat iskeleti, açık hesap yönü, hız turu.**
+> - **Sadakat 1a — para puan cüzdanı** (`sql/2026-10-02-sadakat.sql`,
+>   `src/sadakat.ts`): `sadakat_hareketleri` (kazanc/harcama/duzeltme, artı
+>   giren eksi çıkan), bakiye hareket toplamı. Kazanç tetikleyicide: adisyon
+>   kapanınca Cüzdan dışı tahsilatların %X'i; yeniden açılır/iptal edilirse
+>   siliniyor. Harcama: "Cüzdan" tipli tahsilat (ödeme tipleri tablosunda yok,
+>   kasaya girmiyor) adisyonun `musteri_id`'sinden düşüyor, bakiye eksiye
+>   inemez (müşteri satırı kilitli). Ayarlar › Sadakat: oran %2-10, harcama alt
+>   sınırı, bir hesapta en fazla %. Tahsilat penceresinde tek satır şerit
+>   (müşteri bağla / ad + bakiye), basınca ortada cüzdan penceresi
+>   (`OrtaPencere` yeni `ust` seçeneği, z 70). Müşteri seçicide `cuzdan` kipi:
+>   herkes listelenir, ad+telefonla hızlı kayıt. Müşteri kartında Cüzdan
+>   sekmesi, listede Cüzdan sütunu ve "Cüzdanlarda" toplamı, Excel'de sütun.
+> - **Açık hesap yönü çevrildi:** bakiye = ödenen − borç; borçlu eksi ve
+>   kırmızı, fazla ödeyen artı ve yeşil. Özet kutusu "Toplam alacak" (yalnız
+>   borçlar, artı). Excel yüklemesinde işaret yok sayılıyor (eski dosyada borç
+>   artıydı). `paraGoster` eksiyi "−₺85,00" yazıyor (her ekranda).
+> - **Hız turu** (bütün ekranlar ölçüldü): tanım kopyası 2 dk içinde
+>   tazelendiyse arkadan sorulmuyor (`TAZE_SURE`); menünün okuduğu 5 tablo canlı
+>   yayına eklendi (`sql/2026-10-03-menu-canli-tamam.sql`, `tanimAbonelik`
+>   HARITA). Salon (masaüstü+mobil) ve Müşteriler son görülen hâlle anında;
+>   sayfa yenilenince salon cihazdaki işletmeye bağlı ≤10 dk kopyadan
+>   (`tazeSalonKopyasi`). Açılış oturum kopyası varsa kişi/yetki zincirini
+>   beklemiyor (App). İşletme adı/kodu kopyadan. Dolu masaya basınca adisyon
+>   okuması başlıyor (`adisyonuOnOku`). Boş masada kişi sayısı penceresi
+>   beklemeden (`state.bosMasa`). Yazdırma kuyruğu okuma kuralı sorgu başına bir
+>   kez (`sql/2026-10-03-kuyruk-okuma-hizi.sql`).
+> - **Gönder salona hemen dönüyor:** kayıt `canli` işaretiyle kuyruktan arkada
+>   yazılıyor; önce yalnız stok sorusu bekleniyor (yetmezse eskisi gibi ekranda
+>   uyarı). Sunucu reddederse sepet `duranlar`da kalıyor, kartta "Gönderilmedi",
+>   şeritte sebep; masa yeniden gönderilince kalkıyor. Yazılırken aynı masaya
+>   girilirse ekran yazımı bekliyor (`yoldakiKayit`), çift yazım yok. Kayıtta
+>   stok+hesap bulma ve başlık+okumalar aynı anda. İptal ve toptan ikramda
+>   okumalar aynı anda (iptal ~1 sn → 0,6 sn). Tek sunucu işlemi aşağıda 3. madde.
+>
 > **YENİ SEANSIN BAŞI: aşağıdaki "Sonrakiler" bölümü — önce bütün kalanları say.**
 >
 > **BİTTİ (2 Eki 2026, ikinci seans): küçük rapor eklemeleri.**
@@ -215,8 +264,23 @@
 > **YENİ SEANSTA İLK İŞ (Ramazan'ın isteği):** aşağıdaki kalan işlerin TAMAMINI
 > Ramazan'a say (gruplu, kısa), sonra 1. maddeyle başla. Küçük işler bitti.
 >
-> 1. **Sadakat programı** (puan, kampanya) — önce Adisyo'da canlı tur.
+> 1. **Sadakat programı** — a) iskelet BİTTİ (3 Eki); sıradaki b) seviyeler.
+>    2 Eki 2026: Adisyo'da Pro pakette, canlı görülemedi; internetten
+>    Square/Toast/Simpra incelendi. Basit "X ₺'ye 1 puan + ödül listesi" Ramazan'ca amatör
+>    bulundu. Karar: hepsi, parça parça —
+>    a) iskelet: para puan (harcamanın %X'i TL olarak cüzdana), siparişte müşteri bağlama,
+>       ödemede cüzdandan düşme, iade/iptalde geri alma, müşteri kartında hareketler;
+>    b) seviyeler (Bronz/Gümüş/Altın, üst seviye daha yüksek oran);
+>    c) müşterinin kendi kartı (karekodla kendisi üye olur, web sayfasında bakiyesini görür);
+>    d) kampanya motoru (damga kartı, gün/saat çift kazanç, doğum günü, gelmeyene teklif);
+>    e) müşteri bölümleri ve kampanya raporu; SMS/WhatsApp en sona (ücretli dış servis).
 > 2. **Çoklu şube** — merkezi menü, şube karşılaştırma.
+> 3. **Sipariş kaydı tek sunucu işleminde** (3 Eki 2026, Ramazan kararı: sonraya).
+>    Bugün Gönder 7-9 sıralı gidiş-dönüş (stok, adisyon bul, başlık, kalemleri oku,
+>    ikram adları, tur, kalemler, servis). Hepsi tek veritabanı fonksiyonuna:
+>    tek gidiş-dönüş, yarım kalan kayıt yok. Para kodu baştan yazılacağı için ayrı
+>    seans; masa/paket/gel al/ödeme/eksik kapatma/kuyruk/iki cihaz yeniden denenir.
+>    Şimdilik Gönder salona hemen dönüyor, kayıt arkada (aşağıdaki seans notu).
 > Satıştan önce: **Kurye atama ve teslimat takibi** (2 Eki 2026: Ramazan'ın
 > işletmesinde paket servis yok, satıştan önceye alındı). Adisyo'da temel kısım
 > pakete dahil: Siparişler panosunda "Teslimata Çıkanlar" sütunu, Kurye rolü,

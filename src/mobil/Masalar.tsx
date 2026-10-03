@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import {
   BOLGE_ANAHTAR,
+  kopyadakiBolgeler,
   SEYREK_TANIM,
   bolgeleriGetir,
   durgunMu,
@@ -28,6 +29,7 @@ import {
 } from "../masalar";
 import {
   adisyonGetir,
+  adisyonuOnOku,
   adisyonIkram,
   adisyonIptal,
   adisyonKaydet,
@@ -44,7 +46,7 @@ import type { AdisyonVerisi } from "../adisyonlar";
 import type { IndirimKaynagi } from "../indirimler";
 import { servisSatirlari } from "../servis";
 import { adisyonFisiYaz } from "../yazicilar";
-import { yetkiVar } from "../oturum";
+import { acikOturum, yetkiVar } from "../oturum";
 import OnayModal from "../components/OnayModal";
 import SecimHapi from "../components/SecimHapi";
 import KalemTasiOnay from "../components/KalemTasiOnay";
@@ -53,7 +55,7 @@ import SiparisGecmisi from "../components/SiparisGecmisi";
 import IslemPenceresi from "./IslemPenceresi";
 import HizliOde from "../components/HizliOde";
 import { bekleyenMasalar, cevrimdisiHesap, kopyaMasalari, kuyrugaEkle, useKuyruk } from "../kuyruk";
-import { hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
+import { hesapKopyasiSil, kopyaSaati, tazeSalonKopyasi } from "../hesapKopyasi";
 import { baglantiHatasi, baglantiVar, sureSinirli, useBaglanti } from "../baglanti";
 import { SINYAL, useCanli } from "../canli";
 import { devralabilir, masayiDevral, useMesguliyetler } from "../mesguliyet";
@@ -94,6 +96,20 @@ function sure(acilis?: string) {
 // dönerken yine bahçeyi buluyor, her seferinde ilk bölgeden aramıyor.
 const SECILI_BOLGE_ANAHTAR = "mobil.bolge";
 
+// Salonun bu oturumda en son görülen hâli. Masaya girip dönünce ekran bununla
+// anında çiziliyor, sunucudan gelen güncel özet arkadan üstüne yazıyor; yoksa
+// telefon hattında her dönüşte bir saniyeye yakın boş ekran bekleniyordu.
+// İşletmeye bağlı: aynı sekmede başka işletmeye geçilince eskisi çizilmesin.
+let son: { isletmeId?: number; bolgeler: Bolge[]; adisyonlar: Record<number, MasaOzeti> } = {
+  bolgeler: [],
+  adisyonlar: {},
+};
+
+const sonHal = () =>
+  son.isletmeId === acikOturum()?.isletmeId
+    ? son
+    : { bolgeler: kopyadakiBolgeler(), adisyonlar: tazeSalonKopyasi() };
+
 function bolgeOku(): number | null {
   const id = Number(localStorage.getItem(SECILI_BOLGE_ANAHTAR));
   return Number.isFinite(id) && id > 0 ? id : null;
@@ -101,7 +117,7 @@ function bolgeOku(): number | null {
 
 export default function MobilMasalar() {
   const git = useNavigate();
-  const [bolgeler, setBolgeler] = useState<Bolge[]>([]);
+  const [bolgeler, setBolgeler] = useState<Bolge[]>(() => sonHal().bolgeler);
 
   // Masa/bölge tanımı başka cihazda değişince kopya tazeleniyor; plan açıkken
   // de yeni masa görünsün diye haberi burada alıyoruz. Adisyon durumu buradan
@@ -113,7 +129,11 @@ export default function MobilMasalar() {
     });
   });
 
-  const [adisyonlar, setAdisyonlar] = useState<Record<number, MasaOzeti>>({});
+  // Cihazda bekleyen sipariş en yenisi; son görülen hâlin üstüne biniyor.
+  const [adisyonlar, setAdisyonlar] = useState<Record<number, MasaOzeti>>(() => ({
+    ...sonHal().adisyonlar,
+    ...bekleyenMasalar(),
+  }));
   const [seciliBolge, setSeciliBolge] = useState<number | null>(bolgeOku);
   const [mesgulSorusu, setMesgulSorusu] = useState<{ masa: Masa; ad: string } | null>(null);
   const mesguliyetler = useMesguliyetler();
@@ -183,6 +203,7 @@ export default function MobilMasalar() {
     }
 
     setBolgeler(b);
+    son = { isletmeId: acikOturum()?.isletmeId, bolgeler: b, adisyonlar: a ?? sonHal().adisyonlar };
     // Cihazda bekleyen siparişler sunucudakinin üstüne biniyor: masa dolu
     // görünsün, aynı masaya ikinci hesap açılmasın.
     setAdisyonlar({ ...(baglantiVar() ? {} : kopyaMasalari()), ...(a ?? {}), ...bekleyenMasalar() });
@@ -274,7 +295,7 @@ export default function MobilMasalar() {
       setMesgulSorusu({ masa: m, ad: mesgul.ad });
       return;
     }
-    git(`/mobil/siparis/${m.id}`);
+    git(`/mobil/siparis/${m.id}`, { state: { bosMasa: !adisyonlar[m.id] } });
   };
 
   const devral = async () => {
@@ -476,7 +497,12 @@ export default function MobilMasalar() {
             }
 
             return (
-              <button key={m.id} className={sinif} onClick={() => masayaDokun(m)}>
+              <button
+                key={m.id}
+                className={sinif}
+                onClick={() => masayaDokun(m)}
+                onPointerDown={secimModu || !acik ? undefined : () => adisyonuOnOku(m.id)}
+              >
                 <span className="m-masa-ust">
                   <span className="m-masa-ad">{m.ad}</span>
                   {!secimModu && acik && (

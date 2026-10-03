@@ -29,6 +29,7 @@ export type BilinenBilgi = {
   musteriAd?: string | null;
   musteriTelefon?: string | null;
   adres?: string | null;
+  musteriId?: number | null;
   kuverUygula?: boolean | null;
   garsoniyeUygula?: boolean | null;
 };
@@ -200,14 +201,37 @@ function kalemeCevir(s: KalemSatiri): SepetKalemi {
 }
 
 const ADISYON_ALANLARI = `id, adisyon_no, gunluk_no, indirim, indirim_tanim_id, indirim_ad, acilis, garson, tip,
-       ad, kisi_sayisi, not_metni, musteri_ad, musteri_telefon, adres,
+       ad, kisi_sayisi, not_metni, musteri_ad, musteri_telefon, adres, musteri_id,
        kuver_uygula, garsoniye_uygula,
        acan:personel!adisyonlar_acan_id_fkey (ad),
        turlar (sira, olusturma, garson:personel!turlar_garson_id_fkey (ad),
                adisyon_kalemleri (${KALEM_ALANLARI})),
        tahsilatlar (id, tip, tutar, bahsis, kalem_adetleri, istemci_kimlik)`;
 
-export async function adisyonGetir(masaId: number): Promise<AdisyonVerisi> {
+/**
+ * Salonda masaya dokunulduğu anda başlayan okuma. Sipariş ekranı açılıp
+ * okumaya başlayana kadar geçen süre telefonda yüz milisaniyeleri buluyor;
+ * okuma o arada yola çıkmış oluyor. Birkaç saniyeden eski sonuç kullanılmıyor.
+ */
+const onOkumalar = new Map<number, { zaman: number; soz: Promise<AdisyonVerisi> }>();
+const ON_OKUMA_OMRU = 3_000;
+
+export function adisyonuOnOku(masaId: number) {
+  const varolan = onOkumalar.get(masaId);
+  if (varolan && Date.now() - varolan.zaman < ON_OKUMA_OMRU) return;
+  const soz = adisyonuSunucudanOku(masaId);
+  soz.catch(() => onOkumalar.delete(masaId));
+  onOkumalar.set(masaId, { zaman: Date.now(), soz });
+}
+
+export function adisyonGetir(masaId: number): Promise<AdisyonVerisi> {
+  const on = onOkumalar.get(masaId);
+  onOkumalar.delete(masaId);
+  if (on && Date.now() - on.zaman < ON_OKUMA_OMRU) return on.soz;
+  return adisyonuSunucudanOku(masaId);
+}
+
+async function adisyonuSunucudanOku(masaId: number): Promise<AdisyonVerisi> {
   const { data } = await supabase
     .from("adisyonlar")
     .select(ADISYON_ALANLARI)
@@ -401,6 +425,7 @@ function adisyonaCevir(data: any): AdisyonVerisi {
       musteriAd: (data as any).musteri_ad ?? null,
       musteriTelefon: (data as any).musteri_telefon ?? null,
       adres: (data as any).adres ?? null,
+      musteriId: (data as any).musteri_id ?? null,
       kuverUygula: (data as any).kuver_uygula ?? null,
       garsoniyeUygula: (data as any).garsoniye_uygula ?? null,
     },
@@ -428,6 +453,7 @@ function adisyonaCevir(data: any): AdisyonVerisi {
       ad: (data as any).musteri_ad ?? undefined,
       telefon: (data as any).musteri_telefon ?? undefined,
       adres: (data as any).adres ?? undefined,
+      musteriId: (data as any).musteri_id ?? null,
     },
   };
 }
@@ -703,25 +729,24 @@ async function servisiTazele(adisyonId: number) {
  * Tahsilatı olan adisyon iptal edilemez — kasaya girmiş para ortada kalır.
  */
 export async function adisyonIptal(adisyonId: number, sebep: string) {
-  const { data: tahsilat } = await supabase
-    .from("tahsilatlar")
-    .select("id")
-    .eq("adisyon_id", adisyonId)
-    .limit(1);
+  // Beş okuma birbirini beklemiyor; sırayla gittiklerinde iptal telefonda
+  // saniyeleri buluyordu (ölçüm, 3 Eki 2026: sırayla 0,53 sn, birlikte 0,14 sn).
+  // Kalemler ve künye iptal yazılmadan önce okunuyor: tezgâha "bu masanın
+  // tamamını yapmayın" fişi bunlardan basılıyor. İptal edilmiş adisyonu okumak
+  // ayrı bir yetkiye bağlı, sonra bakılsa fiş boş çıkardı.
+  const [{ data: tahsilat }, tutar, yer, iptalEdilecekler, kunye] = await Promise.all([
+    supabase.from("tahsilatlar").select("id").eq("adisyon_id", adisyonId).limit(1),
+    adisyonTutari(adisyonId),
+    adisyonYeri(adisyonId),
+    adisyonKalemleri(adisyonId),
+    fisKunyesi(adisyonId),
+  ]);
 
   if ((tahsilat ?? []).length) {
     throw new Error(
       "Bu adisyondan tahsilat alınmış. Önce ödemeyi geri verip tahsilatı silin, sonra iptal edin."
     );
   }
-
-  const tutar = await adisyonTutari(adisyonId);
-  const yer = await adisyonYeri(adisyonId);
-  // Adisyonun kalemleri ve künyesi iptal yazılmadan önce okunuyor: tezgâha
-  // "bu masanın tamamını yapmayın" fişi bunlardan basılıyor. İptal edilmiş
-  // adisyonu okumak ayrı bir yetkiye bağlı, sonra bakılsa fiş boş çıkardı.
-  const iptalEdilecekler = await adisyonKalemleri(adisyonId);
-  const kunye = await fisKunyesi(adisyonId);
 
   const { error } = await supabase.rpc("adisyon_iptal_et", {
     p_adisyon_id: adisyonId,
@@ -772,8 +797,12 @@ export async function adisyonIkram(
   sebep?: string,
   odenmezId?: number
 ) {
-  const tutar = await adisyonTutari(adisyonId);
-  const yer = await adisyonYeri(adisyonId);
+  // Okumalar birbirini beklemiyor; iptaldeki gibi aynı anda gidiyor.
+  const [tutar, yer, adlar] = await Promise.all([
+    adisyonTutari(adisyonId),
+    adisyonYeri(adisyonId),
+    odenmezAdlariniGetir(odenmezId ? [odenmezId] : []),
+  ]);
 
   // Kalemler ve adisyon sunucuda tek işlemde yazılıyor: eskiden ikisi ayrı
   // istekti ve ikincisi düşerse ürünler ikram, adisyon açık kalıyordu.
@@ -782,8 +811,6 @@ export async function adisyonIkram(
     p_odenmez_id: odenmezId ?? null,
   });
   if (error) throw new Error(error.message || "Adisyon ikram edilemedi.");
-
-  const adlar = await odenmezAdlariniGetir(odenmezId ? [odenmezId] : []);
 
   await denetimYaz([
     {
@@ -807,8 +834,8 @@ export async function adisyonKaydet(
   veri: AdisyonVerisi,
   kapat = false
 ): Promise<AdisyonVerisi> {
-  await stokuOnceSor(veri);
-  let adisyon = await acikAdisyonBul(masaId);
+  // Stok sorusu ve hesabın bulunması birbirini beklemiyor; ikisi de yalnız okuma.
+  const [, adisyon] = await Promise.all([stokuOnceSor(veri), acikAdisyonBul(masaId)]);
 
   // Boş adisyon: hiç kalem yoksa masayı işgal etmesin.
   if (veri.sepet.length === 0 && !kapat) {
@@ -844,21 +871,23 @@ export async function adisyonKaydet(
       await supabase.from("adisyonlar").delete().eq("id", yeni.id);
       throw hata;
     }
-  } else {
-    const guncelleme = await supabase
-      .from("adisyonlar")
-      .update({
-        ...indirimAlanlari(veri),
-        ...bilgiAlanlari(veri),
-        ...servisAlanlari(veri),
-        guncelleme: new Date().toISOString(),
-      })
-      .eq("id", adisyon.id)
-      .select("id");
-    satirDenetle(guncelleme, "Adisyon güncellenemedi.");
   }
 
-  return kalemleriYaz(adisyon.id, veri, kapat);
+  // Başlık güncellemesi kalemlerin okunmasıyla aynı anda gidiyor; sonucu
+  // kalemler yazılmadan önce denetleniyor.
+  const guncelleme = supabase
+    .from("adisyonlar")
+    .update({
+      ...indirimAlanlari(veri),
+      ...bilgiAlanlari(veri),
+      ...servisAlanlari(veri),
+      guncelleme: new Date().toISOString(),
+    })
+    .eq("id", adisyon.id)
+    .select("id")
+    .then((sonuc) => satirDenetle(sonuc, "Adisyon güncellenemedi."));
+
+  return kalemleriYaz(adisyon.id, veri, kapat, guncelleme);
 }
 
 /**
@@ -867,7 +896,7 @@ export async function adisyonKaydet(
  * güncelleniyor, tur açılıyor ve uyarı ancak beşinci istekte geliyordu.
  * Soru cevapsız kalırsa (bağlantı yok) kayıt eskisi gibi yoluna devam ediyor.
  */
-async function stokuOnceSor(veri: AdisyonVerisi) {
+export async function stokuOnceSor(veri: AdisyonVerisi) {
   if (veri.stokDenetimsiz || ayarlar().eksiStokIzin) return;
   const yeniler = veri.sepet.filter(
     (k) => (!k.id || k.id < 0) && k.porsiyonId && k.durum !== "iptal"
@@ -933,6 +962,7 @@ function bilgiAlanlari(veri: AdisyonVerisi) {
     if (m.telefon !== undefined)
       yaz("musteri_telefon", m.telefon.trim() || null, bilinen?.musteriTelefon ?? null);
     if (m.adres !== undefined) yaz("adres", m.adres.trim() || null, bilinen?.adres ?? null);
+    if (m.musteriId !== undefined) yaz("musteri_id", m.musteriId ?? null, bilinen?.musteriId ?? null);
   }
   return alanlar;
 }
@@ -1028,10 +1058,13 @@ function ayniKalem(onceki: any, yeni: Record<string, unknown>) {
 async function kalemleriYaz(
   adisyonId: number,
   veri: AdisyonVerisi,
-  kapat: boolean
+  kapat: boolean,
+  /** Yolda olan başlık güncellemesi; kalemler yazılmadan önce bitmiş olmalı. */
+  baslik?: PromiseLike<void>
 ): Promise<AdisyonVerisi> {
-  // İki okuma birbirini beklemiyor: turlar ve tahsilatlar aynı anda isteniyor.
-  const [{ data: turSatirlari }, { data: eskiTahsilatlar }] = await Promise.all([
+  // Okumalar birbirini beklemiyor: turlar, tahsilatlar, ikram adları ve
+  // başlık güncellemesi aynı anda gidiyor.
+  const [{ data: turSatirlari }, { data: eskiTahsilatlar }, odenmezAdlari] = await Promise.all([
     supabase
       .from("turlar")
       .select(
@@ -1040,6 +1073,9 @@ async function kalemleriYaz(
       .eq("adisyon_id", adisyonId)
       .order("sira"),
     supabase.from("tahsilatlar").select("id, tip, tutar").eq("adisyon_id", adisyonId),
+    // İkram deftere kimin adına yazıldığıyla düşüyor; ad tek sorguda çekiliyor.
+    odenmezAdlariniGetir(veri.sepet.map((k) => k.odenmezId).filter((id): id is number => !!id)),
+    baslik,
   ]);
   const turlar = ((turSatirlari as any[]) ?? []);
 
@@ -1077,10 +1113,6 @@ async function kalemleriYaz(
   // Duran kalemler her kaydetmede tek tek güncelleniyordu: on kalemlik masada
   // on ayrı istek, her biri sunucuya gidiş dönüş. Artık yalnız gerçekten
   // değişenler yazılıyor ve onlar da aynı anda gidiyor.
-  // İkram deftere kimin adına yazıldığıyla düşüyor; ad tek sorguda çekiliyor.
-  const odenmezAdlari = await odenmezAdlariniGetir(
-    veri.sepet.map((k) => k.odenmezId).filter((id): id is number => !!id)
-  );
 
   // Tezgâhtan geri alınacak ürünler. Üç yoldan biriyle buraya düşüyorlar:
   // kalem iptal edildi, kalem sepetten tamamen silindi, ya da adedi azaltıldı
@@ -1465,6 +1497,7 @@ function yazilanBilgi(veri: AdisyonVerisi): BilinenBilgi {
     musteriTelefon:
       m?.telefon !== undefined ? m.telefon.trim() || null : bilinen?.musteriTelefon ?? null,
     adres: m?.adres !== undefined ? m.adres.trim() || null : bilinen?.adres ?? null,
+    musteriId: m?.musteriId !== undefined ? m.musteriId ?? null : bilinen?.musteriId ?? null,
     kuverUygula: veri.kuverUygula ?? null,
     garsoniyeUygula: veri.garsoniyeUygula ?? null,
   };

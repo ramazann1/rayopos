@@ -96,6 +96,9 @@ export function useYerelVeriZamani() {
 /** Sunucu bu süre içinde cevap vermezse, elde kopya varsa ona geçiliyor. */
 const BEKLEME_SINIRI = 1_500;
 
+/** Bu süreden yeni kopya arkadan yeniden sorulmuyor. */
+const TAZE_SURE = 2 * 60_000;
+
 class ZamanAsimi extends Error {}
 
 function sinirla<T>(is: Promise<T>, ms: number) {
@@ -161,7 +164,11 @@ export async function onbellekliGetir<T>(
   if (paket && ondenVer) {
     // Tazeleme arkada koşuyor; düşerse elde zaten kopya var, ekrana hata
     // taşınmıyor. Yakalanmayan söz uyarısı çıkmasın diye burada susturuluyor.
-    sunucudanTazele(anahtar, getirici).catch(() => {});
+    // Kopya yeni tazelendiyse sorulmuyor: masaya her girişte beş menü isteği
+    // asıl beklenen adisyon okumasıyla aynı hattı paylaşıp onu geciktiriyordu
+    // (ölçüm, 3 Eki 2026: telefonda 22 istek, adisyon 0,86 sn). Arada değişen
+    // tanımı canlı abonelik zaten anında tazeliyor.
+    if (Date.now() - paket.zaman > TAZE_SURE) sunucudanTazele(anahtar, getirici).catch(() => {});
     yerelZamanYaz(null);
     return paket.veri;
   }

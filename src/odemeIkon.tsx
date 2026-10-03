@@ -2,6 +2,7 @@ import {
   Banknote,
   BookUser,
   CreditCard,
+  Gift,
   Landmark,
   Smartphone,
   Ticket,
@@ -11,6 +12,7 @@ import {
 // Ödeme tipleri işletmenin kendi tanımı; sabit liste yok. İkon ada bakarak
 // seçiliyor, tanımadığımız bir tip gelirse cüzdan ikonuyla yine de ikonlu çıkıyor.
 const ESLER: { anahtarlar: string[]; ikon: typeof Wallet }[] = [
+  { anahtarlar: ["cüzdan"], ikon: Gift },
   { anahtarlar: ["nakit", "peşin", "pesin"], ikon: Banknote },
   { anahtarlar: ["kredi", "kart", "visa", "master", "banka kartı", "pos"], ikon: CreditCard },
   {

@@ -8,6 +8,9 @@ import EksikKapat from "./EksikKapat";
 import KdvDokum from "./KdvDokum";
 import OdemeTipDugmeleri from "./OdemeTipDugmeleri";
 import MusteriSecici from "./MusteriSecici";
+import SadakatKarti from "./SadakatKarti";
+import { CUZDAN } from "../sadakat";
+import type { Musteri } from "../cari";
 import { adetGoster } from "../para";
 import { kalemTutari, yeniTahsilat } from "../adisyonlar";
 import { indirimYapabilir, yetkiVar } from "../oturum";
@@ -63,9 +66,12 @@ type Props = {
   onOdendi: (tahsilatlar: Tahsilat[], eksik?: { kisi: string; sebep: string; tutar: number }) => void;
   /** Adisyondaki müşteri adı; eksik kapatmada borç alanı bununla açılıyor. */
   musteri?: string;
+  /** Hesaba bağlı kayıtlı müşteri; sadakat cüzdanı buna bakıyor. */
+  musteriId?: number | null;
+  onMusteriDegis?: (m: Musteri | null) => void;
 };
 
-export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, servis, kdvSatirlari, kayitliTahsilatlar, musteri, onKaydet, onSil, onIndirimDegis, onKalemIndirim, onKapat, onOdendi }: Props) {
+export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, servis, kdvSatirlari, kayitliTahsilatlar, musteri, musteriId, onMusteriDegis, onKaydet, onSil, onIndirimDegis, onKalemIndirim, onKapat, onOdendi }: Props) {
   const [tahsilatlar, setTahsilatlar] = useState<Tahsilat[]>(kayitliTahsilatlar ?? []);
   // Mobil ödemeyi alındığı anda kaydediyor; kayıttan dönen kimlikler buraya
   // gelmezse pencere ödemeyi kaydedilmemiş sanıp sebep sormadan siliyordu.
@@ -583,6 +589,16 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
                       Kaldır
                     </button>
                   </div>
+                )}
+                {onMusteriDegis && (
+                  <SadakatKarti
+                    musteriId={musteriId ?? null}
+                    toplam={toplam}
+                    kalan={kalan}
+                    tahsilatlar={tahsilatlar}
+                    onMusteriDegis={onMusteriDegis}
+                    onCuzdandanOde={(tutar) => tahsilatIsle(CUZDAN, tutar)}
+                  />
                 )}
                 <OdemeTipDugmeleri tipler={odemeTipleri} onSec={odemeAl} />
               </>

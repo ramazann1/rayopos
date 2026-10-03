@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  ArrowRight,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -21,6 +22,7 @@ import {
   Trash2,
   Users,
   Wallet,
+  WalletCards,
 } from "lucide-react";
 import SaatKutusu from "../components/SaatKutusu";
 import AyarBasligi from "../components/AyarBasligi";
@@ -54,6 +56,7 @@ import {
   type IndirimTipi,
 } from "../indirimler";
 import Bildirim from "../components/Bildirim";
+import { paraGoster } from "../para";
 import Bilgi from "../components/Bilgi";
 import Anahtar from "../components/Anahtar";
 import OnayModal from "../components/OnayModal";
@@ -745,13 +748,125 @@ function QrMenuBolumu({
     </section>
   );
 }
+/**
+ * Sadakat bölümü: para puan cüzdanının kuralları. Seçenekler hazır basamak —
+ * yüzdeyi serbest yazdırmak "50" yazıp hesabın yarısını dağıtma riskini açıyor.
+ */
+function SadakatBolumu({
+  genel,
+  degistir,
+  ara,
+}: {
+  genel: IsletmeAyarlariTipi;
+  degistir: (degisen: Partial<IsletmeAyarlariTipi>, mesaj?: string) => Promise<void>;
+  ara: string;
+}) {
+  const s = genel.sadakat;
+  const yaz = (degisen: Partial<IsletmeAyarlariTipi["sadakat"]>, mesaj: string) =>
+    degistir({ sadakat: { ...s, ...degisen } }, mesaj);
+  const ornek = 500;
+
+  return (
+    <section className="ayar-bolum ayar-liste">
+      <div className={s.acik ? "sdk-onizleme" : "sdk-onizleme kapali"}>
+        <span className="sdk-onizleme-ikon">
+          <WalletCards size={24} />
+        </span>
+        <div className="sdk-onizleme-metin">
+          <strong>
+            {paraGoster(ornek)} hesap <ArrowRight size={16} /> cüzdana{" "}
+            <em>+{paraGoster((ornek * s.oran) / 100)}</em>
+          </strong>
+          <span>
+            {s.acik
+              ? s.altLimit > 0
+                ? `Cüzdan ${paraGoster(s.altLimit)} olunca harcanabilir, bir hesabın en fazla %${s.ustOran} kadarı cüzdanla ödenir.`
+                : `Cüzdan hemen harcanabilir, bir hesabın en fazla %${s.ustOran} kadarı cüzdanla ödenir.`
+              : "Sadakat kapalı; ödeme ekranında müşteri kartı görünmüyor."}
+          </span>
+        </div>
+      </div>
+
+      <AyarSatiri
+        ad="Sadakat programı"
+        ara={ara}
+        ipucu="Açıkken ödeme ekranında hesaba müşteri bağlanır. Hesap kapanınca ödenen tutarın yüzdesi müşterinin cüzdanına TL olarak yazılır; müşteri sonraki hesaplarda bunu Cüzdan ödeme tipiyle harcar."
+      >
+        <AyarAnahtari
+          acik={s.acik}
+          degistir={(acik) => yaz({ acik }, acik ? "Sadakat programı açıldı" : "Sadakat programı kapatıldı")}
+        />
+      </AyarSatiri>
+
+      <AyarSatiri
+        ad="Cüzdana dönen oran"
+        ara={ara}
+        ipucu="Kapanan hesabın yüzde kaçı müşterinin cüzdanına yazılsın. Cüzdanla ödenen kısım yeniden kazandırmaz; bahşiş hesaba girmez."
+      >
+        <div className="mod-sec kompakt dar">
+          {[2, 3, 5, 8, 10].map((o) => (
+            <button
+              key={o}
+              className={s.oran === o ? "aktif" : ""}
+              onClick={() => yaz({ oran: o }, `Hesabın %${o} kadarı cüzdana yazılacak`)}
+            >
+              %{o}
+            </button>
+          ))}
+        </div>
+      </AyarSatiri>
+
+      <AyarSatiri
+        ad="Harcama alt sınırı"
+        ara={ara}
+        ipucu="Cüzdan bu tutara ulaşmadan harcanamaz; küçük tutarların her hesapta kuruş kuruş düşülmesini önler. Sınır yok seçilirse cüzdan her zaman kullanılabilir."
+      >
+        <div className="mod-sec kompakt dar">
+          {[0, 50, 100, 250].map((t) => (
+            <button
+              key={t}
+              className={s.altLimit === t ? "aktif" : ""}
+              onClick={() =>
+                yaz({ altLimit: t }, t === 0 ? "Harcama sınırı kaldırıldı" : `Cüzdan ₺${t} olunca harcanabilecek`)
+              }
+            >
+              {t === 0 ? "Sınır yok" : `₺${t}`}
+            </button>
+          ))}
+        </div>
+      </AyarSatiri>
+
+      <AyarSatiri
+        ad="Bir hesapta en fazla"
+        ara={ara}
+        ipucu="Bir hesabın en fazla yüzde kaçı cüzdanla ödenebilsin. Tamamı seçilirse müşteri biriktirdiğiyle hesabın hepsini kapatabilir."
+      >
+        <div className="mod-sec kompakt dar">
+          {[25, 50, 100].map((o) => (
+            <button
+              key={o}
+              className={s.ustOran === o ? "aktif" : ""}
+              onClick={() =>
+                yaz({ ustOran: o }, o === 100 ? "Hesabın tamamı cüzdanla ödenebilecek" : `Hesabın en fazla %${o} kadarı cüzdanla ödenecek`)
+              }
+            >
+              {o === 100 ? "Tamamı" : `%${o}`}
+            </button>
+          ))}
+        </div>
+      </AyarSatiri>
+    </section>
+  );
+}
+
 export default function IsletmeAyarlari() {
   const { bolum } = useParams();
   const odemeBolumu = bolum === "odeme-tipleri";
   const satisBolumu = bolum === "satis";
   const genelBolumu = bolum === "genel";
   const qrBolumu = bolum === "qr-menu";
-  const masalarBolumu = !odemeBolumu && !satisBolumu && !genelBolumu && !qrBolumu;
+  const sadakatBolumu = bolum === "sadakat";
+  const masalarBolumu = !odemeBolumu && !satisBolumu && !genelBolumu && !qrBolumu && !sadakatBolumu;
 
   const [kdvDahil, setKdvDahil] = useState(ayarlar().kdvDahil);
   // Genel parametreler tek tek kaydediliyor; her satır kendi başına anlamlı,
@@ -986,9 +1101,11 @@ export default function IsletmeAyarlari() {
                   ? "İşletmenin çalışma düzenini buradan kurarsınız."
                   : qrBolumu
                     ? "Masalara koyacağınız karekodu okutan müşteri menünüzü telefonunda görür. Menü RayoPOS'taki ürünlerden okunur; fiyatı değiştirdiğinizde müşterinin gördüğü menü de aynı anda değişir. Yalnız satışta görünür kategori ve ürünler listelenir."
-                    : "Satışın genel kurallarını buradan belirlersiniz."}
+                    : sadakatBolumu
+                      ? "Düzenli müşterinize harcamasının bir kısmını cüzdanına geri verirsiniz; müşteri bunu sonraki hesabında kullanır."
+                      : "Satışın genel kurallarını buradan belirlersiniz."}
           </Bilgi>
-          {(genelBolumu || satisBolumu) && (
+          {(genelBolumu || satisBolumu || sadakatBolumu) && (
             <AramaKutusu deger={ara} degistir={setAra} yer="Ayar ara" />
           )}
         </div>
@@ -1148,6 +1265,8 @@ export default function IsletmeAyarlari() {
               </button>
             </section>
           )}
+
+          {sadakatBolumu && <SadakatBolumu genel={genel} degistir={genelDegistir} ara={ara} />}
 
           {qrBolumu && (
             <QrMenuBolumu genel={genel} degistir={genelDegistir} ara={ara} uyar={setUyari} />

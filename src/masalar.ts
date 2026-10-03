@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { hataysaFirlat, kopyadanGetir, onbellekliGetir } from "./onbellek";
+import { hataysaFirlat, kopyadanGetir, onbellekliGetir, onbellekOku } from "./onbellek";
 import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
 import { tanimTazele, tazeleyiciTanit } from "./tanimAbonelik";
 import { ayarlar } from "./isletmeAyarlari";
@@ -54,6 +54,11 @@ export function yabanciMasaVar(bolgeler: Bolge[], adisyonlar: Record<number, unk
  * masa tanımı siparişle değişmediği için o okumalarda kapalı çağrılıyor.
  * Tanım gerçekten değişirse `tanimAbonelik` kopyayı tazeliyor.
  */
+/** Cihazdaki kopya, beklemeden; sayfa yenilenince salonun ilk çizimi için. */
+export function kopyadakiBolgeler(): Bolge[] {
+  return onbellekOku<Bolge[]>(BOLGE_ANAHTAR)?.veri ?? [];
+}
+
 export function bolgeleriGetir(tazele = true): Promise<Bolge[]> {
   if (!tazele) return kopyadanGetir(BOLGE_ANAHTAR, bolgeleriOku);
   return onbellekliGetir(BOLGE_ANAHTAR, bolgeleriOku, true);

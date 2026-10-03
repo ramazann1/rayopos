@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -44,6 +44,7 @@ import {
   adisyonGetir,
   adisyonIptal,
   adisyonKaydet,
+  stokuOnceSor,
   adisyonOzeti,
   kalemTutari,
   sepetiTazele,
@@ -54,7 +55,7 @@ import type { AdisyonVerisi } from "../adisyonlar";
 import { servisEtiketi, servisSatirlari, servisTutarlari, servisVar } from "../servis";
 import { kdvDokumu } from "../kdv";
 import { adisyonFisiYaz } from "../yazicilar";
-import { bekleyenKayit, kuyrugaEkle } from "../kuyruk";
+import { bekleyenKayit, kuyrugaEkle, kuyruguGonder, yoldakiKayit } from "../kuyruk";
 import { useMasayiTut } from "../mesguliyet";
 import { SINYAL, useCanli } from "../canli";
 import { baglantiHatasi, baglantiVar } from "../baglanti";
@@ -63,6 +64,7 @@ import { useGeriKilidi } from "../geriKilidi";
 import { salonaSecimle } from "../salonSecimi";
 import { ayarlar } from "../isletmeAyarlari";
 import { yetkiVar } from "../oturum";
+import { musteriyiBagla } from "../sadakat";
 import { adetGoster, paraGoster } from "../para";
 import type {
   MenuKategori,
@@ -121,7 +123,7 @@ export default function MobilSiparis() {
   const [kisiSayisi, setKisiSayisi] = useState<number | undefined>();
   // Adisyonun kendi bilgileri: adı, notu ve müşterisi. Ürünlerden bağımsız,
   // hesabın kime ait olduğunu anlatıyor; hepsi isteğe bağlı.
-  const [bilgi, setBilgi] = useState({ ad: "", not: "", musteriAd: "", musteriTelefon: "" });
+  const [bilgi, setBilgi] = useState<{ ad: string; not: string; musteriAd: string; musteriTelefon: string; musteriId?: number | null }>({ ad: "", not: "", musteriAd: "", musteriTelefon: "", musteriId: null });
   const [bilgiAcik, setBilgiAcik] = useState(false);
   // Kuver ve garsoniye bu hesapta elle eklenmiş ya da kaldırılmış olabilir.
   // Okunup geri yazılmazsa her kayıt kararı siliyor: kasiyerin kaldırdığı kuver
@@ -143,7 +145,13 @@ export default function MobilSiparis() {
   const [islemlerAcik, setIslemlerAcik] = useState(false);
   const [kalemIslem, setKalemIslem] = useState<SepetKalemi | null>(null);
   const [iptalSorusu, setIptalSorusu] = useState(false);
-  const [kisiSorusu, setKisiSorusu] = useState(false);
+  const location = useLocation();
+  // Boş masaya girildiyse salon bunu biliyor: misafir sayısı hesabın okunmasını
+  // beklemeden soruluyor.
+  const erkenSoruldu = useRef(
+    ayarlar().kisiSayisiZorunlu && (location.state as any)?.bosMasa === true
+  );
+  const [kisiSorusu, setKisiSorusu] = useState(erkenSoruldu.current);
   // Sipariş geçmişi masaüstüyle aynı pencereyi açıyor; telefonda başlıkta yer
   // olmadığı için giriş noktası üç nokta menüsünde.
   const [acikAdisyonId, setAcikAdisyonId] = useState<number | undefined>();
@@ -219,6 +227,9 @@ export default function MobilSiparis() {
 
   useEffect(() => {
     const oku = async (): Promise<AdisyonVerisi> => {
+      // Bu masanın siparişi şu an sunucuya yazılıyorsa bitmesi bekleniyor;
+      // yarıda okunan hâlin üstüne eklenen ürünler iki kez yazılırdı.
+      await yoldakiKayit({ tip: "masa", masaId });
       // Kuyrukta bekleyen kayıt sunucudakinden yeni: sunucu onu henüz görmedi.
       const bekleyen = bekleyenKayit({ tip: "masa", masaId });
       if (bekleyen) return bekleyen;
@@ -233,18 +244,23 @@ export default function MobilSiparis() {
       setIndirim(veri.indirim);
       setAcikAdisyonId(veri.id);
       setTahsilatlar(veri.tahsilatlar);
-      setKisiSayisi(veri.kisiSayisi);
+      // Okuma sürerken seçilen misafir sayısı boş gelen kayıtla silinmiyor.
+      setKisiSayisi((k) => veri.kisiSayisi ?? k);
       const okunan = {
         ad: veri.ad ?? "",
         not: veri.not ?? "",
         musteriAd: veri.musteri?.ad ?? "",
         musteriTelefon: veri.musteri?.telefon ?? "",
+        musteriId: veri.musteri?.musteriId ?? null,
       };
       setBilgi(okunan);
       bilgiImza.current = JSON.stringify(okunan);
       setServis({ kuverUygula: veri.kuverUygula, garsoniyeUygula: veri.garsoniyeUygula });
       baslangicImza.current = JSON.stringify(veri.sepet);
-      if (ayarlar().kisiSayisiZorunlu && !veri.kisiSayisi) setKisiSorusu(true);
+      // Erken açılan soru kendi hâlinde kalıyor: arada cevaplandıysa yeniden
+      // açılmıyor, başka cihaz misafir sayısını girdiyse kapanıyor.
+      if (ayarlar().kisiSayisiZorunlu)
+        setKisiSorusu((acik) => (veri.kisiSayisi ? false : erkenSoruldu.current ? acik : true));
       // Masalar ekranından "Öde" ile gelindiyse hesap okunur okunmaz pencere
       // açılıyor: masaya basıp bir de düğmeye basmak gereksiz bir durak.
       if (adres.get("tahsilat") === "1" && yetkiVar("odeme.al")) setTahsilatAcik(true);
@@ -385,7 +401,7 @@ export default function MobilSiparis() {
     tip: "masa",
     ad: bilgi.ad,
     not: bilgi.not,
-    musteri: { ad: bilgi.musteriAd, telefon: bilgi.musteriTelefon },
+    musteri: { ad: bilgi.musteriAd, telefon: bilgi.musteriTelefon, musteriId: bilgi.musteriId ?? null },
     ...servis,
   };
   const ozet = adisyonOzeti(adisyon);
@@ -509,35 +525,46 @@ export default function MobilSiparis() {
     setGonderiliyor(true);
     const veri: AdisyonVerisi = { ...adisyon, ...(kisiSayisi ? { kisiSayisi } : {}) };
 
-    // Bağlantının olmadığı biliniyorsa sunucu hiç denenmiyor: kayıt doğrudan
-    // kuyruğa giriyor, garson beklemeden diğer masaya geçiyor.
-    if (!baglantiVar()) {
-      kuyrugaEkle({ tip: "masa", masaId, masaAdi, veri });
-      kilitKaldir();
-      git("/mobil/masalar");
-      return;
-    }
-
-    try {
-      await adisyonKaydet(masaId, veri);
-    } catch (e) {
-      // Sebep bağlantıysa sipariş kaybolmuyor, kuyruğa giriyor. Başka bir hata
-      // ise garson görsün — sessizce düşmesin.
-      if (!baglantiHatasi(e) && baglantiVar()) {
+    // Kayıt yedi-sekiz sıralı istekle yazılıyor, telefon hattında iki saniyeyi
+    // buluyordu. Sipariş kuyruğa girip arkada yazılıyor, garson hemen salona
+    // dönüyor. Bağlantı varken giren kayıt "çevrimiçi" işaretli: stok yine
+    // soruluyor, reddedilirse sepet kaybolmuyor ve sebep şeritte yazıyor.
+    // Stok yetmiyorsa garson ekranda kalıp düzeltmeli: tek soru bekleniyor,
+    // gerisi arkada. Yalnız eksi stok kapalıyken ve yeni ürün varsa soruluyor.
+    if (baglantiVar()) {
+      try {
+        await stokuOnceSor(veri);
+      } catch (e) {
         setGonderiliyor(false);
-        setUyari(e instanceof Error ? e.message : "Sipariş gönderilemedi.");
+        setUyari(e instanceof Error ? e.message : "Stok yetersiz.");
         return;
       }
-      kuyrugaEkle({ tip: "masa", masaId, masaAdi, veri });
     }
+
+    kuyrugaEkle({ tip: "masa", masaId, masaAdi, veri }, { canli: baglantiVar() });
+    void kuyruguGonder();
     kilitKaldir();
     git("/mobil/masalar");
   };
+
+  const kisiPenceresi = kisiSorusu && (
+    <MisafirSayisi
+      onSec={(sayi) => {
+        setKisiSayisi(sayi);
+        setKisiSorusu(false);
+      }}
+      onVazgec={() => {
+        kilitKaldir();
+        git("/mobil/masalar");
+      }}
+    />
+  );
 
   if (yukleniyor) {
     return (
       <div className="yukleniyor">
         <div className="cember" />
+        {kisiPenceresi}
       </div>
     );
   }
@@ -1052,12 +1079,13 @@ export default function MobilSiparis() {
           bilgi={{ ...bilgi, kisiSayisi }}
           onKapat={() => setBilgiAcik(false)}
           onKaydet={(yeni) => {
-            setBilgi({
+            setBilgi((b) => ({
+              ...b,
               ad: yeni.ad ?? "",
               not: yeni.not ?? "",
               musteriAd: yeni.musteriAd ?? "",
               musteriTelefon: yeni.musteriTelefon ?? "",
-            });
+            }));
             setKisiSayisi(yeni.kisiSayisi || undefined);
             setBilgiAcik(false);
           }}
@@ -1140,6 +1168,8 @@ export default function MobilSiparis() {
           kdvSatirlari={kdvSatirlari}
           kayitliTahsilatlar={tahsilatlar}
           musteri={bilgi.musteriAd || bilgi.ad}
+          musteriId={bilgi.musteriId ?? null}
+          onMusteriDegis={(m) => setBilgi((b) => musteriyiBagla(b, m))}
           onKapat={() => setTahsilatAcik(false)}
           onKaydet={(t) => tahsilatYaz(t)}
           onSil={(id, sebep) => silinenTahsilatlar.current.push({ id, sebep })}
@@ -1183,18 +1213,7 @@ export default function MobilSiparis() {
         />
       )}
 
-      {kisiSorusu && (
-        <MisafirSayisi
-          onSec={(sayi) => {
-            setKisiSayisi(sayi);
-            setKisiSorusu(false);
-          }}
-          onVazgec={() => {
-            kilitKaldir();
-            git("/mobil/masalar");
-          }}
-        />
-      )}
+      {kisiPenceresi}
 
       {devralindi && (
         <OnayModal

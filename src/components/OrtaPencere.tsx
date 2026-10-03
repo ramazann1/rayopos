@@ -11,6 +11,7 @@ export default function OrtaPencere({
   baslik,
   aciklama,
   genislik = "orta",
+  ust,
   onKapat,
   alt,
   children,
@@ -19,12 +20,14 @@ export default function OrtaPencere({
   baslik: ReactNode;
   aciklama?: ReactNode;
   genislik?: "dar" | "orta" | "genis" | "cok-genis";
+  /** Başka bir pencerenin (ödeme gibi) üstünde açılıyor. */
+  ust?: boolean;
   onKapat: () => void;
   alt?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className="pnc-fon" onClick={onKapat}>
+    <div className={ust ? "pnc-fon ust" : "pnc-fon"} onClick={onKapat}>
       <div className={`pnc-pencere ${genislik}`} onClick={(e) => e.stopPropagation()}>
         <header className="pnc-ust">
           <span className="pnc-im"><Ikon size={20} /></span>

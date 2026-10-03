@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Bike,
@@ -29,6 +29,7 @@ import {
   masasizEtiketi,
   adisyonGetir,
   adisyonKaydet,
+  stokuOnceSor,
   kalemTutari,
   masasizGetir,
   masasizKaydet,
@@ -57,7 +58,7 @@ import { kilitKaldir, kilitKur } from "../cikisKilidi";
 import { useGeriKilidi } from "../geriKilidi";
 import { salonaSecimle } from "../salonSecimi";
 import { baglantiHatasi, baglantiVar, hataMesaji } from "../baglanti";
-import { bekleyenKayit, kimlikCoz, kuyrugaEkle, kuyruguGonder } from "../kuyruk";
+import { bekleyenKayit, kimlikCoz, kuyrugaEkle, kuyruguGonder, yoldakiKayit } from "../kuyruk";
 import { hesapKopyasiOku, hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
 import type { KuyrukIsi } from "../kuyruk";
 import { kdvDokumu } from "../kdv";
@@ -65,6 +66,7 @@ import { adetGoster, paraGoster } from "../para";
 import { useMasayiTut } from "../mesguliyet";
 import { SINYAL, useCanli } from "../canli";
 import { ayarlar } from "../isletmeAyarlari";
+import { musteriyiBagla } from "../sadakat";
 import type { IndirimKaynagi } from "../indirimler";
 import type {
   MenuKategori,
@@ -91,7 +93,7 @@ function adisyonImzasi(
     sepet: sepet.map((k) => [k.id, k.adet, k.fiyat, k.durum ?? "normal", k.indirim ?? 0]),
     indirim,
     tahsilat: tahsilatlar.map((t) => [t.tip, t.tutar]),
-    bilgi: [bilgi.ad ?? "", bilgi.kisiSayisi ?? 0, bilgi.not ?? "", bilgi.musteriAd ?? "", bilgi.musteriTelefon ?? ""],
+    bilgi: [bilgi.ad ?? "", bilgi.kisiSayisi ?? 0, bilgi.not ?? "", bilgi.musteriAd ?? "", bilgi.musteriTelefon ?? "", bilgi.musteriId ?? null],
     servis: [servis.kuver ?? null, servis.garsoniye ?? null],
   });
 }
@@ -104,6 +106,7 @@ function adisyondanBilgi(veri: AdisyonVerisi): AdisyonBilgisi {
     not: veri.not,
     musteriAd: veri.musteri?.ad,
     musteriTelefon: veri.musteri?.telefon,
+    musteriId: veri.musteri?.musteriId ?? null,
   };
 }
 
@@ -174,6 +177,9 @@ export default function Siparis() {
     : ({ tip: "masa", masaId } as const);
 
   const adisyonuOku = async (): Promise<AdisyonVerisi> => {
+    // Bu masanın siparişi şu an sunucuya yazılıyorsa bitmesi bekleniyor;
+    // yarıda okunan hâlin üstüne eklenen ürünler iki kez yazılırdı.
+    await yoldakiKayit(hedef);
     const bekleyen = bekleyenKayit(hedef);
     if (bekleyen) return bekleyen;
     // Bağlantı yoksa istek atılmıyor: cevapsız isteği beklemek ekranı
@@ -240,7 +246,13 @@ export default function Siparis() {
   // eklendi, false = kaldırıldı.
   const [servis, setServis] = useState<ServisDurumu>({});
   const [bilgiAcik, setBilgiAcik] = useState(false);
-  const [kisiSorusu, setKisiSorusu] = useState(false);
+  const location = useLocation();
+  // Boş masaya girildiyse salon bunu biliyor: misafir sayısı hesabın okunmasını
+  // beklemeden soruluyor.
+  const erkenSoruldu = useRef(
+    !masasiz && ayarlar().kisiSayisiZorunlu && (location.state as any)?.bosMasa === true
+  );
+  const [kisiSorusu, setKisiSorusu] = useState(erkenSoruldu.current);
   const [adisyonNo, setAdisyonNo] = useState<number | undefined>();
   // Masa siparişinde adisyonun kimliği adresten gelmiyor, kayıttan okunuyor;
   // sipariş geçmişi penceresi onu istiyor.
@@ -262,7 +274,11 @@ export default function Siparis() {
       ad: bilgi.ad ?? "",
       kisiSayisi: bilgi.kisiSayisi ?? 0,
       not: bilgi.not ?? "",
-      musteri: { ad: bilgi.musteriAd ?? "", telefon: bilgi.musteriTelefon ?? "" },
+      musteri: {
+        ad: bilgi.musteriAd ?? "",
+        telefon: bilgi.musteriTelefon ?? "",
+        musteriId: bilgi.musteriId ?? null,
+      },
       // Servis bedeli kişi sayısına ve sipariş tipine bağlı; ikisi de kayda
       // buradan giriyor ki hangi yoldan kaydedilirse kaydedilsin aynı çıksın.
       tip: masasiz ? masasizBilgi?.tip ?? "gelal" : "masa",
@@ -358,12 +374,16 @@ export default function Siparis() {
       );
       setAdisyonNo(veri.no);
       setAcikAdisyonId(veri.id);
-      setBilgi(adisyondanBilgi(veri));
+      // Okuma sürerken seçilen misafir sayısı boş gelen kayıtla silinmiyor.
+      setBilgi((b) => ({ ...adisyondanBilgi(veri), kisiSayisi: veri.kisiSayisi ?? b.kisiSayisi }));
       setServis(adisyondanServis(veri));
       if (masasiz) setMasasizBilgi(veri);
       // Misafir sayısı zorunluysa soru masaya girer girmez çıkıyor. Masasız
       // siparişte (gel al / paket) kişi kavramı yok.
-      if (!masasiz && ayarlar().kisiSayisiZorunlu && !veri.kisiSayisi) setKisiSorusu(true);
+      if (!masasiz && ayarlar().kisiSayisiZorunlu)
+        // Erken açılan soru kendi hâlinde kalıyor: arada cevaplandıysa yeniden
+        // açılmıyor, başka cihaz misafir sayısını girdiyse kapanıyor.
+        setKisiSorusu((acik) => (veri.kisiSayisi ? false : erkenSoruldu.current ? acik : true));
       setYukleniyor(false);
     });
   }, [masaId, adisyonId, masasiz]);
@@ -599,32 +619,27 @@ export default function Siparis() {
       setKisiSorusu(true);
       return;
     }
-    // Kayıt düşerse salona dönülmüyor: ekrandaki sipariş garsonun elinde
-    // kalsın, bağlantı gelince aynı tuşla yeniden gönderebilsin.
     const veri = { sepet, indirim, indirimTanim, tahsilatlar: kayitliTahsilatlar };
 
-    // Bağlantının olmadığı biliniyorsa sunucu hiç denenmiyor: kayıt doğrudan
-    // kuyruğa giriyor ve garson beklemeden salona dönüyor. Yoğun saatte her
-    // siparişte cevapsız isteği beklemek kasayı kilitliyordu.
-    if (!baglantiVar()) {
-      kuyrugaEkle(kuyrukIsi(tamVeri(veri)));
-      kilitKaldir();
-      navigate("/");
-      return;
-    }
-
-    try {
-      await adisyonuYaz(veri);
-    } catch (e) {
-      // Sebep bağlantıysa sipariş kaybolmuyor: cihazda kuyruğa giriyor,
-      // bağlantı gelince kendiliğinden sunucuya yazılıyor. Garson masayı
-      // bırakıp diğerine gidebilsin — kasa internetsiz diye satış durmasın.
-      if (!baglantiHatasi(e) && baglantiVar()) {
-        setUyari(hataMesaji(e, "Adisyon kaydedilemedi."));
+    // Kayıt sunucuya yedi-sekiz sıralı istekle yazılıyor; telefon hattında
+    // iki saniyeyi buluyordu ve garson o sürede salona dönemiyordu. Sipariş
+    // artık kuyruğa girip arkada yazılıyor, ekran hemen salona dönüyor.
+    // Bağlantı varken giren kayıt "çevrimiçi" işaretli: stok yine soruluyor,
+    // sunucu reddederse sepet kaybolmuyor ve sebep şeritte yazıyor. Bağlantı
+    // yoksa eskisi gibi çevrimdışı kuyrukta bekliyor.
+    // Stok yetmiyorsa ekranda kalıp düzeltilmeli: tek soru bekleniyor, gerisi
+    // arkada. Yalnız eksi stok kapalıyken ve yeni ürün varsa soruluyor.
+    if (baglantiVar()) {
+      try {
+        await stokuOnceSor(veri);
+      } catch (e) {
+        setUyari(hataMesaji(e, "Stok yetersiz."));
         return;
       }
-      kuyrugaEkle(kuyrukIsi(sonYazilan.current ?? veri));
     }
+
+    kuyrugaEkle(kuyrukIsi(tamVeri(veri)), { canli: baglantiVar() });
+    void kuyruguGonder();
     kilitKaldir();
     navigate("/");
   };
@@ -1014,6 +1029,8 @@ export default function Siparis() {
           }
           onKapat={() => setTahsilatAcik(false)}
           musteri={bilgi.musteriAd || bilgi.ad}
+          musteriId={bilgi.musteriId ?? null}
+          onMusteriDegis={(m) => setBilgi((b) => musteriyiBagla(b, m))}
           onOdendi={async (tahsilatlar, eksik) => {
             // Kapanan adisyon silinmiyor, kapalıya çekiliyor — gün sonu raporu ona bakacak.
             try {
@@ -1125,7 +1142,7 @@ export default function Siparis() {
           no={adisyonNo}
           bilgi={bilgi}
           onKapat={() => setBilgiAcik(false)}
-          onKaydet={(yeni) => { setBilgi(yeni); setBilgiAcik(false); }}
+          onKaydet={(yeni) => { setBilgi((b) => ({ ...b, ...yeni })); setBilgiAcik(false); }}
         />
       )}
 

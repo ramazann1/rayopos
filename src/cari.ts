@@ -1,11 +1,14 @@
 import { supabase } from "./supabase";
+import { cuzdanBakiyeleri } from "./sadakat";
 
 /**
  * Cari hesap: müşteri kayıtları ve borç/alacak hareketleri.
  *
  * Bakiye hiçbir yerde sütun olarak durmuyor — hareketlerin toplamı. İki yerde
  * para tutulursa er geç birbirini tutmaz; tek kaynak `cari_hareketler`.
- * Artı bakiye "müşteri borçlu", eksi bakiye "işletme borçlu" demek.
+ * Bakiye müşterinin cebinden okunuyor: adisyon ona yazılınca eksiye iner
+ * (müşteri borçlu), ödedikçe sıfıra çıkar, fazlası artıda kalır (işletme
+ * borçlu). Sadakat cüzdanıyla aynı yön — artı her zaman müşterinin lehine.
  */
 
 export type Musteri = {
@@ -19,6 +22,8 @@ export type Musteri = {
   notlar: string;
   aktif: boolean;
   bakiye: number;
+  /** Sadakat cüzdanı; açık hesap bakiyesinden ayrı para. */
+  cuzdan: number;
 };
 
 export type MusteriAlanlari = {
@@ -68,14 +73,15 @@ export async function musterileriGetir(): Promise<Musteri[]> {
     .select("id, no, ad, soyad, telefon, telefon2, acik_hesap, notlar, aktif")
     .order("no");
 
-  const { data: hareketler } = await supabase
-    .from("cari_hareketler")
-    .select("musteri_id, borc, alacak");
+  const [{ data: hareketler }, cuzdanlar] = await Promise.all([
+    supabase.from("cari_hareketler").select("musteri_id, borc, alacak"),
+    cuzdanBakiyeleri(),
+  ]);
 
   const bakiyeler = new Map<number, number>();
   for (const h of (hareketler as any[]) ?? []) {
     const eski = bakiyeler.get(h.musteri_id) ?? 0;
-    bakiyeler.set(h.musteri_id, eski + Number(h.borc) - Number(h.alacak));
+    bakiyeler.set(h.musteri_id, eski + Number(h.alacak) - Number(h.borc));
   }
 
   return ((data as any[]) ?? []).map((m) => ({
@@ -88,7 +94,8 @@ export async function musterileriGetir(): Promise<Musteri[]> {
     acikHesap: m.acik_hesap,
     notlar: m.notlar ?? "",
     aktif: m.aktif,
-    bakiye: bakiyeler.get(m.id) ?? 0,
+    bakiye: Math.round((bakiyeler.get(m.id) ?? 0) * 100) / 100,
+    cuzdan: cuzdanlar.get(m.id) ?? 0,
   }));
 }
 
@@ -274,7 +281,7 @@ export async function hareketleriGetir(musteriId: number): Promise<Hareket[]> {
 
   let yuruyen = 0;
   return ((data as any[]) ?? []).map((h) => {
-    yuruyen += Number(h.borc) - Number(h.alacak);
+    yuruyen += Number(h.alacak) - Number(h.borc);
     return {
       id: h.id,
       tip: h.tip,
@@ -321,14 +328,15 @@ export async function bakiyeDuzelt(
   yeniBakiye: number,
   sebep: string
 ) {
-  const fark = yeniBakiye - eskiBakiye;
+  // Bakiye eksiye inmek borcun büyümesi demek: aşağı yönlü fark borç yazılıyor.
+  const fark = Math.round((yeniBakiye - eskiBakiye) * 100) / 100;
   if (fark === 0) return;
 
   await hareketEkle({
     musteriId,
     tip: "duzeltme",
-    borc: fark > 0 ? fark : 0,
-    alacak: fark < 0 ? -fark : 0,
+    borc: fark < 0 ? -fark : 0,
+    alacak: fark > 0 ? fark : 0,
     aciklama: sebep,
   });
 }
@@ -375,9 +383,10 @@ export const MUSTERI_BASLIKLARI = [
   "Notlar",
   "Aktif",
   "Bakiye",
+  "Cüzdan",
 ] as const;
 
-export const MUSTERI_SUTUNLARI = [11, 18, 16, 15, 15, 12, 30, 9, 11];
+export const MUSTERI_SUTUNLARI = [11, 18, 16, 15, 15, 12, 30, 9, 11, 11];
 
 type Hucre = import("write-excel-file/browser").CellObject | null;
 
@@ -400,6 +409,7 @@ export function musteriTablosu(liste: Musteri[]) {
       yazi(m.notlar),
       evetHayir(m.aktif),
       { value: m.bakiye, type: Number, format: "#,##0.00" },
+      { value: m.cuzdan, type: Number, format: "#,##0.00" },
     ]);
   }
 
@@ -540,12 +550,16 @@ export function musteriPlaniHazirla(tablo: unknown[][], mevcut: Musteri[]): Must
     // yok sayılıyor — bakiye hareketlerin toplamı, tabloya elle yazılan bir
     // rakam değil. Değiştirmek isteyen müşteri detayından "Bakiye düzeltme"
     // hareketi giriyor.
+    //
+    // Borç eskiden artı yazılıyordu, artık eksi. Elde iki türlü dosya
+    // olabileceği için işaret yok sayılıyor: dosyadaki bakiye borçtur.
+    const borc = Math.abs(bakiye);
     if (!kayit) {
-      plan.yeniler.push({ ...alanlar, bakiye, acilisBakiye: bakiye > 0 ? bakiye : undefined });
+      plan.yeniler.push({ ...alanlar, bakiye: -borc, acilisBakiye: borc > 0 ? borc : undefined });
       return;
     }
 
-    if (bakiyeMetni && kurusla(kayit.bakiye) !== bakiye) {
+    if (bakiyeMetni && kurusla(Math.abs(kayit.bakiye)) !== borc) {
       plan.bakiyeUyarilari.push(tamAd(kayit));
     }
 

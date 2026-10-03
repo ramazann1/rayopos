@@ -8,6 +8,8 @@ export type AdisyonBilgisi = {
   not?: string;
   musteriAd?: string;
   musteriTelefon?: string;
+  /** Sadakat için bağlanan kayıtlı müşteri; boşsa hesap kimseye bağlı değil. */
+  musteriId?: number | null;
 };
 
 /**

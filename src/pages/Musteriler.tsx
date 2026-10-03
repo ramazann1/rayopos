@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Download,
+  Gift,
   MapPin,
   Pencil,
   Plus,
@@ -20,7 +21,8 @@ import OnayModal from "../components/OnayModal";
 import MusteriDetay from "../components/MusteriDetay";
 import { eslesiyor } from "../arama";
 import { paraGoster, paraSayi, paraYaz } from "../para";
-import { yetkiVar } from "../oturum";
+import { ayarlar } from "../isletmeAyarlari";
+import { acikOturum, yetkiVar } from "../oturum";
 import {
   MUSTERI_SUTUNLARI,
   adresKaydet,
@@ -218,7 +220,7 @@ function MusteriPaneli({
               hareketlerden geliyor, elle yazılan bir alan olarak durmamalı. */}
           {!musteri && (
             <div className="alan">
-              <label>Devreden bakiye</label>
+              <label>Devreden borç</label>
               <input
                 value={acilis}
                 onChange={(e) => setAcilis(paraYaz(e.target.value))}
@@ -295,9 +297,17 @@ function MusteriPaneli({
   );
 }
 
+// Listenin bu oturumda son görülen hâli: ekran onunla anında açılıyor, güncel
+// bakiyeler arkadan geliyor. İşletmeye bağlı — başka işletmeye geçilince
+// eskisi gösterilmiyor.
+let sonListe: { isletmeId?: number; liste: Musteri[] } | null = null;
+
+const sonGorulen = () =>
+  sonListe && sonListe.isletmeId === acikOturum()?.isletmeId ? sonListe.liste : null;
+
 export default function Musteriler() {
-  const [yukleniyor, setYukleniyor] = useState(true);
-  const [liste, setListe] = useState<Musteri[]>([]);
+  const [yukleniyor, setYukleniyor] = useState(() => !sonGorulen());
+  const [liste, setListe] = useState<Musteri[]>(() => sonGorulen() ?? []);
   const [panel, setPanel] = useState<Musteri | null | undefined>(undefined);
   const [detay, setDetay] = useState<Musteri | null>(null);
   const [silinecek, setSilinecek] = useState<Musteri | null>(null);
@@ -317,7 +327,11 @@ export default function Musteriler() {
 
   const duzenleyebilir = yetkiVar("cari.duzenle");
 
-  const tazele = async () => setListe(await musterileriGetir());
+  const tazele = async () => {
+    const yeni = await musterileriGetir();
+    sonListe = { isletmeId: acikOturum()?.isletmeId, liste: yeni };
+    setListe(yeni);
+  };
 
   useEffect(() => {
     (async () => {
@@ -436,14 +450,18 @@ export default function Musteriler() {
 
   const gorunen = liste.filter((m) => {
     if (yalnizAcikHesap && !m.acikHesap) return false;
-    if (yalnizBorclu && m.bakiye <= 0) return false;
+    if (yalnizBorclu && m.bakiye >= 0) return false;
     return eslesiyor(`${tamAd(m)} ${m.telefon} ${m.telefon2} ${m.no}`, ara);
   });
 
   // Üstteki toplam listenin süzülmüş hâlini değil işletmenin gerçek alacağını
   // gösteriyor: süzgeç değiştikçe oynayan bir "toplam borç" yanıltıcı olurdu.
-  const toplamBakiye = liste.reduce((t, m) => t + m.bakiye, 0);
-  const borcluSayisi = liste.filter((m) => m.bakiye > 0).length;
+  // İşletmenin gözünden: müşterilerin borcu işletmenin alacağı, artı yazılıyor.
+  // Fazla ödeyen müşteri bu toplamı küçültmüyor, o ayrı bir borç.
+  const toplamAlacak =
+    Math.round(liste.reduce((t, m) => t + (m.bakiye < 0 ? -m.bakiye : 0), 0) * 100) / 100;
+  const borcluSayisi = liste.filter((m) => m.bakiye < 0).length;
+  const toplamCuzdan = Math.round(liste.reduce((t, m) => t + m.cuzdan, 0) * 100) / 100;
 
   return (
     <>
@@ -511,10 +529,16 @@ export default function Musteriler() {
                 <small>Borçlu müşteri</small>
                 {borcluSayisi}
               </span>
-              <span className={toplamBakiye > 0 ? "borclu" : ""}>
+              <span className={toplamAlacak > 0 ? "borclu" : ""}>
                 <small>Toplam alacak</small>
-                {paraGoster(toplamBakiye)}
+                {paraGoster(toplamAlacak)}
               </span>
+              {(ayarlar().sadakat.acik || toplamCuzdan > 0) && (
+                <span>
+                  <small>Cüzdanlarda</small>
+                  {paraGoster(toplamCuzdan)}
+                </span>
+              )}
             </div>
 
             {liste.length === 0 ? (
@@ -529,6 +553,14 @@ export default function Musteriler() {
               </div>
             ) : (
               <div className="musteri-liste">
+                <div className="musteri-baslik">
+                  <span className="dar-gizle">No</span>
+                  <span>Müşteri</span>
+                  <span className="dar-gizle" />
+                  <span className="sag">Bakiye</span>
+                  <span className="sag">Cüzdan</span>
+                  <span />
+                </div>
                 {gorunen.map((m) => (
                   <div
                     key={m.id}
@@ -546,14 +578,18 @@ export default function Musteriler() {
                     </span>
                     <span
                       className={
-                        m.bakiye > 0
+                        m.bakiye < 0
                           ? "musteri-bakiye borclu"
-                          : m.bakiye < 0
+                          : m.bakiye > 0
                             ? "musteri-bakiye alacakli"
                             : "musteri-bakiye"
                       }
                     >
                       {paraGoster(m.bakiye)}
+                    </span>
+                    <span className={m.cuzdan > 0 ? "musteri-cuzdan dolu" : "musteri-cuzdan"}>
+                      <Gift size={14} />
+                      {paraGoster(m.cuzdan)}
                     </span>
                     {duzenleyebilir && (
                       <button

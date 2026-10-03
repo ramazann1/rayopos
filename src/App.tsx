@@ -38,7 +38,7 @@ import { istasyonHaritasiniUnut, yaziciOnbelleginiUnut } from "./yazicilar";
 import { baglantiyiIzle, sureSinirli, useBaglanti } from "./baglanti";
 import { tanimlariIzle } from "./tanimAbonelik";
 import { kuyruguIzle } from "./kuyruk";
-import { bekleyenPinIzle, girisKuruldu, kilitle, oturumuYukle, useOturum } from "./oturum";
+import { acikOturum, bekleyenPinIzle, girisKuruldu, kilitle, oturumuYukle, useOturum } from "./oturum";
 
 function App() {
   const { oturum, kilitli } = useOturum();
@@ -69,11 +69,21 @@ function App() {
     // dönen halkaya bakıp kalıyor, sorunun ne olduğunu göremiyor.
     const dene = (is: Promise<unknown>) => sureSinirli(is.catch(() => undefined));
 
+    const ayar = dene(ayarlariGetir());
     Promise.all([
-      dene(ayarlariGetir()),
+      ayar,
       dene(oturumuYukle()),
       dene(girisKuruldu().then(setGirisGerekli)),
     ]).finally(() => setHazir(true));
+
+    // Oturum cihazdaki kopyadan kurulduysa sunucudaki doğrulama beklenmiyor:
+    // kişi, personel ve yetki okumaları sırayla üç gidiş-dönüş, telefonda
+    // sayfa yenilenince salon saniyeye yakın boş kalıyordu. Doğrulama arkada
+    // sürüyor; kişi artık giremiyorsa oturum düşüyor, ekran girişe dönüyor.
+    // Veri okumaları zaten sunucunun yetki kurallarından geçiyor.
+    ayar.then(() => {
+      if (acikOturum()) setHazir(true);
+    });
   }, []);
 
   // Bağlantı geri geldiğinde oturum yeniden okunuyor. Kopukken kişi bilgisi

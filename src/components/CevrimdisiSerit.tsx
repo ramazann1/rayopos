@@ -15,7 +15,9 @@ import { useYerelVeriZamani, zamanMetni } from "../onbellek";
 export default function CevrimdisiSerit() {
   const cevrimici = useBaglanti();
   const yerelZaman = useYerelVeriZamani();
-  const { bekleyen, bekleyenOdeme, hata, uyari } = useKuyruk();
+  // Çevrimiçi gönderilen sipariş de kuyruktan geçiyor ama saniyeler içinde
+  // yazılıyor; her Gönder'de şerit bir an belirip kaybolmasın.
+  const { bekleyenCevrimdisi: bekleyen, bekleyenOdeme, hata, uyari } = useKuyruk();
 
   // Kuyrukta masa başına tek kayıt duruyor, sipariş adedi değil — "hesap".
   // Çevrimdışı alınan tahsilat ayrı sayılıyor: bekleyen şey para olduğunda

@@ -13,8 +13,11 @@ export const paraYaz = (s: string) => s.replace(/[^0-9.,]/g, "");
 
 // Ekranda gösterilen tutar her yerde kuruşlu ve Türkçe biçimli olsun: 1110 değil
 // "₺1.110,00". Toplam ile döküm arasında biçim farkı kalmıyor.
+// Eksi işaret simgenin önünde: "₺-85,00" değil "−₺85,00".
 export const paraGoster = (v: number) =>
-  "₺" + v.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  (v < 0 ? "−" : "") +
+  "₺" +
+  Math.abs(v).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // Adet buçuklu olabiliyor (yarım porsiyon, tartılan ürün). Tam sayıda ondalık
 // gösterilmiyor: "1" yazması gerekirken "1,0" yazması rakamı ağırlaştırıyor.

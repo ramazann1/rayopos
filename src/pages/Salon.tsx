@@ -31,7 +31,7 @@ import {
   masasizCevrimdisiAc,
   useKuyruk,
 } from "../kuyruk";
-import { hesapKopyasiSil, kopyaSaati } from "../hesapKopyasi";
+import { hesapKopyasiSil, kopyaSaati, tazeSalonKopyasi } from "../hesapKopyasi";
 import MasaKarti from "../components/MasaKarti";
 import MasaPlani, { yerlesimiVar } from "../components/MasaPlani";
 import OnayModal from "../components/OnayModal";
@@ -43,13 +43,14 @@ import SiparisGecmisi from "../components/SiparisGecmisi";
 import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
 import MasasizSiparis from "../components/MasasizSiparis";
 import Kasa from "../components/Kasa";
-import { yetkiVar } from "../oturum";
+import { acikOturum, yetkiVar } from "../oturum";
 import { ayarlar } from "../isletmeAyarlari";
 import { baglantiHatasi, baglantiVar, sureSinirli, useBaglanti } from "../baglanti";
 import { SINYAL, useCanli } from "../canli";
 import { devralabilir, masayiDevral, useMesguliyetler } from "../mesguliyet";
 import {
   adisyonGetir,
+  adisyonuOnOku,
   adisyonIkram,
   adisyonIptal,
   adisyonKaydet,
@@ -71,6 +72,7 @@ import type { AdisyonVerisi, MasaOzeti, MasasizAdisyon } from "../adisyonlar";
 import { adisyonFisiYaz } from "../yazicilar";
 import {
   BOLGE_ANAHTAR,
+  kopyadakiBolgeler,
   SEYREK_TANIM,
   bolgeleriGetir,
   durgunMu,
@@ -81,6 +83,18 @@ import {
 import type { Bolge, Masa } from "../types";
 
 type Acik = MasaOzeti;
+
+// Salonun bu oturumda son görülen hâli. Siparişten dönünce ekran bununla
+// anında çiziliyor, güncel özet arkadan üstüne yazıyor (telefondaki Masalar
+// ile aynı kural). İşletmeye bağlı: başka işletmeye geçilince eskisi çizilmez.
+let son: {
+  isletmeId?: number;
+  bolgeler: Bolge[];
+  adisyonlar: Record<number, Acik>;
+  masasizlar: MasasizAdisyon[];
+} | null = null;
+
+const sonHal = () => (son && son.isletmeId === acikOturum()?.isletmeId ? son : null);
 
 function sureFarki(acilis: string): string {
   const dk = Math.floor((Date.now() - new Date(acilis).getTime()) / 60000);
@@ -168,7 +182,7 @@ function sekmeOku(): number | "tumu" | "masasiz" | null {
 
 export default function Salon() {
   const navigate = useNavigate();
-  const [bolgeler, setBolgeler] = useState<Bolge[]>([]);
+  const [bolgeler, setBolgeler] = useState<Bolge[]>(() => sonHal()?.bolgeler ?? kopyadakiBolgeler());
 
   // Masa/bölge tanımı başka cihazda değişince kopya tazeleniyor; plan açıkken
   // de yeni masa görünsün diye haberi burada alıyoruz. Adisyon durumu buradan
@@ -180,17 +194,24 @@ export default function Salon() {
     });
   });
 
-  const [adisyonlar, setAdisyonlar] = useState<Record<number, Acik>>({});
+  // Cihazda bekleyen sipariş en yenisi; son görülen hâlin üstüne biniyor.
+  const [adisyonlar, setAdisyonlar] = useState<Record<number, Acik>>(() => ({
+    ...(sonHal()?.adisyonlar ?? tazeSalonKopyasi()),
+    ...bekleyenMasalar(),
+  }));
   // Sekme tarayıcıda saklanıyor: masaya girip dönünce veya sayfa yenilenince
   // garson kendini başka bölgede bulmasın.
   const [seciliId, setSeciliId] = useState<number | "tumu" | "masasiz" | null>(sekmeOku);
   // Gel al / paket siparişleri masaya bağlı değil; kendi sekmesinde listeleniyor.
-  const [masasizlar, setMasasizlar] = useState<MasasizAdisyon[]>([]);
+  const [masasizlar, setMasasizlar] = useState<MasasizAdisyon[]>(() => [
+    ...(sonHal()?.masasizlar ?? []),
+    ...bekleyenMasasizlar(),
+  ]);
   // Sekmeye girince önce tür seçiliyor (paket mi gel al mı), liste sonra geliyor.
   const [masasizTip, setMasasizTip] = useState<"gelal" | "paket" | null>(null);
   const [yeniSiparis, setYeniSiparis] = useState(false);
   const [duzenlenen, setDuzenlenen] = useState<MasasizAdisyon | null>(null);
-  const [yukleniyor, setYukleniyor] = useState(true);
+  const [yukleniyor, setYukleniyor] = useState(() => !sonHal());
   const [okunamadi, setOkunamadi] = useState(false);
   // Açık kalma süreleri kendiliğinden ilerlesin; garson ekranı yenilemek zorunda
   // kalmasın diye dakikada bir yeniden çiziliyor.
@@ -239,7 +260,7 @@ export default function Salon() {
       setMesgulSorusu({ masa, ad: mesgul.ad });
       return;
     }
-    navigate(`/siparis/${masa.id}`);
+    navigate(`/siparis/${masa.id}`, { state: { bosMasa: !adisyonlar[masa.id] } });
   };
 
   // Sipariş ekranından taşıma için gelindiyse salon seçim kipinde açılıyor.
@@ -308,6 +329,12 @@ export default function Salon() {
     }
 
     setBolgeler(b);
+    son = {
+      isletmeId: acikOturum()?.isletmeId,
+      bolgeler: b,
+      adisyonlar: a ?? sonHal()?.adisyonlar ?? {},
+      masasizlar: m ?? sonHal()?.masasizlar ?? [],
+    };
     // Cihazda bekleyen siparişler sunucudakilerin üstüne biniyor: masa dolu
     // görünsün, garson aynı masaya ikinci hesap açmasın. Gönderilmiş kayıt
     // kuyruktan düştüğü için burada kendiliğinden sunucununki geçerli oluyor.
@@ -651,6 +678,7 @@ export default function Salon() {
         mesgul={mesguliyetler[masa.id]?.ad}
         secim={secim}
         onClick={() => (islem ? hedefSecildi(masa) : masayaGir(masa))}
+        onBasildi={islem || mesguliyetler[masa.id] || !adisyonlar[masa.id] ? undefined : () => adisyonuOnOku(masa.id)}
       />
     );
   };
@@ -666,7 +694,7 @@ export default function Salon() {
   return (
     <>
       <div className="sayfa">
-        {yukleniyor ? (
+        {yukleniyor && bolgeler.length === 0 ? (
           <div className="yukleniyor"><div className="cember" /></div>
         ) : okunamadi ? (
           <div className="ayar-bos">

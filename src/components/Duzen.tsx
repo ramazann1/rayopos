@@ -41,6 +41,7 @@ import {
   UtensilsCrossed,
   TriangleAlert,
   Wifi,
+  WalletCards,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import OnayModal from "./OnayModal";
@@ -79,6 +80,7 @@ export const ayarBolumleri: Bolum[] = [
   { yol: "/ayarlar/odeme-tipleri", ad: "Ödeme Tipleri", ikon: CreditCard },
   { yol: "/ayarlar/satis", ad: "Satış", ikon: Receipt },
   { yol: "/ayarlar/qr-menu", ad: "QR Menü", ikon: QrCode },
+  { yol: "/ayarlar/sadakat", ad: "Sadakat", ikon: WalletCards },
   { yol: "/ayarlar/odenmezler", ad: "Ödenmezler", ikon: Gift },
   { yol: "/ayarlar/yazicilar", ad: "Yazıcılar", ikon: Printer, alt: yaziciBolumleri },
 ];
