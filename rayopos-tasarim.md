@@ -3,19 +3,49 @@
 
 ## 0. SIRADAKİ İŞ (3 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ (Ramazan'ın isteği): hız taramasına devam — "başka yavaş
-> yer var mı".** Yöntem bu seansta kuruldu: Chrome'da Deneme (15003), ekranlar
-> arası `history.pushState` + `popstate` ile geçiş, dönen çember (`.cember`)
-> süresi ve `performance.getEntriesByType("resource")` ile istek listesi.
-> Bekleme Web Worker zamanlayıcısıyla (arka sekmede `setTimeout` dakikalara
-> uzuyor; Ramazan sekmeyi öne alırsa daha gerçekçi). **Dev sunucusunda React
-> StrictMode her ekranı iki kez açıyor — istek sayıları canlının iki katı.**
-> Bakılmamış yerler: tahsilat penceresi açılışı ve ödeme alma/hesap kapatma,
-> masa taşıma/birleştirme, kasa açma/kapama, Menü Stüdyosu'nda ürün kaydetme,
-> Analiz'in uzun dönemleri, mobil Satış/Mutfak/Sayım işlemleri, paket/gel al
-> açma. Kalan bilinen yavaşlar: Fiş Tasarımı önizlemesi 0,8 sn (bekletmiyor),
-> müşteri listesi bütün cari hareketleri çekiyor (çok müşteride sunucuya).
-> Sonra "Sonrakiler" listesi (Sadakat 1b seviyelerden devam).
+> **YENİ SEANSIN İLK İŞİ: Adisyo'daki 4 yıllık verinin aktarımı — önce
+> Adisyo turu (Ramazan, 3 Eki 2026).** Egzoz
+> RayoPOS'a geçerken geçmiş taşınacak. **Karar: tam ayrıntı** — Ramazan
+> "geçen yıl bugün" diye günlük kıyas yapıyor ve eski adisyonları açıp
+> bakıyor; gün/ürün özeti yetmiyor. Adisyon, kalem, ödeme, saat, garson
+> gelecek. Canlı tablolara karışmayacak (kasa, stok, sadakat etkilenmesin),
+> ama Analiz'in dönem kıyası ve Adisyonlar listesi okuyabilecek. İlk adım:
+> Chrome'da Adisyo turu — hangi rapor Excel'e kalem ayrıntısıyla iniyor,
+> 2022'ye kadar gidiyor mu. Paralelde Ramazan Adisyo desteğinden kalem
+> ayrıntılı tam döküm istiyor (KVKK, kendi verisi). Elimizdeki görülünce
+> aktarım planlanacak.
+>
+> Sonra "Sonrakiler" listesi (Sadakat 1b seviyelerden devam). "Analiz
+> hesapları sunucuya" maddesi orada duruyor; bugün raporlar doğru ve hızlı,
+> veri büyümeden önce yapılacak.
+>
+> **BİTTİ (3 Eki 2026, ikinci seans): hız taraması tamamlandı.**
+> - Ölçüm yöntemi: Chrome'da Deneme, `history.pushState` + `popstate`, `.cember`
+>   süresi, `performance.getEntriesByType("resource")`. Dev'de StrictMode istekleri
+>   ikiye katlıyor. Telefon ekranı tam ekran Chrome'da sekme içine 400 px
+>   `iframe` açılarak denendi (pencere küçültülemiyor).
+> - **Hesap kapatma ~1,0 → ~0,7 sn:** `adisyonKaydet` ekranın bildiği hesap
+>   kimliğiyle (`veri.id`) başlığı doğrudan güncelliyor (`masa_id` + `durum=acik`
+>   koşuluyla), kalem okumaları aynı anda başlıyor; güncelleme boş dönerse
+>   (hesap başka cihazda kapanmış/taşınmış) eski yola, masanın açık hesabını
+>   aramaya dönülüyor. Masaüstü `tamVeri` ve mobil `adisyon` artık `id` taşıyor.
+>   Üç senaryo Chrome'da denendi (iki cihaz: kapanmış #3214 yerine yeni #3215 açıldı).
+> - **Yeni masanın kartında garson adı anında:** `bekleyenMasalar` geçici karta
+>   `garson` yazıyor (kaydı gönderen kişi).
+> - **Ürün kaydetme ~0,9 → ~0,45 sn:** kaldırılan porsiyonlar "ekrandakiler
+>   dışındakiler" süzgeciyle siliniyor, duranların güncellemesi aynı anda; yeni
+>   porsiyon silmeden sonra yazılıyor (yoksa silme onu da götürürdü); barkod
+>   çakışmasında silme bitince bir kez daha deneniyor. Seçenek grupları ve reçete
+>   aynı anda. Kategoriler değişmediyse bağlar yeniden yazılmıyor.
+> - **Müşteri bakiyeleri sunucuda** (`sql/2026-10-03-musteri-bakiyeleri.sql`,
+>   `musteri_bakiyeleri()` security invoker): eskiden bütün cari ve cüzdan
+>   hareketleri çekiliyordu, 1000 satırda sessizce kesilip bakiyeyi yanlış
+>   gösterecekti. Deneme'de kartla karşılaştırıldı (−₺85 / ₺36,50 tuttu).
+> - Sorunsuz ölçülenler (≤0,55 sn): masaya girme, tahsilat penceresi, gel al
+>   açma, Analiz sekmeleri (30 gün), Kasa, Stok Sayım, mobil sekmeler, Fiş
+>   Tasarımı. Kasa penceresi 0,34 sn — küçük paralelleştirme Ramazan'ca gereksiz.
+>   Kasa kapatma açık hesap varken izin vermiyor, ölçülmedi.
+> - Deneme'de kasa takibi açık bırakıldı (canlıda kullanılıyor).
 >
 > **BİTTİ (3 Eki 2026): sadakat iskeleti, açık hesap yönü, hız turu.**
 > - **Sadakat 1a — para puan cüzdanı** (`sql/2026-10-02-sadakat.sql`,

@@ -834,8 +834,40 @@ export async function adisyonKaydet(
   veri: AdisyonVerisi,
   kapat = false
 ): Promise<AdisyonVerisi> {
+  const stok = stokuOnceSor(veri);
+  const baslikAlanlari = () => ({
+    ...indirimAlanlari(veri),
+    ...bilgiAlanlari(veri),
+    ...servisAlanlari(veri),
+    guncelleme: new Date().toISOString(),
+  });
+
+  // Ekran hesabın kimliğini biliyorsa önce onu aramaya gidilmiyor: başlık
+  // doğrudan güncelleniyor, kalemlerin okunması da aynı anda başlıyor. Hesap
+  // bu arada kapanmış ya da başka masaya geçmişse güncelleme boş döner,
+  // kalemler yazılmadan eski yola, masanın açık hesabını aramaya dönülür.
+  if (veri.id && veri.id > 0 && (veri.sepet.length > 0 || kapat)) {
+    const bulunamadi = Symbol();
+    const guncelleme = supabase
+      .from("adisyonlar")
+      .update(baslikAlanlari())
+      .eq("id", veri.id)
+      .eq("masa_id", masaId)
+      .eq("durum", "acik")
+      .select("id")
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!data?.length) throw bulunamadi;
+      });
+    try {
+      return await kalemleriYaz(veri.id, veri, kapat, Promise.all([stok, guncelleme]).then(() => {}));
+    } catch (hata) {
+      if (hata !== bulunamadi) throw hata;
+    }
+  }
+
   // Stok sorusu ve hesabın bulunması birbirini beklemiyor; ikisi de yalnız okuma.
-  const [, adisyon] = await Promise.all([stokuOnceSor(veri), acikAdisyonBul(masaId)]);
+  const [, adisyon] = await Promise.all([stok, acikAdisyonBul(masaId)]);
 
   // Boş adisyon: hiç kalem yoksa masayı işgal etmesin.
   if (veri.sepet.length === 0 && !kapat) {
@@ -877,12 +909,7 @@ export async function adisyonKaydet(
   // kalemler yazılmadan önce denetleniyor.
   const guncelleme = supabase
     .from("adisyonlar")
-    .update({
-      ...indirimAlanlari(veri),
-      ...bilgiAlanlari(veri),
-      ...servisAlanlari(veri),
-      guncelleme: new Date().toISOString(),
-    })
+    .update(baslikAlanlari())
     .eq("id", adisyon.id)
     .select("id")
     .then((sonuc) => satirDenetle(sonuc, "Adisyon güncellenemedi."));

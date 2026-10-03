@@ -48,15 +48,6 @@ export async function cuzdanBakiyesi(musteriId: number): Promise<number> {
   return kurus(((data as any[]) ?? []).reduce((t, h) => t + Number(h.tutar), 0));
 }
 
-/** Bütün müşterilerin bakiyesi tek sorguda; liste ekranı satır başına sormasın. */
-export async function cuzdanBakiyeleri(): Promise<Map<number, number>> {
-  const { data } = await supabase.from("sadakat_hareketleri").select("musteri_id, tutar");
-  const bakiyeler = new Map<number, number>();
-  for (const h of (data as any[]) ?? []) {
-    bakiyeler.set(h.musteri_id, kurus((bakiyeler.get(h.musteri_id) ?? 0) + Number(h.tutar)));
-  }
-  return bakiyeler;
-}
 
 /** Yeniden eskiye; müşteri kartındaki cüzdan sekmesi. */
 export async function sadakatHareketleri(musteriId: number): Promise<SadakatHareketi[]> {

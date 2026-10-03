@@ -1,5 +1,4 @@
 import { supabase } from "./supabase";
-import { cuzdanBakiyeleri } from "./sadakat";
 
 /**
  * Cari hesap: müşteri kayıtları ve borç/alacak hareketleri.
@@ -64,24 +63,23 @@ export const tamAd = (m: { ad: string; soyad: string }) =>
   `${m.ad} ${m.soyad}`.trim();
 
 /**
- * Müşteriler ve bakiyeleri. Hareketler tek sorguda çekilip müşteri başına
- * toplanıyor — müşteri sayısı kadar ayrı sorgu atmaktan ucuz.
+ * Müşteriler ve bakiyeleri. Bakiyeler veritabanında müşteri başına toplanıp
+ * geliyor: hareketlerin hepsini çekmek hem yavaştı hem 1000 satırda kesiliyordu.
  */
 export async function musterileriGetir(): Promise<Musteri[]> {
-  const { data } = await supabase
-    .from("musteriler")
-    .select("id, no, ad, soyad, telefon, telefon2, acik_hesap, notlar, aktif")
-    .order("no");
-
-  const [{ data: hareketler }, cuzdanlar] = await Promise.all([
-    supabase.from("cari_hareketler").select("musteri_id, borc, alacak"),
-    cuzdanBakiyeleri(),
+  const [{ data }, { data: toplamlar }] = await Promise.all([
+    supabase
+      .from("musteriler")
+      .select("id, no, ad, soyad, telefon, telefon2, acik_hesap, notlar, aktif")
+      .order("no"),
+    supabase.rpc("musteri_bakiyeleri"),
   ]);
 
   const bakiyeler = new Map<number, number>();
-  for (const h of (hareketler as any[]) ?? []) {
-    const eski = bakiyeler.get(h.musteri_id) ?? 0;
-    bakiyeler.set(h.musteri_id, eski + Number(h.alacak) - Number(h.borc));
+  const cuzdanlar = new Map<number, number>();
+  for (const t of (toplamlar as any[]) ?? []) {
+    bakiyeler.set(t.musteri_id, Number(t.bakiye));
+    cuzdanlar.set(t.musteri_id, Number(t.cuzdan));
   }
 
   return ((data as any[]) ?? []).map((m) => ({
@@ -95,7 +93,7 @@ export async function musterileriGetir(): Promise<Musteri[]> {
     notlar: m.notlar ?? "",
     aktif: m.aktif,
     bakiye: Math.round((bakiyeler.get(m.id) ?? 0) * 100) / 100,
-    cuzdan: cuzdanlar.get(m.id) ?? 0,
+    cuzdan: Math.round((cuzdanlar.get(m.id) ?? 0) * 100) / 100,
   }));
 }
 

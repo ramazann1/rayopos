@@ -268,6 +268,7 @@ export default function Siparis() {
   const tamVeri = (veri: AdisyonVerisi): AdisyonVerisi => {
     return {
       ...veri,
+      id: veri.id ?? acikAdisyonId,
       // Silinen tahsilatların sebebi kayıtla birlikte deftere geçiyor;
       // yazıldıktan sonra liste boşalıyor ki ikinci kayıtta tekrarlanmasın.
       silinenTahsilatlar: silinenTahsilatlar.current.splice(0),

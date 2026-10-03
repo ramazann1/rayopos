@@ -18,6 +18,8 @@ import type {
 import { baglantiDinle, baglantiHatasi, baglantiVar, kopukBildir } from "./baglanti";
 import { hesapKopyalari, hesapKopyasiOku, hesapKopyasiSil, salonKopyasiOku } from "./hesapKopyasi";
 import type { HesapHedefi } from "./hesapKopyasi";
+import { acikOturum } from "./oturum";
+import { kisaAd } from "./personel";
 
 /**
  * Bağlantı yokken alınan siparişlerin cihazdaki kuyruğu.
@@ -247,6 +249,9 @@ export function bekleyenMasalar(): Record<number, MasaOzeti> {
       acilis: new Date(k.zaman).toISOString(),
       ad: k.veri.ad || undefined,
       kisiSayisi: k.veri.kisiSayisi || undefined,
+      // Yeni açılan hesabı kaydı gönderen kişi açmış oluyor; kart adı
+      // sunucudan dönmesini beklemeden göstersin.
+      garson: k.veri.garson || kisaAd(acikOturum()?.ad ?? "") || undefined,
       // Çevrimiçi gönderilen sipariş saniyeler içinde yazılıyor; kartta
       // "Gönderilmedi" yazması yanlış alarm olurdu. Reddedilip duran sipariş
       // ise gerçekten gönderilmedi.

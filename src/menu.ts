@@ -517,33 +517,40 @@ async function urunuYaz(u: MenuUrun) {
   const porsiyonlariYaz = async () => {
     // Porsiyonlar silinip yeniden yazılmaz, id'leriyle güncellenir — seçenek
     // grupları porsiyon id'sine bağlı, silinen porsiyonla bağlantıları giderdi.
-    const { data: eskiPorsiyonlar } = await supabase
-      .from("porsiyonlar")
-      .select("id")
-      .eq("urun_id", urunId);
-    const kalanlar = u.porsiyonlar.map((p) => p.id).filter(Boolean);
-    const silinecek = (eskiPorsiyonlar ?? [])
-      .map((p: any) => p.id as number)
-      .filter((pid) => !kalanlar.includes(pid));
-    if (silinecek.length) {
-      yazmayiDenetle(
-        await supabase.from("porsiyonlar").delete().in("id", silinecek),
-        "Kaldırılan porsiyon silinemedi."
-      );
-    }
+    //
+    // Kaldırılanların silinmesi ile duranların güncellenmesi birbirini
+    // beklemiyor. Yeni porsiyon ise silme bittikten sonra yazılıyor: silme
+    // "ekranda kalanlar dışındakiler" diye gittiği için ondan önce yazılan
+    // yeni satırı da götürürdü.
+    const kalanlar = u.porsiyonlar.map((p) => p.id).filter((pid): pid is number => !!pid);
+    let silme = supabase.from("porsiyonlar").delete().eq("urun_id", urunId);
+    if (kalanlar.length) silme = silme.not("id", "in", `(${kalanlar.join(",")})`);
+    const silindi = Promise.resolve(silme).then((sonuc) =>
+      yazmayiDenetle(sonuc, "Kaldırılan porsiyon silinemedi.")
+    );
 
-    await Promise.all(
-      u.porsiyonlar.map(async (p, i) => {
+    await Promise.all([
+      silindi,
+      ...u.porsiyonlar.map(async (p, i) => {
         let porsiyonId = p.id;
         if (porsiyonId) {
-          const sonuc = await supabase
-            .from("porsiyonlar")
-            .update(porsiyonSatiri(urunId, p, i + 1))
-            .eq("id", porsiyonId)
-            .select("id");
+          const guncelle = () =>
+            supabase
+              .from("porsiyonlar")
+              .update(porsiyonSatiri(urunId, p, i + 1))
+              .eq("id", porsiyonId!)
+              .select("id");
+          let sonuc = await guncelle();
+          // Barkod, aynı kayıtta kaldırılan porsiyondan bu porsiyona verilmiş
+          // olabilir; o satır silinince bir kez daha deneniyor.
+          if (sonuc.error?.code === "23505") {
+            await silindi;
+            sonuc = await guncelle();
+          }
           barkodDenetle(sonuc);
           satirDenetle(sonuc, "Porsiyon kaydedilemedi.");
         } else {
+          await silindi;
           const sonuc = await supabase
             .from("porsiyonlar")
             .insert(porsiyonSatiri(urunId, p, i + 1))
@@ -553,14 +560,17 @@ async function urunuYaz(u: MenuUrun) {
           yazmayiDenetle(sonuc, "Porsiyon eklenemedi.");
           porsiyonId = (sonuc.data as any)?.id;
         }
+        // Seçenek grupları ve reçete porsiyon yazıldıktan sonra: yeni
+        // porsiyonun numarası ancak burada belli oluyor. İkisi ayrı tablolar,
+        // birbirini beklemiyor.
         if (porsiyonId) {
-          await porsiyonGruplariYaz(porsiyonId, p.grupIdler);
-          // Reçete porsiyon yazıldıktan sonra: yeni porsiyonun numarası
-          // ancak burada belli oluyor.
-          if (p.recete) await receteYaz(porsiyonId, p.recete);
+          await Promise.all([
+            porsiyonGruplariYaz(porsiyonId, p.grupIdler),
+            p.recete ? receteYaz(porsiyonId, p.recete) : undefined,
+          ]);
         }
-      })
-    );
+      }),
+    ]);
   };
 
   const kategorileriYaz = async () => {
@@ -573,6 +583,12 @@ async function urunuYaz(u: MenuUrun) {
     const eskiSira = new Map<number, number>(
       (eskiBaglar ?? []).map((x: any) => [x.kategori_id, x.sira])
     );
+    // Kategoriler değişmediyse bağlar eski sıralarıyla zaten duruyor.
+    if (
+      eskiSira.size === new Set(u.kategoriIdler).size &&
+      u.kategoriIdler.every((k) => eskiSira.has(k))
+    )
+      return;
 
     const baglar = await Promise.all(
       u.kategoriIdler.map(async (k) => ({
