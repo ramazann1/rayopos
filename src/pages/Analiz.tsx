@@ -469,6 +469,7 @@ function Adisyonlar({
   const adisyonlar = useMemo(() => {
     const ara = arama.trim().toLocaleLowerCase("tr");
     const liste = hepsi.filter((a) => {
+      if (a.gecmis) return false;
       if (sadeceEksik && !(a.durum === "kapali" && a.kalan > 0)) return false;
       if (!ara) return true;
       const metin = `${a.no} ${a.masaAd} ${a.bolgeAd} ${a.garson} ${a.ad} ${a.musteri}`;
@@ -759,9 +760,11 @@ function Ozet({
               <dt>Kapanan ciro</dt>
               <dd>{paraGoster(ozet.ciro)}</dd>
               <em>
-                {ozet.toplamIs > 0
-                  ? `toplam satışın %${Math.round((ozet.ciro / ozet.toplamIs) * 100)}'i`
-                  : "hesap kapanmadı"}
+                {ozet.acikHesaba > 0
+                  ? `${paraGoster(ozet.acikHesaba)} açık hesaba yazıldı`
+                  : ozet.toplamIs > 0
+                    ? `toplam satışın %${Math.round((ozet.ciro / ozet.toplamIs) * 100)}'i`
+                    : "hesap kapanmadı"}
               </em>
             </div>
             <span className="oz-arti">+</span>

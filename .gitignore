@@ -40,3 +40,4 @@ kopru/src/sunucu-gomulu.js
 # şey değil. Veriyi koruyan anahtarın gizliliği değil, RLS kuralları.
 # `service_role` anahtarı BURAYA YAZILMAZ: o RLS'i tamamen atlar.
 !.env.local
+aktarim/

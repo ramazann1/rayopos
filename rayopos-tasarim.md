@@ -1,23 +1,84 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (3 Eki 2026 güncellendi)
+## 0. SIRADAKİ İŞ (4 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ: Adisyo'daki 4 yıllık verinin aktarımı — önce
-> Adisyo turu (Ramazan, 3 Eki 2026).** Egzoz
-> RayoPOS'a geçerken geçmiş taşınacak. **Karar: tam ayrıntı** — Ramazan
-> "geçen yıl bugün" diye günlük kıyas yapıyor ve eski adisyonları açıp
-> bakıyor; gün/ürün özeti yetmiyor. Adisyon, kalem, ödeme, saat, garson
-> gelecek. Canlı tablolara karışmayacak (kasa, stok, sadakat etkilenmesin),
-> ama Analiz'in dönem kıyası ve Adisyonlar listesi okuyabilecek. İlk adım:
-> Chrome'da Adisyo turu — hangi rapor Excel'e kalem ayrıntısıyla iniyor,
-> 2022'ye kadar gidiyor mu. Paralelde Ramazan Adisyo desteğinden kalem
-> ayrıntılı tam döküm istiyor (KVKK, kendi verisi). Elimizdeki görülünce
-> aktarım planlanacak.
+> **YENİ SEANSIN İLK İŞİ: Adisyo aktarımının Deneme'de testi.** Ramazan
+> Analiz'de dener: 17.06.2023 ve 02.10.2026'yı Adisyo'nun Gün Sonu → Özet
+> ekranıyla kıyaslar (Alınan Ödemeler ↔ RayoPOS Toplam satış, kuruşu
+> kuruşuna tutmalı), Son 30 gün / bütün 2024 açılış hızına bakar. Sorun
+> yoksa sıradakiler:
+> 1. **Adisyo kalemleri:** aynı yöntemle (aşağıda) adisyon başına
+>    `GetOrderViewModel`, 73 bin istek, birkaç istek aynı anda → 1–2 saat.
+>    `kaynak_id` ile bağlanacak (bizim 3000'li numara değil). Gelince eski
+>    adisyonlar Adisyonlar listesinde ve Ürünler sekmesinde görünecek;
+>    şimdilik listede yoklar (`gecmis` işaretiyle süzülüyor).
+> 2. **Açık hesap tahsilatı ödendiği gün ciroya:** bu seansta açık hesap
+>    cirodan çıkarıldı (karar aşağıda); müşterinin sonradan ödediği borcun
+>    o gün ciroya eklenmesi henüz yapılmadı. Adisyo dönemindeki tahsilatlar
+>    (~₺18.394, `GetCustomerPaymentsByDate`) da ayrıca çekilecek.
+> 3. Giderler (Gün Sonu → Masraflar) ve müşteri/bakiye aktarımı geçiş
+>    gününe kadar.
+> 4. **Geçiş günü (Egzoz):** Adisyo'da son masa kapandıktan sonra bütün
+>    dönem yeniden çekilir; `node adisyo-aktar.js <Egzoz kodu>`; Egzoz'daki
+>    RayoPOS test adisyonları silinir (`sql/2026-10-04-deneme-adisyonlarini-sil.sql`
+>    kod değiştirilerek); 1-ara-tablo → CSV içe aktar → 2-tasi.
 >
 > Sonra "Sonrakiler" listesi (Sadakat 1b seviyelerden devam). "Analiz
-> hesapları sunucuya" maddesi orada duruyor; bugün raporlar doğru ve hızlı,
-> veri büyümeden önce yapılacak.
+> hesapları sunucuya" maddesi orada duruyor — 19 bin adisyonluk bir yıl
+> artık tarayıcıda toplanıyor, hız ölçülünce öne alınabilir.
+>
+> **ADİSYO VERİ ÇEKME YÖNTEMİ (4 Eki 2026, Ramazan izniyle — Egzoz geçişinde
+> de BU kullanılacak):** Excel indirmeleri değil, Adisyo'nun kendi rapor
+> adresi. Chrome'da Ramazan'ın açık Adisyo oturumunda (Gün Sonu → Tüm
+> Adisyonlar) XHR `setRequestHeader` sarılıp sayfanın kendi isteğinin
+> başlıkları yakalanıyor (değerler ekrana basılmıyor), sonra
+> `POST https://ext.adisyo.com/api/reporting/GetOrdersWithCollections`
+> ay ay çağrılıyor (gövde: startDateTime/endDateTime UTC, kasa günü 08:45 →
+> 08:40, `limit:10000`, `onlyClosed:true`). Ay başına 1–2 sn; bütün dönem
+> ~2 dk, tek JSON (`aktarim/adisyo-adisyonlar.json`). Satır = bir ödeme
+> (adisyon id, masa, garson, açılış/kapanış, kişi, tip, indirim, bahşiş,
+> servis, ödeme tipi/tutarı); kalem yok. Telefon/adres alanları alınmıyor.
+> `aktarim/` depoya girmiyor (.gitignore). Ekran üzerinden Excel indirmek
+> denendi, vazgeçildi: Tüm Adisyonlar en çok 7 gün, liste yüklenmeden
+> İndir'e basılırsa eski listeyi indiriyor, takvim tarayıcı bağlantısında
+> donuyor.
+>
+> **YÜKLEME YÖNTEMİ:** SQL Editor 3,5 MB sorguyu "too large" diye reddediyor.
+> `node adisyo-aktar.js <işletme kodu>` → `aktarim/1-ara-tablo.sql`,
+> `gecmis-adisyonlar.csv`, `2-tasi.sql`. CSV Table Editor → adisyo_ara →
+> Insert → Import data from CSV ile yükleniyor (Claude yüklerken 10 MB
+> sınırı var, ikiye bölündü). Claude SQL Editor'e uzun metni harf harf
+> yazınca sekme donuyor; `monaco.editor.getModels()[0].setValue(...)` ile
+> konuyor. Canlı Supabase'de SQL'i bu seansta Ramazan'ın açık izniyle
+> Claude çalıştırdı.
+>
+> **BİTTİ (4 Eki 2026): Adisyo geçmişi Deneme'ye aktarıldı.**
+> - `gecmis_adisyonlar` tablosu (`sql/2026-10-04-gecmis-adisyonlar.sql`):
+>   canlı `adisyonlar`'a yazılmıyor (orada tutar kalemden hesaplanıyor,
+>   kalemsiz hesap sıfır görünürdü). Okuma `rapor.gun_sonu`/`rapor.tumu`.
+>   İlk denenen günlük ciro tablosu (`gecmis_ciro`) bu dosyada siliniyor.
+> - Deneme (15003): **73.567 adisyon, 31.12.2022 – 04.10.2026 03:10,
+>   ₺74.265.930.** 2.718'i tutarı 0 (2.713'ü %100 indirim — ikram/personel,
+>   5'i boş BAR masası); adisyon sayılıyor, ciroları 0. Açık kalan 4 satır
+>   alınmadı.
+> - **Numara:** eski adisyonlar açılış sırasına göre **3000'den** RayoPOS
+>   numarası aldı (3000 → 76.566); işletme sayacı 76.566'ya çekildi, yeni
+>   adisyon 76.567'den. Adisyo'nun fişteki numarası `kaynak_no`'da,
+>   Adisyo'nun iç kimliği `kaynak_id`'de (bağlantı anahtarı).
+> - Deneme'nin test adisyonları silindi (Ramazan kararı: hepsi testti).
+> - Analiz (`analiz.ts` `gecmisAdisyonlar`): aktarılan adisyonlar normal
+>   adisyon gibi bütün sayımlara giriyor (adet, misafir, ortalama, saat,
+>   yoğunluk, tip, garson — garsona hesabın tamamı yazılıyor). Masa/bölge/
+>   garson süzgecinde görünmüyorlar (RayoPOS kayıtlarına bağlı değiller).
+>   Aynı kasa gününde RayoPOS'ta kapanmış hesap varsa o günün aktarılmışları
+>   atlanıyor (çift sayım olmasın).
+> - **Karar (Ramazan, 4 Eki 2026): açık hesap ciroya girmiyor.** Adisyo gibi:
+>   toplam satış = eline geçen para. Her adisyonda `acikHesap` (açık hesap
+>   tipli ödemeler, tip adıyla tanınıyor; Adisyo'nun "Açık Hesap"ı da)
+>   cirodan, eğriden, gün gün tablodan, saat/tip/masa/garson toplamlarından
+>   düşülüyor; "Kapanan ciro" altında "₺X açık hesaba yazıldı". 02.10.2026'da
+>   ₺165'lik fark bundan çıkmıştı (128.212 ↔ Adisyo 128.047).
 >
 > **BİTTİ (3 Eki 2026, ikinci seans): hız taraması tamamlandı.**
 > - Ölçüm yöntemi: Chrome'da Deneme, `history.pushState` + `popstate`, `.cember`

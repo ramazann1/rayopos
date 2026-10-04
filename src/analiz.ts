@@ -4,6 +4,7 @@ import { kdvDokumu } from "./kdv";
 import { masraflariGetir, odemeAdi, type Masraf } from "./masraflar";
 import { denetimGetir, denetimYaz } from "./denetim";
 export type { DenetimSatiri } from "./denetim";
+import { odemeTipleriniGetir } from "./odemeTipleri";
 import { kisaAd } from "./personel";
 import { yetkiVar } from "./oturum";
 import { supabase } from "./supabase";
@@ -279,6 +280,16 @@ export type AnalizAdisyon = {
   kalan: number;
   bahsis: number;
   odemeler: { tip: string; tutar: number }[];
+  /**
+   * Hesabın açık hesaba (müşteri borcuna) yazılan kısmı. Ciroya girmiyor:
+   * kasaya para girmedi, müşteri borcunu ödediği gün girecek.
+   */
+  acikHesap: number;
+  /**
+   * Önceki programdan aktarılmış adisyon. Bütün sayımlara giriyor ama ürün
+   * kalemi yok; açılıp ayrıntısı görülemediği için adisyon listesinde yok.
+   */
+  gecmis?: boolean;
 };
 
 // Maliyet yalnız stok yönetme yetkisi olana isteniyor; satır güvenliği zaten
@@ -387,6 +398,7 @@ function satiraCevir(s: any, varsayilanKdv?: number): AnalizAdisyon {
     kalan: Math.max(0, toplam - odenen),
     bahsis: tahsilatlar.reduce((t, o) => t + Number(o.bahsis ?? 0), 0),
     odemeler: tahsilatlar.map((o) => ({ tip: o.tip, tutar: Number(o.tutar) })),
+    acikHesap: 0,
   };
 }
 
@@ -429,6 +441,12 @@ async function adisyonlariCek(bas: Date, bit: Date, f: AnalizFiltre) {
       .range(i, i + PARCA - 1);
 
   const kdvSozu = varsayilanKdvOrani();
+  const gecmisSozu = gecmisAdisyonlar(bas, bit);
+  // Tahsilat tipin kimliğini değil adını taşıyor; açık hesap tipleri adla
+  // tanınıyor. Önceki programın açık hesabı da aynı adla geliyor.
+  const acikHesapSozu = odemeTipleriniGetir(true).then(
+    (t) => new Set(["Açık Hesap", ...t.filter((x) => x.acikHesap).map((x) => x.ad)])
+  );
   const ham: any[] = [];
   for (let i = 0; ; i += PARCA) {
     const { data } = await parcaCek(bas, bit, i);
@@ -439,7 +457,93 @@ async function adisyonlariCek(bas: Date, bit: Date, f: AnalizFiltre) {
   const varsayilanKdv = await kdvSozu;
 
   const satirlar = ham.map((s) => satiraCevir(s, varsayilanKdv));
-  return satirlar.filter((a) => uyuyor(a, f));
+
+  // Aynı gün iki kez sayılmasın: RayoPOS'ta kapanmış hesabı olan günün
+  // aktarılmış adisyonları kullanılmıyor.
+  const doluGunler = new Set(
+    satirlar
+      .filter((a) => a.durum === "kapali")
+      .map((a) => kasaGunuBasi(new Date(a.kapanis ?? a.acilis)).toDateString())
+  );
+  const gecmis = (await gecmisSozu).filter(
+    (a) => !doluGunler.has(kasaGunuBasi(new Date(a.kapanis!)).toDateString())
+  );
+  const acikHesapTipleri = await acikHesapSozu;
+  const hepsi = [...satirlar, ...gecmis];
+  for (const a of hepsi) {
+    a.acikHesap = a.odemeler
+      .filter((o) => acikHesapTipleri.has(o.tip))
+      .reduce((t, o) => t + o.tutar, 0);
+  }
+  return hepsi.filter((a) => uyuyor(a, f));
+}
+
+/**
+ * Önceki programdan aktarılmış adisyonlar (`gecmis_adisyonlar`). Masa,
+ * garson ve müşteri ad olarak geliyor; RayoPOS'taki kayıtlara bağlı
+ * olmadıkları için masa/bölge/garson süzgecinde görünmüyorlar.
+ */
+async function gecmisAdisyonlar(bas: Date, bit: Date): Promise<AnalizAdisyon[]> {
+  const ham: any[] = [];
+  for (let i = 0; ; i += 1000) {
+    const { data } = await supabase
+      .from("gecmis_adisyonlar")
+      .select(
+        "kaynak_id, no, tip, masa_ad, garson_ad, musteri_ad, acilis, kapanis, kisi_sayisi, indirim, bahsis, servis, toplam, odemeler"
+      )
+      .gte("kapanis", bas.toISOString())
+      .lt("kapanis", bit.toISOString())
+      .order("kapanis", { ascending: false })
+      .order("kaynak_id", { ascending: false })
+      .range(i, i + 999);
+    const parca = (data as any[]) ?? [];
+    ham.push(...parca);
+    if (parca.length < 1000) break;
+  }
+
+  return ham.map((s) => {
+    const toplam = Number(s.toplam);
+    const servis = Number(s.servis);
+    const odemeler = ((s.odemeler ?? []) as any[]).map((o) => ({
+      tip: String(o.tip),
+      tutar: Number(o.tutar),
+    }));
+    const odenen = odemeler.reduce((t, o) => t + o.tutar, 0);
+    return {
+      id: -Number(s.kaynak_id),
+      no: s.no ?? 0,
+      tip: (s.tip ?? "masa") as AdisyonTipi,
+      durum: "kapali" as const,
+      iptalSebep: "",
+      masaId: null,
+      masaAd: s.masa_ad ?? "",
+      bolgeId: null,
+      bolgeAd: "",
+      garsonId: null,
+      garson: s.garson_ad ? kisaAd(s.garson_ad) : "",
+      acilis: s.acilis,
+      kapanis: s.kapanis,
+      kisiSayisi: Number(s.kisi_sayisi ?? 0),
+      ad: "",
+      musteri: s.musteri_ad ?? "",
+      kalemler: [],
+      adet: 0,
+      araToplam: toplam - servis + Number(s.indirim),
+      indirim: Number(s.indirim),
+      ikram: 0,
+      matrah: 0,
+      kdv: 0,
+      kuver: servis,
+      garsoniye: 0,
+      toplam,
+      odenen,
+      kalan: Math.max(0, Math.round((toplam - odenen) * 100) / 100),
+      bahsis: Number(s.bahsis),
+      odemeler,
+      acikHesap: 0,
+      gecmis: true,
+    };
+  });
 }
 
 /**
@@ -655,6 +759,8 @@ export type AnalizOzeti = {
   acikTutar: number;
   /** Kapanan ciro + açık masalar: günün şu ana kadarki toplam işi. */
   toplamIs: number;
+  /** Kapanan hesaplardan müşteri borcuna yazılan; cironun dışında. */
+  acikHesaba: number;
   /** Kapanan hesaplardan kasaya gerçekten giren para. */
   tahsilEdilen: number;
   /** Hesap kapandı ama tahsil edilmedi — ciroya yazılı, kasada yok. */
@@ -679,7 +785,7 @@ export function analizOzeti(adisyonlar: AnalizAdisyon[], giderler: Masraf[]): An
   const topla = (liste: AnalizAdisyon[], alan: (a: AnalizAdisyon) => number) =>
     liste.reduce((t, a) => t + alan(a), 0);
 
-  const ciro = topla(kapanan, (a) => a.toplam);
+  const ciro = topla(kapanan, (a) => a.toplam - a.acikHesap);
   const misafir = topla(kapanan, (a) => a.kisiSayisi);
 
   const odemeler = new Map<string, OzetDilimi>();
@@ -695,7 +801,7 @@ export function analizOzeti(adisyonlar: AnalizAdisyon[], giderler: Masraf[]): An
   const tipler = new Map<AdisyonTipi, OzetDilimi>();
   for (const a of kapanan) {
     const dilim = tipler.get(a.tip) ?? { ad: TIP_ADLARI[a.tip], tutar: 0, adet: 0 };
-    dilim.tutar += a.toplam;
+    dilim.tutar += a.toplam - a.acikHesap;
     dilim.adet += 1;
     tipler.set(a.tip, dilim);
   }
@@ -707,7 +813,7 @@ export function analizOzeti(adisyonlar: AnalizAdisyon[], giderler: Masraf[]): An
   for (const a of kapanan) {
     const yer = saatYeri.get(new Date(a.kapanis ?? a.acilis).getHours());
     if (yer == null) continue;
-    saatler[yer].tutar += a.toplam;
+    saatler[yer].tutar += a.toplam - a.acikHesap;
     saatler[yer].adet += 1;
   }
 
@@ -734,6 +840,7 @@ export function analizOzeti(adisyonlar: AnalizAdisyon[], giderler: Masraf[]): An
     acik: acikOlanlar.length,
     acikTutar,
     toplamIs: ciro + acikTutar,
+    acikHesaba: topla(kapanan, (a) => a.acikHesap),
     tahsilEdilen: ciro - eksikTahsilat,
     eksikTahsilat,
     odemeler: [...odemeler.values()].sort((a, b) => b.tutar - a.tutar),
@@ -773,7 +880,7 @@ export function zamanSerisi(adisyonlar: AnalizAdisyon[], bas: Date, bit: Date): 
     const yeri = new Map(sira.map((saat, i) => [saat, i]));
     for (const a of kapanan) {
       const k = kutular[yeri.get(new Date(a.kapanis ?? a.acilis).getHours()) ?? 0];
-      k.tutar += a.toplam;
+      k.tutar += a.toplam - a.acikHesap;
       k.adet += 1;
     }
     // Kepenk kapalıyken geçen saatler eğrinin yarısını yutmasın: ilk ve son
@@ -797,7 +904,7 @@ export function zamanSerisi(adisyonlar: AnalizAdisyon[], bas: Date, bit: Date): 
   for (const a of kapanan) {
     const k = kutular.get(kasaGunuBasi(new Date(a.kapanis ?? a.acilis)).toDateString());
     if (!k) continue;
-    k.tutar += a.toplam;
+    k.tutar += a.toplam - a.acikHesap;
     k.adet += 1;
   }
   return { birim, noktalar: [...kutular.values()] };
@@ -843,7 +950,7 @@ export function gunlukCiro(adisyonlar: AnalizAdisyon[], bas: Date, bit: Date): G
     const s = satirlar.get(kasaGunuBasi(new Date(a.kapanis ?? a.acilis)).toDateString());
     if (!s) continue;
     s.adisyon += 1;
-    s.ciro = Math.round((s.ciro + a.toplam) * 100) / 100;
+    s.ciro = Math.round((s.ciro + a.toplam - a.acikHesap) * 100) / 100;
     s.eksik = Math.round((s.eksik + Math.max(0, a.kalan)) * 100) / 100;
     for (const o of a.odemeler) {
       const i = tipYeri.get(o.tip)!;
@@ -920,7 +1027,7 @@ export function yogunlukTablosu(adisyonlar: AnalizAdisyon[], bas: Date, bit: Dat
     if (!satir) continue;
     const hucre = satir.hucreler[yeri.get(an.getHours()) ?? 0];
     hucre.adet += 1;
-    hucre.tutar += a.toplam;
+    hucre.tutar += a.toplam - a.acikHesap;
     satir.adet += 1;
   }
 
@@ -1140,7 +1247,7 @@ export function analizUrunleri(
         tutar: 0,
         adet: 0,
       };
-      m.tutar += a.toplam;
+      m.tutar += a.toplam - a.acikHesap;
       m.adet += 1;
       masalar.set(a.masaId, m);
     }
@@ -1358,6 +1465,14 @@ export function analizPersoneli(adisyonlar: AnalizAdisyon[]): PersonelOzeti {
     if (a.durum !== "kapali") continue;
 
     satir(a.garsonId ?? undefined, a.garson || BILINMEYEN).acilan += 1;
+
+    // Aktarılmış adisyonda kalem yok; hesabın tamamı masayı açana yazılıyor.
+    if (a.gecmis) {
+      const acan = satir(undefined, a.garson || BILINMEYEN);
+      acan.ciro = Math.round((acan.ciro + a.toplam - a.acikHesap) * 100) / 100;
+      acan.adisyon += 1;
+      continue;
+    }
 
     const satilanlar = a.kalemler.filter((k) => (k.durum ?? "normal") === "normal");
     const kalemToplami = satilanlar.reduce((t, k) => t + kalemTutari(k), 0);
