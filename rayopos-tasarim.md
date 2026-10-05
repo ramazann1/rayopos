@@ -46,7 +46,12 @@
 >    gününe kadar.
 > 3. **Geçiş günü (Egzoz):** Adisyo'da son masa kapandıktan sonra bütün
 >    dönem yeniden çekilir — adisyonlar VE kalemler (yöntem aşağıda);
->    `node adisyo-aktar.js <Egzoz kodu>` (7 CSV parçası üretir); Egzoz'daki
+>    `node adisyo-aktar.js <Egzoz kodu>` (7 CSV parçası üretir); taşımadan
+>    sonra `node adisyo-kategori.js <Egzoz kodu>` → `aktarim/3-kategori.sql`
+>    (kalemlere Adisyo kategorisi + İngilizce menünün Türkçe karşılığı; ürün
+>    listesi `aktarim/adisyo-kategoriler.txt`, elle eşleştirme
+>    `aktarim/adisyo-eslestirme.txt` — geçişte yeni ürün eklendiyse betik
+>    eşleşmeyenleri yazar, listeye eklenir); Egzoz'daki
 >    RayoPOS test adisyonları silinir (`sql/2026-10-04-deneme-adisyonlarini-sil.sql`
 >    kod değiştirilerek); `2026-10-04-gecmis-kalemler.sql` ve
 >    `2026-10-05-gecmis-duzeltme.sql` canlıda çalışmış olmalı;

@@ -565,6 +565,8 @@ function gecmisKalemleri(s: any): SepetKalemi[] {
     durum: (k.durum ?? "normal") as SepetKalemi["durum"],
     indirim: Number(k.indirim ?? 0) || undefined,
     not: k.not ?? undefined,
+    kategoriAd: k.kategoriAd ?? undefined,
+    esAd: k.esAd ?? undefined,
     turGarson: s.garson_ad || undefined,
   }));
 }
@@ -1350,6 +1352,23 @@ export function analizUrunleri(
   const saatYeri = new Map(saatSirasi.map((s, i) => [s, i]));
   const bosSaatler = () => saatSirasi.map((saat) => ({ saat, tutar: 0, adet: 0 }));
 
+  // Aktarılmış kalem menüye bağlı değil, yalnız adı var. Adı (İngilizce menüden
+  // satıldıysa Türkçe karşılığı) bugünkü menüde bulunursa o ürün sayılıyor:
+  // dönem karşılaştırmasında eski satış ile yeni satış aynı satırda dursun.
+  const buyuk = (s: string) => s.trim().toLocaleUpperCase("tr");
+  const menudeAdla = new Map((ek?.menu ?? []).map((u) => [buyuk(u.ad), u]));
+  const kimlik = (k: SepetKalemi) => {
+    if (k.urunId) {
+      const kategori = kategoriler.get(k.urunId);
+      return { anahtar: `u${k.urunId}`, ad: k.ad, kategori, kategoriAd: k.kategoriAd || kategori?.ad };
+    }
+    const ad = k.esAd ?? k.ad;
+    const urun = menudeAdla.get(buyuk(ad));
+    if (!urun) return { anahtar: `a${ad}`, ad, kategori: undefined, kategoriAd: k.kategoriAd };
+    const kategori = kategoriler.get(urun.id);
+    return { anahtar: `u${urun.id}`, ad: urun.ad, kategori, kategoriAd: kategori?.ad || k.kategoriAd };
+  };
+
   const satirlar = new Map<string, UrunSatiri>();
   const sepetler: string[][] = [];
   let ikramMaliyeti = 0;
@@ -1372,19 +1391,17 @@ export function analizUrunleri(
     }
     const saat = saatYeri.get(new Date(a.kapanis ?? a.acilis).getHours()) ?? 0;
     for (const k of a.kalemler) {
-      const anahtar = k.urunId ? `u${k.urunId}` : `a${k.ad}`;
-      if ((k.durum ?? "normal") === "normal") sepet.add(anahtar);
       // Kategori önce kalemin kendisinden okunuyor: satış anında yazıldığı için
       // menü sonradan değişse de doğru kalıyor. Menüye ancak o alan boşsa
       // bakılıyor — imzadan (22 Eyl 2026) önceki kalemlerin bir kısmı öyle.
-      const kategori = k.urunId ? kategoriler.get(k.urunId) : undefined;
-      const kategoriAd = k.kategoriAd || kategori?.ad || KATEGORISIZ;
+      const { anahtar, ad, kategori, kategoriAd } = kimlik(k);
+      if ((k.durum ?? "normal") === "normal") sepet.add(anahtar);
       const satir =
         satirlar.get(anahtar) ??
         ({
           anahtar,
-          ad: k.ad,
-          kategoriAd,
+          ad,
+          kategoriAd: kategoriAd || KATEGORISIZ,
           kategoriRenk: kategori?.renk,
           miktar: 0,
           ciro: 0,
@@ -1438,7 +1455,7 @@ export function analizUrunleri(
       if (a.durum !== "kapali") continue;
       for (const k of a.kalemler) {
         if ((k.durum ?? "normal") !== "normal") continue;
-        const anahtar = k.urunId ? `u${k.urunId}` : `a${k.ad}`;
+        const { anahtar, ad, kategori, kategoriAd } = kimlik(k);
         const satir = satirlar.get(anahtar);
         // Önceki dönemde satılıp bu dönemde hiç satılmayan ürün de listeye
         // giriyor; "düşenler" kartının asıl aradığı satır o.
@@ -1446,10 +1463,9 @@ export function analizUrunleri(
           satir ??
           ({
             anahtar,
-            ad: k.ad,
-            kategoriAd:
-              k.kategoriAd || (k.urunId ? kategoriler.get(k.urunId)?.ad : "") || KATEGORISIZ,
-            kategoriRenk: k.urunId ? kategoriler.get(k.urunId)?.renk : undefined,
+            ad,
+            kategoriAd: kategoriAd || KATEGORISIZ,
+            kategoriRenk: kategori?.renk,
             miktar: 0,
             ciro: 0,
             ikram: 0,

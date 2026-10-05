@@ -69,6 +69,8 @@ export type SepetKalemi = {
   odenmezId?: number | null;
   /** Satış anındaki kategori adı; menü sonradan değişse de rapor bozulmasın diye. */
   kategoriAd?: string;
+  /** Önceki programdan aktarılmış, İngilizce menüden satılmış kalemin Türkçe karşılığı. */
+  esAd?: string;
   /** Aynı bilginin okunur hâli; Analiz ödenmez dökümünü bununla topluyor. */
   odenmezAd?: string;
   turSira?: number;
