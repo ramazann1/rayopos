@@ -4,13 +4,15 @@
 ## 0. SIRADAKİ İŞ (6 Eki 2026 güncellendi)
 
 > **YENİ SEANSIN İLK İŞİ: Analiz uzun aralıkta çok yavaş** (2025'in tamamı
-> dakikalar sürüyor). Tahminle değiştirme, önce ölç. Tarayıcıdan ölçülemedi:
-> Chrome eklentisi ve uygulama tarayıcısı rayopos.pages.dev'e girişi
-> reddediyor (localhost:5173 eklentide izinli, dev sunucusu açıksa oradan
-> ölçülebilir). Plan: Analiz'in okuma/hesaplama adımlarına süre ölçümü ekle
-> (eski adisyon paketleri kaç tane/kaç sn, yeni adisyonlar, hesaplama),
-> Ramazan'a sor, onayla canlıya gönder, Ramazan 2025'i açıp rakamı iletsin;
-> rakama göre karar ver. Şüpheliler: `gecmis_adisyonlar` 1000'er satır
+> dakikalar sürüyor). Tahminle değiştirme, önce ölç. **Ölçümü Claude,
+> Ramazan'ın Chrome'unda yapıyor (Ramazan kararı)** — ama rayopos.pages.dev
+> eklentide izinli değil, yalnız `localhost:5173` izinli: Ramazan
+> `npm.cmd run dev`'i açar, Claude Chrome'da yeni sekme grubu açıp
+> (tabs_context createIfEmpty) `https://localhost:5173/analiz`'e gider,
+> deneme işletmesinde 2025'in tamamını açıp ağ isteklerini ve süreleri
+> ölçer (eski adisyon paketleri kaç tane/kaç sn, yeni adisyonlar,
+> hesaplama). Rakama göre plan anlatılır, onayla düzeltilir, canlıya
+> göndermeden önce sorulur. Şüpheliler: `gecmis_adisyonlar` 1000'er satır
 > SIRAYLA iniyor ve kalemler (jsonb) her satırda geliyor; kalıcı çözüm
 > "Analiz hesapları sunucuya" (Sonrakiler'de).
 >
