@@ -167,7 +167,8 @@ export default function MobilMasalar() {
     if (!secim || bolgeler.length === 0) return;
     const kaynak = bolgeler.flatMap((b) => b.masalar).find((m) => m.id === secim.masaId);
     git(location.pathname, { replace: true, state: null });
-    if (kaynak) setSecimModu({ tip: secim.tip, kaynak, kalem: secim.kalem });
+    // "aktif" yalnız masaüstündeki adisyon detayından geliyor.
+    if (kaynak && secim.tip !== "aktif") setSecimModu({ tip: secim.tip, kaynak, kalem: secim.kalem });
   }, [location.state, bolgeler]);
   const [hizliMasa, setHizliMasa] = useState<{ masa: Masa; veri: AdisyonVerisi } | null>(null);
   const [iptalSorusu, setIptalSorusu] = useState<{ masa: Masa; adisyonId: number } | null>(null);

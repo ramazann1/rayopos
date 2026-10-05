@@ -14,6 +14,7 @@ import {
   History,
   LayoutGrid,
   LockKeyhole,
+  LockOpen,
   Pencil,
   Plus,
   Printer,
@@ -37,7 +38,8 @@ import MasaPlani, { yerlesimiVar } from "../components/MasaPlani";
 import OnayModal from "../components/OnayModal";
 import SecimHapi from "../components/SecimHapi";
 import KalemTasiOnay from "../components/KalemTasiOnay";
-import { gelenSecim, type TasinanKalem } from "../salonSecimi";
+import { gelenSecim, type SecimTipi, type TasinanKalem } from "../salonSecimi";
+import { adisyonAktifEt, adisyonDetayi, MasaDoluHatasi } from "../analiz";
 import HizliOde from "../components/HizliOde";
 import SiparisGecmisi from "../components/SiparisGecmisi";
 import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
@@ -219,9 +221,10 @@ export default function Salon() {
   // Masa işlemi iki adımda ilerliyor: önce hedef masa seçilir, sonra onaylanır.
   // Ürün taşıma sipariş ekranından başlıyor, hedef yine burada seçiliyor.
   const [islem, setIslem] = useState<{
-    tip: "tasi" | "birlestir" | "kalem";
+    tip: SecimTipi;
     masa: Masa;
     kalem?: TasinanKalem;
+    adisyonId?: number;
   } | null>(null);
   const [kalemSorusu, setKalemSorusu] = useState<{
     kaynak: Masa;
@@ -273,7 +276,7 @@ export default function Salon() {
     navigate(location.pathname, { replace: true, state: null });
     if (!masa) return;
     if (seciliId === "masasiz") setSeciliId("tumu");
-    setIslem({ tip: secim.tip, masa, kalem: secim.kalem });
+    setIslem({ tip: secim.tip, masa, kalem: secim.kalem, adisyonId: secim.adisyonId });
   }, [location.state, bolgeler]);
 
   // Seçim kipi pencere değil ama penceredeki alışkanlık sürüyor: Escape çıkarır.
@@ -461,6 +464,34 @@ export default function Salon() {
     const kaynak = islem.masa;
     if (islem.tip === "kalem") {
       setKalemSorusu({ kaynak, hedef, kalem: islem.kalem! });
+      return;
+    }
+    if (islem.tip === "aktif") {
+      const adisyonId = islem.adisyonId!;
+      setIslem(null);
+      setOnay({
+        baslik: "Adisyon bu masada açılsın mı?",
+        ikon: <LockOpen size={20} />,
+        mesaj: `*${kaynak.ad}* masasının adisyonu *${hedef.ad}* masasında yeniden açılacak.`,
+        onayMetni: "Aç",
+        onOnay: async () => {
+          setOnay(null);
+          try {
+            const adisyon = await adisyonDetayi(adisyonId);
+            if (!adisyon) throw new Error("Adisyon bulunamadı.");
+            await adisyonAktifEt(adisyon, hedef.id);
+            navigate(`/siparis/${hedef.id}`);
+          } catch (e) {
+            setUyari(
+              e instanceof MasaDoluHatasi
+                ? `${hedef.ad} masası bu arada doldu, başka bir masa seçin.`
+                : e instanceof Error
+                  ? e.message
+                  : "Adisyon açılamadı."
+            );
+          }
+        },
+      });
       return;
     }
     const tip = islem.tip;

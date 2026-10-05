@@ -778,15 +778,19 @@ export async function gecmisAdisyonIptalGeri(adisyonId: number) {
  * eder; masada başka bir adisyon açıldıysa eskisi geri alınamaz, yoksa iki
  * açık adisyon aynı masaya düşerdi.
  */
-export async function adisyonAktifEt(adisyon: AnalizAdisyon) {
-  if (adisyon.masaId) {
+export class MasaDoluHatasi extends Error {}
+
+/** `hedefMasaId`: eski masası doluysa adisyon salonda seçilen boş masada açılıyor. */
+export async function adisyonAktifEt(adisyon: AnalizAdisyon, hedefMasaId?: number) {
+  const masaId = hedefMasaId ?? adisyon.masaId;
+  if (masaId) {
     const { data } = await supabase
       .from("adisyonlar")
       .select("id")
-      .eq("masa_id", adisyon.masaId)
+      .eq("masa_id", masaId)
       .eq("durum", "acik")
       .maybeSingle();
-    if (data) throw new Error("Bu masada açık bir adisyon var. Önce onu kapatın.");
+    if (data) throw new MasaDoluHatasi("Bu masa dolu.");
   }
 
   // İptal edilmiş adisyon da aynı yoldan dönüyor: iptal yalnız tahsilatsız
@@ -799,6 +803,7 @@ export async function adisyonAktifEt(adisyon: AnalizAdisyon) {
       kapanis: null,
       guncelleme: new Date().toISOString(),
       ...(iptaldi ? { iptal_sebep: null } : {}),
+      ...(hedefMasaId ? { masa_id: hedefMasaId } : {}),
     })
     .eq("id", adisyon.id);
   if (error) throw new Error("Adisyon yeniden açılamadı.");

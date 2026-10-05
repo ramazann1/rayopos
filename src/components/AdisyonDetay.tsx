@@ -21,6 +21,7 @@ import {
   adisyonDetayi,
   gecmisAdisyonIptal,
   gecmisAdisyonIptalGeri,
+  MasaDoluHatasi,
   tahsilatTipiDuzelt,
   tamamiIkram,
   type AdisyonDetay as Detay,
@@ -28,6 +29,7 @@ import {
 import type { SepetKalemi } from "../types";
 import { adisyonDenetimi, type DenetimSatiri } from "../denetim";
 import { ZamanCizelgesi } from "./SiparisGecmisi";
+import { salonaSecimle } from "../salonSecimi";
 
 const saat = (t: string) =>
   new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
@@ -64,6 +66,7 @@ export default function AdisyonDetay({
   const [aktifSor, setAktifSor] = useState(false);
   const [islem, setIslem] = useState<"iptal" | "ikram" | null>(null);
   const [iptalGeri, setIptalGeri] = useState(false);
+  const [masaDolu, setMasaDolu] = useState(false);
   const [duzeltilen, setDuzeltilen] = useState<Detay["tahsilatlar"][number] | null>(null);
   const [hata, setHata] = useState("");
   const navigate = useNavigate();
@@ -98,7 +101,8 @@ export default function AdisyonDetay({
       onDegisti?.();
       navigate(siparisYolu);
     } catch (e) {
-      setHata((e as Error).message);
+      if (e instanceof MasaDoluHatasi) setMasaDolu(true);
+      else setHata((e as Error).message);
     }
   };
 
@@ -367,6 +371,23 @@ export default function AdisyonDetay({
             }
           }}
           onKapat={() => setIslem(null)}
+        />
+      )}
+
+      {masaDolu && detay?.masaId && (
+        <OnayModal
+          baslik="Bu masa dolu"
+          ikon={<LockOpen size={16} />}
+          mesaj={`*${detay.masaAd}* masasında açık bir adisyon var. #${detay.no} numaralı adisyonu açmak için salondan boş bir masa seçin.`}
+          onayMetni="Masa seç"
+          onOnay={() => {
+            setMasaDolu(false);
+            navigate(
+              "/",
+              salonaSecimle({ tip: "aktif", masaId: detay.masaId!, adisyonId: detay.id })
+            );
+          }}
+          onKapat={() => setMasaDolu(false)}
         />
       )}
 

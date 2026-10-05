@@ -5,10 +5,14 @@
  */
 export type TasinanKalem = { id: number; ad: string; adet: number };
 
+/** "aktif": kapanmış/iptal adisyonun masası dolu, açılacağı boş masa seçiliyor. */
+export type SecimTipi = "tasi" | "birlestir" | "kalem" | "aktif";
+
 export type SalonSecimi = {
-  tip: "tasi" | "birlestir" | "kalem";
+  tip: SecimTipi;
   masaId: number;
   kalem?: TasinanKalem;
+  adisyonId?: number;
 };
 
 export function salonaSecimle(secim: SalonSecimi) {

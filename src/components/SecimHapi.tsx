@@ -1,7 +1,15 @@
-import { ArrowRightLeft, Combine, X } from "lucide-react";
+import { ArrowRightLeft, Combine, LockOpen, X } from "lucide-react";
+import type { SecimTipi } from "../salonSecimi";
+
+const FIILLER: Record<SecimTipi, string> = {
+  tasi: "taşınıyor",
+  kalem: "taşınıyor",
+  birlestir: "birleştiriliyor",
+  aktif: "açılıyor",
+};
 
 type Props = {
-  tip: "tasi" | "birlestir" | "kalem";
+  tip: SecimTipi;
   /** Taşınan şeyin adı: masa ya da ürün. */
   ad: string;
   onVazgec: () => void;
@@ -15,9 +23,15 @@ type Props = {
 export default function SecimHapi({ tip, ad, onVazgec }: Props) {
   return (
     <div className="secim-hapi">
-      {tip === "birlestir" ? <Combine size={16} /> : <ArrowRightLeft size={16} />}
+      {tip === "birlestir" ? (
+        <Combine size={16} />
+      ) : tip === "aktif" ? (
+        <LockOpen size={16} />
+      ) : (
+        <ArrowRightLeft size={16} />
+      )}
       <strong>
-        {ad} {tip === "birlestir" ? "birleştiriliyor" : "taşınıyor"}
+        {ad} {FIILLER[tip]}
       </strong>
       <em>· masa seçin</em>
       <button aria-label="Vazgeç" onClick={onVazgec}>
