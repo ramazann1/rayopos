@@ -3,6 +3,14 @@
 
 ## 0. SIRADAKİ İŞ (5 Eki 2026 güncellendi)
 
+> **ÖNCE RAMAZAN'A HATIRLAT (5 Eki gece bildirdi): masa kilidi takılı
+> kalıyor.** Telefonda Mert'in hesabıyla masaya girildi, bilgisayarda
+> (yönetici açık) masa kilitli göründü; Mert masadan çıkmadan uygulamayı
+> kapattı, bilgisayarda kilit kalkmadı, durmaya devam etti. Kilidin
+> uygulama kapanınca / bağlantı kopunca kendiliğinden düşmesi gerekiyor
+> (süre aşımı ya da canlı bağlantının kopma haberi). Önce kilidin nasıl
+> tutulduğuna bak, planı anlat.
+>
 > **YENİ SEANSIN İLK İŞİ: 5 Eki seansında yazılıp denenmemiş olanların
 > testi.** Önce Ramazan `sql/2026-10-05-gecmis-duzeltme.sql`'i çalıştırmış
 > mı, sor (çalışmadıysa eski adisyonlar Analiz'de boş gelir). Sonra sırayla:
