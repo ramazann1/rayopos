@@ -80,6 +80,19 @@ async function kalpAtisi(masaId: number, kisiId: number) {
   return ((data as any[]) ?? []).length > 0;
 }
 
+/** Masada şu an başka biri var mı — ölü işaret sayılmıyor. */
+async function baskasindaMi(masaId: number, kisiId: number) {
+  const sinir = new Date(Date.now() - OLU_SURE).toISOString();
+  const { data } = await supabase
+    .from("masa_mesguliyet")
+    .select("kisi_id")
+    .eq("masa_id", masaId)
+    .neq("kisi_id", kisiId)
+    .gte("guncelleme", sinir)
+    .maybeSingle();
+  return !!data;
+}
+
 /** Masa bizdeyse bırakılıyor; başkasına geçtiyse onun işaretine dokunulmuyor. */
 async function isaretiKaldir(masaId: number, kisiId: number) {
   const { error } = await supabase
@@ -94,9 +107,8 @@ async function isaretiKaldir(masaId: number, kisiId: number) {
 
 /**
  * Masa ekranı açık olduğu sürece işareti diri tutuyor, ekrandan çıkınca
- * kaldırıyor. Ekran arkaya alınınca (telefon cebe girince) kalp atışı duruyor:
- * masa bir dakika içinde kendiliğinden serbest kalıyor, garsonun geri
- * dönmesi beklenmiyor.
+ * kaldırıyor. Ekran arkaya alınınca (telefon cebe girince) masa hemen serbest
+ * kalıyor, garsonun geri dönmesi beklenmiyor.
  *
  * Çevrimdışıyken hiç denenmiyor — işaret sunucuda yaşıyor, bağlantı yoksa
  * konulamıyor. Kalem kaybına karşı koruma zaten ayrı katmanda.
@@ -128,11 +140,19 @@ export function useMasayiTut(masaId: number | null) {
 
     let birakildi = false;
     let bizde = false;
+    let ilkGiris = true;
 
     const vur = async () => {
       if (birakildi || document.hidden || !baglantiVar()) return;
-      // İlk giriş masayı üstümüze alıyor; sonraki atışlar yalnız tazeliyor.
       if (!bizde) {
+        // Arkadan dönüşte masa bu arada başkasına geçmiş olabilir; ondan
+        // geri alınmıyor, garson devralma uyarısıyla masadan çıkıyor.
+        if (!ilkGiris && (await baskasindaMi(masaId, kisiId))) {
+          birakildi = true;
+          sahibiSor().catch(() => {});
+          return;
+        }
+        ilkGiris = false;
         await isaretiKoy(masaId).catch(() => {});
         bizde = true;
         return;
@@ -145,15 +165,26 @@ export function useMasayiTut(masaId: number | null) {
       sahibiSor().catch(() => {});
     };
 
+    // Uygulama arkaya atılınca ya da kapatılınca masa beklemeden bırakılıyor;
+    // öteki ekranlar ölme süresini beklemesin. Pil biterse haber gidemiyor,
+    // o zaman OLU_SURE devreye giriyor.
+    const birak = () => {
+      if (!bizde || birakildi) return;
+      bizde = false;
+      isaretiKaldir(masaId, kisiId).catch(() => {});
+    };
+    const gorunurlukDegisti = () => (document.hidden ? birak() : vur());
+
     vur();
     const zaman = setInterval(vur, KALP_ATISI);
-    // Sekmeye geri dönüldüğünde bir sonraki atışı beklemeden işaret tazeleniyor.
-    document.addEventListener("visibilitychange", vur);
+    document.addEventListener("visibilitychange", gorunurlukDegisti);
+    window.addEventListener("pagehide", birak);
 
     return () => {
       birakildi = true;
       clearInterval(zaman);
-      document.removeEventListener("visibilitychange", vur);
+      document.removeEventListener("visibilitychange", gorunurlukDegisti);
+      window.removeEventListener("pagehide", birak);
       if (baglantiVar()) isaretiKaldir(masaId, kisiId).catch(() => {});
     };
   }, [masaId]);

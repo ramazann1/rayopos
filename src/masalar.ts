@@ -71,6 +71,14 @@ async function bolgeleriOku(): Promise<Bolge[]> {
   ]);
   hataysaFirlat(blg, msa);
 
+  // Oturum o an tanınmıyorsa (giriş anahtarı yenilenirken) yetki kuralı hata
+  // değil boş liste döndürüyor; salon bunu "masa yok" sanıp planı siliyordu.
+  // Boş gelen liste ancak oturum bir işletmeye bağlıysa gerçek sayılıyor.
+  if (!blg.data?.length) {
+    const { data: isletme } = await supabase.rpc("oturum_isletmesi");
+    if (!isletme) throw new Error("Oturum tanınmadı, masalar okunamadı.");
+  }
+
   const masalar = ((msa.data ?? []) as any[]).map(masayaCevir);
   return ((blg.data ?? []) as any[]).map((b) => ({
     id: b.id,
