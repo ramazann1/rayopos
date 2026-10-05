@@ -8,6 +8,7 @@ import {
   History,
   LockOpen,
   Pencil,
+  Undo2,
   X,
 } from "lucide-react";
 import OnayModal from "./OnayModal";
@@ -19,6 +20,7 @@ import {
   adisyonAktifEt,
   adisyonDetayi,
   gecmisAdisyonIptal,
+  gecmisAdisyonIptalGeri,
   tahsilatTipiDuzelt,
   tamamiIkram,
   type AdisyonDetay as Detay,
@@ -61,6 +63,7 @@ export default function AdisyonDetay({
   const [gecmis, setGecmis] = useState(false);
   const [aktifSor, setAktifSor] = useState(false);
   const [islem, setIslem] = useState<"iptal" | "ikram" | null>(null);
+  const [iptalGeri, setIptalGeri] = useState(false);
   const [duzeltilen, setDuzeltilen] = useState<Detay["tahsilatlar"][number] | null>(null);
   const [hata, setHata] = useState("");
   const navigate = useNavigate();
@@ -127,6 +130,11 @@ export default function AdisyonDetay({
             {detay?.gecmis && detay.durum !== "iptal" && yetkiVar("siparis.iptal") && (
               <button className="detay-dugme" onClick={() => setIslem("iptal")}>
                 <Ban size={16} /> İptal et
+              </button>
+            )}
+            {detay?.gecmis && detay.durum === "iptal" && yetkiVar("siparis.iptal") && (
+              <button className="detay-dugme" onClick={() => setIptalGeri(true)}>
+                <Undo2 size={16} /> İptali geri al
               </button>
             )}
             {detay && !detay.gecmis && (
@@ -355,6 +363,26 @@ export default function AdisyonDetay({
             }
           }}
           onKapat={() => setIslem(null)}
+        />
+      )}
+
+      {iptalGeri && detay && (
+        <OnayModal
+          baslik="İptal geri alınsın mı?"
+          ikon={<Undo2 size={16} />}
+          mesaj={`#${detay.no} numaralı adisyon yeniden kapanmış sayılacak ve ciroya geri dönecek.`}
+          onayMetni="Evet, geri al"
+          onOnay={async () => {
+            setIptalGeri(false);
+            try {
+              await gecmisAdisyonIptalGeri(detay.id);
+              setDetay(await adisyonDetayi(adisyonId));
+              onDegisti?.();
+            } catch (e) {
+              setHata((e as Error).message);
+            }
+          }}
+          onKapat={() => setIptalGeri(false)}
         />
       )}
 

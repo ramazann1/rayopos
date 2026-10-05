@@ -768,6 +768,11 @@ export async function gecmisAdisyonIptal(adisyonId: number, sebep: string) {
   if (error) throw new Error(error.message || "Adisyon iptal edilemedi.");
 }
 
+export async function gecmisAdisyonIptalGeri(adisyonId: number) {
+  const { error } = await supabase.rpc("gecmis_adisyon_iptal_geri", { p_kaynak_id: -adisyonId });
+  if (error) throw new Error(error.message || "İptal geri alınamadı.");
+}
+
 /**
  * Kapanmış adisyonu yeniden açar. Masası hâlâ boşsa hesap kaldığı yerden devam
  * eder; masada başka bir adisyon açıldıysa eskisi geri alınamaz, yoksa iki

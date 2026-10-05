@@ -36,6 +36,7 @@ const DENETIM_IKONLARI: Record<string, React.ReactNode> = {
   kalem_ikram: <Gift size={16} />,
   kalem_ikram_geri: <Undo2 size={16} />,
   adisyon_iptal: <Ban size={16} />,
+  adisyon_iptal_geri: <Undo2 size={16} />,
   adisyon_ikram: <Gift size={16} />,
   tahsilat_sil: <Trash2 size={16} />,
   tahsilat_tip_duzelt: <Pencil size={16} />,

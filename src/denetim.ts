@@ -11,6 +11,7 @@ export type DenetimIslemi =
   | "kalem_ikram"
   | "kalem_ikram_geri"
   | "adisyon_iptal"
+  | "adisyon_iptal_geri"
   | "adisyon_ikram"
   | "tahsilat_sil"
   | "tahsilat_tip_duzelt"
@@ -39,6 +40,7 @@ const ISLEM_ADLARI: Record<DenetimIslemi, string> = {
   kalem_ikram: "Ürün ikram edildi",
   kalem_ikram_geri: "İkram geri alındı",
   adisyon_iptal: "Adisyon iptal edildi",
+  adisyon_iptal_geri: "Adisyon iptali geri alındı",
   adisyon_ikram: "Adisyon ikram edildi",
   tahsilat_sil: "Tahsilat silindi",
   tahsilat_tip_duzelt: "Ödeme tipi düzeltildi",
