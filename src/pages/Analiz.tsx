@@ -540,14 +540,26 @@ function Adisyonlar({
       {garsoniyeVar && <th className="sag">{paraGoster(topla((a) => a.garsoniye))}</th>}
       {indirimVar && <th className="sag">{paraGoster(topla((a) => a.indirim))}</th>}
       {bahsisVar && <th className="sag">{paraGoster(topla((a) => a.bahsis))}</th>}
-      <th className="sag hucre-tutar">{paraGoster(topla((a) => a.toplam))}</th>
+      <th className="sag hucre-tutar">
+        {paraGoster(topla((a) => (a.durum === "iptal" ? 0 : a.toplam - a.acikHesap)))}
+      </th>
     </tr>
   );
 
   // Şeridin rakamları listede görünenin toplamı: arama daraldıkça şerit de
   // daralıyor, alttaki toplam satırıyla aynı kaynaktan besleniyor.
-  const misafir = topla((a) => a.kisiSayisi);
-  const ciro = topla((a) => a.toplam);
+  // Genel bakışla aynı rakamı vermeli: iptal ve açık hesap ciroya girmiyor,
+  // kartın altında ayrıca yazılıyor.
+  const sayilan = adisyonlar.filter((a) => a.durum !== "iptal");
+  const iptaller = adisyonlar.filter((a) => a.durum === "iptal");
+  const iptalTutari = iptaller.reduce((t, a) => t + a.toplam, 0);
+  const acikHesap = sayilan.reduce((t, a) => t + a.acikHesap, 0);
+  const misafir = sayilan.reduce((t, a) => t + a.kisiSayisi, 0);
+  const ciro = sayilan.reduce((t, a) => t + a.toplam, 0) - acikHesap;
+  const ciroDisi = [
+    acikHesap > 0 && `${paraGoster(acikHesap)} açık hesap`,
+    iptaller.length > 0 && `${iptaller.length} iptal (${paraGoster(iptalTutari)})`,
+  ].filter(Boolean);
   const eksikSayisi = adisyonlar.filter((a) => a.durum === "kapali" && a.kalan > 0).length;
 
   return (
@@ -558,14 +570,14 @@ function Adisyonlar({
             <span className="serit-etiket">
               <ClipboardList size={16} /> Adisyon
             </span>
-            <strong>{adisyonlar.length}</strong>
+            <strong>{sayilan.length}</strong>
             <em>
               {eksikSayisi > 0 ? `${eksikSayisi} tanesinde eksik tahsilat` : "hesap açıldı"}
             </em>
           </div>
           <div className="serit-sayi">
             <span className="serit-etiket">Ortalama adisyon</span>
-            <strong>{paraGoster(adisyonlar.length ? ciro / adisyonlar.length : 0)}</strong>
+            <strong>{paraGoster(sayilan.length ? ciro / sayilan.length : 0)}</strong>
             <em>hesap başına</em>
           </div>
           <div className="serit-sayi">
@@ -576,7 +588,7 @@ function Adisyonlar({
           <div className="serit-sayi serit-toplam">
             <span className="serit-etiket">Toplam</span>
             <strong>{paraGoster(ciro)}</strong>
-            <em>listedeki hesapların tutarı</em>
+            <em>{ciroDisi.length ? `${ciroDisi.join(", ")} dahil değil` : "listedeki hesapların tutarı"}</em>
           </div>
         </div>
       </section>

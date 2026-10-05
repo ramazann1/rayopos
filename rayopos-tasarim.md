@@ -3,13 +3,15 @@
 
 ## 0. SIRADAKİ İŞ (5 Eki 2026 güncellendi)
 
-> **ÖNCE RAMAZAN'A HATIRLAT (5 Eki gece bildirdi): masa kilidi takılı
-> kalıyor.** Telefonda Mert'in hesabıyla masaya girildi, bilgisayarda
-> (yönetici açık) masa kilitli göründü; Mert masadan çıkmadan uygulamayı
-> kapattı, bilgisayarda kilit kalkmadı, durmaya devam etti. Kilidin
-> uygulama kapanınca / bağlantı kopunca kendiliğinden düşmesi gerekiyor
-> (süre aşımı ya da canlı bağlantının kopma haberi). Önce kilidin nasıl
-> tutulduğuna bak, planı anlat.
+> **Masa kilidi (6 Eki çözüldü, Ramazan denedi):** uygulama arka plana
+> atılınca işaret anında siliniyor; tamamen kapatılınca telefon bir şey
+> yazamıyor, onun için masadaki cihaz Supabase canlı hattında (presence,
+> `masada-<isletme>` kanalı) "buradayım" diyor, hattan düşünce ızgara 12 sn
+> sonra kilidi kaldırıyor (internet titremesi kilidi düşürmesin). Arkadan
+> dönüşte masa başkasındaysa geri alınmıyor, "Masa devralındı" ile salona
+> dönülüyor (Ramazan kararı). Hat kurulamazsa eski 60 sn kuralı geçerli.
+> Ayrıca: oturum o an tanınmazsa sunucu boş masa listesi döndürüyordu, salon
+> "masa yok" diyordu — artık boş liste `oturum_isletmesi` boşsa hata sayılıyor.
 >
 > **YENİ SEANSIN İLK İŞİ: 5 Eki seansında yazılıp denenmemiş olanların
 > testi.** Önce Ramazan `sql/2026-10-05-gecmis-duzeltme.sql`'i çalıştırmış
@@ -27,6 +29,13 @@
 > - Analiz Adisyonlar'da 10 aylık aralık: donma gitti mi (200'er satır
 >   kaydırdıkça), veri kaç saniyede geliyor. Yavaşsa ölç: büyük olasılıkla
 >   `gecmis_adisyonlar.kalemler`in indirilmesi (Ürünler sekmesi için gerekli).
+>
+> **Oturum tanınmayan istekler (6 Eki, iki kez görüldü):** salon "masa yok",
+> sonra Analiz eski adisyonları boş gösterdi; ikisi de hatasız boş liste,
+> yenileyince düzeldi. Şüphe: istek giriş anahtarı olmadan gidiyor, RLS boş
+> döndürüyor. Ramazan bir dahaki sefere yenilemeden haber verecek; Chrome'da
+> o anki oturuma bakılıp tek merkezde çözülecek (anahtarı yenile, isteği
+> tekrarla). Masalar için geçici koruma `masalar.ts`'te.
 >
 > Sonra sıradakiler:
 > 1. **Açık hesap tahsilatı ödendiği gün ciroya:** bu seansta açık hesap
