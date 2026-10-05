@@ -155,7 +155,7 @@ export default function AdisyonDetay({
                       Siparişe git <ArrowRight size={16} />
                     </button>
                   </>
-                ) : detay.durum === "iptal" ? null : (
+                ) : (
                   yetkiVar("siparis.aktif_et") && (
                     <button className="detay-dugme ana" onClick={() => setAktifSor(true)}>
                       <LockOpen size={16} /> Siparişi aktif et
@@ -326,7 +326,11 @@ export default function AdisyonDetay({
         <OnayModal
           baslik="Adisyon yeniden açılsın mı?"
           ikon={<LockOpen size={16} />}
-          mesaj={`#${detay.no} numaralı adisyon tekrar açılıp sipariş ekranına gidilecek. Kapanmış hesap ciroya yazılmayı bırakır, yeniden kapatılana kadar açık görünür.`}
+          mesaj={
+            detay.durum === "iptal"
+              ? `#${detay.no} numaralı adisyonun iptali geri alınacak, hesap ürünleriyle birlikte tekrar açılıp sipariş ekranına gidilecek. Mutfağa yeniden fiş gitmez; hazırlanacak ürün varsa siparişten tekrar gönderin.`
+              : `#${detay.no} numaralı adisyon tekrar açılıp sipariş ekranına gidilecek. Kapanmış hesap ciroya yazılmayı bırakır, yeniden kapatılana kadar açık görünür.`
+          }
           onayMetni="Evet, aç"
           onOnay={aktifEt}
           onKapat={() => setAktifSor(false)}

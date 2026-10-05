@@ -789,11 +789,24 @@ export async function adisyonAktifEt(adisyon: AnalizAdisyon) {
     if (data) throw new Error("Bu masada açık bir adisyon var. Önce onu kapatın.");
   }
 
+  // İptal edilmiş adisyon da aynı yoldan dönüyor: iptal yalnız tahsilatsız
+  // açık hesapta yapılabildiği için ürünler yerinde, hesap kaldığı yerden sürüyor.
+  const iptaldi = adisyon.durum === "iptal";
   const { error } = await supabase
     .from("adisyonlar")
-    .update({ durum: "acik", kapanis: null, guncelleme: new Date().toISOString() })
+    .update({
+      durum: "acik",
+      kapanis: null,
+      guncelleme: new Date().toISOString(),
+      ...(iptaldi ? { iptal_sebep: null } : {}),
+    })
     .eq("id", adisyon.id);
   if (error) throw new Error("Adisyon yeniden açılamadı.");
+
+  if (iptaldi)
+    await denetimYaz([
+      { islem: "adisyon_iptal_geri", adisyonId: adisyon.id, yer: adisyon.masaAd, tutar: adisyon.toplam },
+    ]);
 }
 
 /**
