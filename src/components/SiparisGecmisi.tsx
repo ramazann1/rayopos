@@ -10,6 +10,7 @@ import {
   Merge,
   Pencil,
   Plus,
+  Printer,
   Trash2,
   TriangleAlert,
   Undo2,
@@ -41,6 +42,7 @@ const DENETIM_IKONLARI: Record<string, React.ReactNode> = {
   hesap_eksik_kapat: <TriangleAlert size={16} />,
   adisyon_masa_degisti: <ArrowRightLeft size={16} />,
   adisyon_birlestirildi: <Merge size={16} />,
+  fis_yazdir: <Printer size={16} />,
 };
 
 /** Defter satırının altına yazılan tek cümle: neye, ne kadar, niçin. */
@@ -162,7 +164,7 @@ export function ZamanCizelgesi({
       kisi: k.kisi === "—" ? "" : k.kisi,
       baslik: k.islemAd,
       alt: denetimAlt(k),
-      dikkat: true,
+      dikkat: k.islem !== "fis_yazdir",
     })),
   ];
 
@@ -176,7 +178,9 @@ export function ZamanCizelgesi({
     });
   }
 
-  olaylar.sort((a, b) => a.zaman.localeCompare(b.zaman));
+  // Aktarılmış adisyonun saatleri farklı bölge yazımıyla geliyor; metin olarak
+  // sıralanınca karışıyordu.
+  olaylar.sort((a, b) => new Date(a.zaman).getTime() - new Date(b.zaman).getTime());
 
   return (
     <ol className="detay-cizelge">

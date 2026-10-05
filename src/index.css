@@ -11499,16 +11499,20 @@ body {
 
 /* Üç sütun: bilgiler, ürünler, tahsilatlar. Orta sütun geniş — ürün adları
    kırpılmasın diye kalan yeri o alıyor. */
+/* Pencere ekrana sığıyor, kalabalık adisyonda yalnız ürün listesi kayıyor:
+   döküm ve toplam altta, bilgiler ve tahsilatlar yanda yerinde duruyor. */
 .detay-govde {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr) 250px;
-  align-items: start;
-  overflow-y: auto;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .detay-govde.tek {
   display: block;
   padding: 24px;
+  overflow-y: auto;
 }
 
 /* Sipariş geçmişi kendi başına da açılıyor (salon menüsü, sipariş ekranı).
@@ -11579,11 +11583,22 @@ body {
 .detay-sutun {
   padding: 20px 22px;
   min-width: 0;
+  overflow-y: auto;
 }
 
 .detay-sutun.orta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-left: 1px solid var(--cizgi);
   border-right: 1px solid var(--cizgi);
+}
+
+.detay-sutun.orta .detay-kalemler {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 14px;
 }
 
 .detay-sutun h4 {
@@ -19639,6 +19654,8 @@ body {
 .cari-detay-govde,
 .cd-form,
 .detay-govde,
+.detay-kalemler,
+.detay-sutun,
 .gecmis-govde,
 .gecmis-pencere,
 .hizli-govde,

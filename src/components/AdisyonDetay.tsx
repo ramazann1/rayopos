@@ -18,6 +18,7 @@ import { adisyonIkram, adisyonIptal, masasizEtiketi } from "../adisyonlar";
 import {
   adisyonAktifEt,
   adisyonDetayi,
+  gecmisAdisyonIptal,
   tahsilatTipiDuzelt,
   tamamiIkram,
   type AdisyonDetay as Detay,
@@ -113,18 +114,23 @@ export default function AdisyonDetay({
           </h3>
 
           <div className="detay-aksiyon">
-            {detay && (
+            {detay && yetkiVar("siparis.gecmis") && (
+              <button
+                className={gecmis ? "detay-dugme acik" : "detay-dugme"}
+                onClick={() => setGecmis(!gecmis)}
+              >
+                <History size={16} />
+                {gecmis ? "Detaya dön" : "Sipariş geçmişi"}
+              </button>
+            )}
+            {/* Aktarılmış adisyon yeniden açılamıyor; iptal doğrudan yapılıyor. */}
+            {detay?.gecmis && detay.durum !== "iptal" && yetkiVar("siparis.iptal") && (
+              <button className="detay-dugme" onClick={() => setIslem("iptal")}>
+                <Ban size={16} /> İptal et
+              </button>
+            )}
+            {detay && !detay.gecmis && (
               <>
-                {yetkiVar("siparis.gecmis") && (
-                  <button
-                    className={gecmis ? "detay-dugme acik" : "detay-dugme"}
-                    onClick={() => setGecmis(!gecmis)}
-                  >
-                    <History size={16} />
-                    {gecmis ? "Detaya dön" : "Sipariş geçmişi"}
-                  </button>
-                )}
-
                 {detay.durum === "acik" ? (
                   <>
                     {yetkiVar("siparis.adisyon_ikram") && (
@@ -198,14 +204,18 @@ export default function AdisyonDetay({
                     {detay.indirim ? `−${paraGoster(detay.indirim)}` : paraGoster(0)}
                   </dd>
                 </div>
-                <div>
-                  <dt>Brüt tutar</dt>
-                  <dd>{paraGoster(detay.matrah)}</dd>
-                </div>
-                <div>
-                  <dt>KDV</dt>
-                  <dd>{paraGoster(detay.kdv)}</dd>
-                </div>
+                {!detay.gecmis && (
+                  <>
+                    <div>
+                      <dt>Brüt tutar</dt>
+                      <dd>{paraGoster(detay.matrah)}</dd>
+                    </div>
+                    <div>
+                      <dt>KDV</dt>
+                      <dd>{paraGoster(detay.kdv)}</dd>
+                    </div>
+                  </>
+                )}
                 {detay.kuver > 0 && (
                   <div>
                     <dt>Kuver{detay.kisiSayisi ? ` (${detay.kisiSayisi} kişi)` : ""}</dt>
@@ -335,7 +345,8 @@ export default function AdisyonDetay({
             const tip = islem;
             setIslem(null);
             try {
-              if (tip === "iptal") await adisyonIptal(detay.id, sebep ?? "");
+              if (tip === "iptal" && detay.gecmis) await gecmisAdisyonIptal(detay.id, sebep ?? "");
+              else if (tip === "iptal") await adisyonIptal(detay.id, sebep ?? "");
               else await adisyonIkram(detay.id, sebep);
               setDetay(await adisyonDetayi(adisyonId));
               onDegisti?.();

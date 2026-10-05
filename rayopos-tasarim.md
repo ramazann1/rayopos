@@ -1,28 +1,48 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (4 Eki 2026 güncellendi)
+## 0. SIRADAKİ İŞ (5 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ: Adisyo aktarımının Deneme'de testi.** Ramazan
-> Analiz'de dener: 17.06.2023 ve 02.10.2026'yı Adisyo'nun Gün Sonu → Özet
-> ekranıyla kıyaslar (Alınan Ödemeler ↔ RayoPOS Toplam satış, kuruşu
-> kuruşuna tutmalı), Son 30 gün / bütün 2024 açılış hızına bakar. Sorun
-> yoksa sıradakiler:
-> 1. **Adisyo kalemleri:** aynı yöntemle (aşağıda) adisyon başına
->    `GetOrderViewModel`, 73 bin istek, birkaç istek aynı anda → 1–2 saat.
->    `kaynak_id` ile bağlanacak (bizim 3000'li numara değil). Gelince eski
->    adisyonlar Adisyonlar listesinde ve Ürünler sekmesinde görünecek;
->    şimdilik listede yoklar (`gecmis` işaretiyle süzülüyor).
-> 2. **Açık hesap tahsilatı ödendiği gün ciroya:** bu seansta açık hesap
+> **YENİ SEANSIN İLK İŞİ: 5 Eki seansında yazılıp denenmemiş olanların
+> testi.** Önce Ramazan `sql/2026-10-05-gecmis-duzeltme.sql`'i çalıştırmış
+> mı, sor (çalışmadıysa eski adisyonlar Analiz'de boş gelir). Sonra sırayla:
+> - Hesap fişi: altta "gönderildi" bildirimi; köprü kapalı → "ulaşmadı"
+>   (Vazgeç → program açılınca fiş ÇIKMAMALI, Beklesin → çıkmalı); her şey
+>   açık → pencere yok. (Yazıcı kapalı → "basılamadı: sebep" denendi, çalıştı.)
+> - Sipariş fişi uyarısı (`SiparisFisiUyarisi`, uygulama kökünde): yazıcı
+>   kapalı → istasyon adıyla "basılamadı" + Yeniden yazdır; köprü kapalı →
+>   "ulaşmadı" tek Tamam; iptal fişi izlenmiyor (Ramazan kararı).
+> - Eski (Adisyo) adisyonda doğrudan İptal et ve ödeme tipi düzeltme;
+>   iptal edilen ciroya girmiyor mu, sipariş geçmişinde görünüyor mu.
+> - Sipariş geçmişinde "Hesap fişi yazdırmaya gönderildi" (gönderme anı,
+>   Ramazan kararı; yalnız 5 Eki sonrası fişler).
+> - Analiz Adisyonlar'da 10 aylık aralık: donma gitti mi (200'er satır
+>   kaydırdıkça), veri kaç saniyede geliyor. Yavaşsa ölç: büyük olasılıkla
+>   `gecmis_adisyonlar.kalemler`in indirilmesi (Ürünler sekmesi için gerekli).
+>
+> Sonra sıradakiler:
+> 1. **Açık hesap tahsilatı ödendiği gün ciroya:** bu seansta açık hesap
 >    cirodan çıkarıldı (karar aşağıda); müşterinin sonradan ödediği borcun
 >    o gün ciroya eklenmesi henüz yapılmadı. Adisyo dönemindeki tahsilatlar
 >    (~₺18.394, `GetCustomerPaymentsByDate`) da ayrıca çekilecek.
-> 3. Giderler (Gün Sonu → Masraflar) ve müşteri/bakiye aktarımı geçiş
+> 2. Giderler (Gün Sonu → Masraflar) ve müşteri/bakiye aktarımı geçiş
 >    gününe kadar.
-> 4. **Geçiş günü (Egzoz):** Adisyo'da son masa kapandıktan sonra bütün
->    dönem yeniden çekilir; `node adisyo-aktar.js <Egzoz kodu>`; Egzoz'daki
+> 3. **Geçiş günü (Egzoz):** Adisyo'da son masa kapandıktan sonra bütün
+>    dönem yeniden çekilir — adisyonlar VE kalemler (yöntem aşağıda);
+>    `node adisyo-aktar.js <Egzoz kodu>` (7 CSV parçası üretir); Egzoz'daki
 >    RayoPOS test adisyonları silinir (`sql/2026-10-04-deneme-adisyonlarini-sil.sql`
->    kod değiştirilerek); 1-ara-tablo → CSV içe aktar → 2-tasi.
+>    kod değiştirilerek); `2026-10-04-gecmis-kalemler.sql` ve
+>    `2026-10-05-gecmis-duzeltme.sql` canlıda çalışmış olmalı;
+>    1-ara-tablo → CSV parçaları → 2-tasi.
+>
+> **BİTTİ (5 Eki 2026): Adisyo kalemleri Deneme'de.** 73.567 adisyon,
+> 383.573 kalem, `gecmis_adisyonlar.kalemler` (jsonb). Eski adisyonlar
+> Adisyonlar listesinde, detayı açılıyor (salt okunur; İptal et ve ödeme
+> tipi düzeltme sunucu fonksiyonlarıyla), Ürünler sekmesinde sayılıyor.
+> Ham dosyalar `aktarim/` (depoda yok, yedeklenmeli). Kalem durumu 1 ve 3
+> ikisi de satış; %100 indirimli hesapta satır tutarı 0 → kalem indirimi.
+> 38 adisyonda kalem toplamı adisyon tutarını tutmuyor (Adisyo'nun kaydı).
+> Analiz'de personel adları kısaltılmıyor (Denetim sekmesi dahil).
 >
 > Sonra "Sonrakiler" listesi (Sadakat 1b seviyelerden devam). "Analiz
 > hesapları sunucuya" maddesi orada duruyor — 19 bin adisyonluk bir yıl
@@ -43,6 +63,20 @@
 > denendi, vazgeçildi: Tüm Adisyonlar en çok 7 gün, liste yüklenmeden
 > İndir'e basılırsa eski listeyi indiriyor, takvim tarayıcı bağlantısında
 > donuyor.
+>
+> **KALEMLER (5 Eki 2026, Ramazan izniyle):** toplu kalem veren adres yok
+> (`GetOrderOperationsReport` kalemsiz, `ProductPivotOrderDetails` boş,
+> `PrepareAndGetReportData` gün/ürün toplamı). Adisyon başına
+> `POST https://ord.adisyo.com/api/orders/GetOrderViewModel` gövde `{id}`
+> (`{orderId}` boş model döndürüyor ama 200 veriyor — dikkat). ord'da hız
+> sınırı yok (ext'teki aynı adres saniyede ~1'de 429 veriyor); 8 eşzamanlı
+> istekle saniyede 30–60, 73 bin adisyon ~40 dk. Oturum yarıda düşebiliyor
+> (401, sekme #/login): hafızadakini hemen indir, Ramazan girince kalanı
+> çek. Çıktı `aktarim/adisyo-kalemler.json` = { adisyonId: [satır...] }.
+> Claude Code "Auto" modunda bu iş engelleniyor; Manual'a alınıyor.
+> Kontrol: %100 indirimli (ikram/personel) adisyonda satır tutarı 0, fiyat
+> dolu; bunlar dışında yalnız 8 adisyonda kalem toplamı tutmuyor. Durum 1 ve
+> 3 ikisi de satılmış kalem; iptal edilen kalem kayıtta yok.
 >
 > **YÜKLEME YÖNTEMİ:** SQL Editor 3,5 MB sorguyu "too large" diye reddediyor.
 > `node adisyo-aktar.js <işletme kodu>` → `aktarim/1-ara-tablo.sql`,

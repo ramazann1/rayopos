@@ -4,10 +4,10 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
  * Adisyo'dan çekilen adisyonları içe aktarılacak hale getirir:
  *   node adisyo-aktar.js 15003
  *
- * Girdi `aktarim/adisyo-adisyonlar.json` (çekme yöntemi tasarım dosyasında,
+ * Girdi `aktarim/adisyo-adisyonlar.json` ve `adisyo-kalemler.json` (çekme yöntemi tasarım dosyasında,
  * "ADİSYO VERİ ÇEKME YÖNTEMİ"). Çıktı `aktarim/` içinde üç dosya:
  *   1-ara-tablo.sql          SQL Editor'de çalıştırılır
- *   gecmis-adisyonlar.csv    Table Editor → adisyo_ara → Import data from CSV
+ *   gecmis-adisyonlar-N.csv  Table Editor → adisyo_ara → Import data from CSV (her parça)
  *   2-tasi.sql               SQL Editor'de çalıştırılır
  * İşletme kodu komutta veriliyor — önce Deneme'ye, sorun yoksa gerçek
  * işletmeye aynı dosyalar üretilir.
@@ -23,6 +23,23 @@ if (!kod) {
 }
 
 const satirlar = JSON.parse(readFileSync("aktarim/adisyo-adisyonlar.json", "utf8"));
+
+// Kalemler adisyon başına ayrı çekiliyor: { adisyonId: [satır, ...] }. Satır
+// sırası çekme kodundaki gibi; yalnız kullanılan alanlar okunuyor.
+const hamKalemler = JSON.parse(readFileSync("aktarim/adisyo-kalemler.json", "utf8"));
+// Adisyo iptal edilen kalemi bu kayıtta tutmuyor; 1 ve 3 ikisi de satılmış kalem.
+const KALEM_DURUMU = { 1: "normal", 3: "normal" };
+// Tamamı indirimle kapanan hesapta (ikram, personel) Adisyo satırın tutarını
+// sıfır yazıyor ama fiyatı bırakıyor; aradaki fark kalem indirimi sayılıyor.
+const kalemCevir = (k) => ({
+  ad: k[2],
+  adet: k[4],
+  fiyat: k[5],
+  indirim: Math.max(0, Math.round((k[4] * k[5] - k[7]) * 100) / 100) || undefined,
+  durum: KALEM_DURUMU[k[9]] ?? "iptal",
+  saat: `${k[13]}+03`,
+  not: k[12] || undefined,
+});
 
 const adisyonlar = new Map();
 for (const s of satirlar) {
@@ -48,6 +65,7 @@ for (const s of satirlar) {
       servis: (s.serviceCharge ?? 0) + (s.waiterCharge ?? 0),
       toplam: s.totalAmount ?? 0,
       odemeler: [],
+      kalemler: (hamKalemler[s.id] ?? []).map(kalemCevir),
     };
     adisyonlar.set(s.id, a);
   }
@@ -65,7 +83,7 @@ const para = (n) => (Math.round(n * 100) / 100).toFixed(2);
 
 const SUTUNLAR = [
   "kaynak_id", "no", "tip", "masa_ad", "garson_ad", "musteri_ad", "acilis", "kapanis",
-  "kisi_sayisi", "indirim", "bahsis", "servis", "toplam", "odemeler",
+  "kisi_sayisi", "indirim", "bahsis", "servis", "toplam", "odemeler", "kalemler",
 ];
 const csv = [SUTUNLAR.join(",")];
 for (const a of adisyonlar.values()) {
@@ -74,12 +92,28 @@ for (const a of adisyonlar.values()) {
       a.id, a.no ?? "", a.tip, hucre(a.masa), hucre(a.garson), hucre(a.musteri),
       `${a.acilis}+03`, `${a.kapanis}+03`, a.kisi, para(a.indirim), para(a.bahsis),
       para(a.servis), para(a.toplam), hucre(JSON.stringify(a.odemeler)),
+      hucre(JSON.stringify(a.kalemler)),
     ].join(",")
   );
 }
 
 mkdirSync("aktarim", { recursive: true });
-writeFileSync("aktarim/gecmis-adisyonlar.csv", csv.join("\n") + "\n");
+// Table Editor'ün içe aktarması 10 MB'tan büyük dosyayı almıyor; her parça
+// başlık satırıyla kendi başına yüklenebilir.
+const SINIR = 8 * 1024 * 1024;
+let parca = [], boy = 0, parcaNo = 0;
+const parcaYaz = () => {
+  writeFileSync(`aktarim/gecmis-adisyonlar-${++parcaNo}.csv`, [csv[0], ...parca].join("\n") + "\n");
+  parca = [];
+  boy = 0;
+};
+for (const satir of csv.slice(1)) {
+  const b = Buffer.byteLength(satir) + 1;
+  if (boy + b > SINIR) parcaYaz();
+  parca.push(satir);
+  boy += b;
+}
+if (parca.length) parcaYaz();
 
 // Numara RayoPOS'un: açılış sırasına göre, RayoPOS'un ilk numarası 3000'den
 // başlayarak veriliyor; işletmenin sayacı sondan devam ediyor. Adisyo'nun
@@ -114,11 +148,12 @@ writeFileSync(
 create table adisyo_ara (
   kaynak_id bigint, no integer, tip text, masa_ad text, garson_ad text, musteri_ad text,
   acilis timestamptz, kapanis timestamptz, kisi_sayisi integer, indirim numeric(12, 2),
-  bahsis numeric(12, 2), servis numeric(12, 2), toplam numeric(12, 2), odemeler jsonb
+  bahsis numeric(12, 2), servis numeric(12, 2), toplam numeric(12, 2), odemeler jsonb,
+  kalemler jsonb
 );
 alter table adisyo_ara enable row level security;
 `
 );
 
 const toplam = [...adisyonlar.values()].reduce((t, a) => t + a.toplam, 0);
-console.log(`Toplam ${adisyonlar.size} adisyon, ${para(toplam)} TL`);
+console.log(`Toplam ${adisyonlar.size} adisyon, ${para(toplam)} TL, ${parcaNo} CSV parçası`);

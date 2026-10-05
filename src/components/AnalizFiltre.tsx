@@ -6,7 +6,7 @@ import { ayarlar } from "../isletmeAyarlari";
 import { vardiyaGecmisi, type VardiyaOzeti } from "../kasa";
 import { BOLGE_ANAHTAR, bolgeleriGetir } from "../masalar";
 import { ODEME_TIPI_ANAHTAR, odemeTipleriniGetir, type OdemeTipi } from "../odemeTipleri";
-import { kisaAd, personeliGetir } from "../personel";
+import { personeliGetir } from "../personel";
 import { useTanim } from "../tanimAbonelik";
 import { DonemPenceresi } from "./TarihSuzgeci";
 import {
@@ -51,7 +51,7 @@ export default function AnalizFiltre({
   const [vardiyalar, setVardiyalar] = useState<VardiyaOzeti[]>([]);
 
   useEffect(() => {
-    personeliGetir().then((p) => setKisiler(p.map((k) => ({ id: k.id, ad: kisaAd(k.ad) }))));
+    personeliGetir().then((p) => setKisiler(p.map((k) => ({ id: k.id, ad: k.ad }))));
     if (ayarlar().kasaTakibi) vardiyaGecmisi(30).then(setVardiyalar);
   }, []);
 

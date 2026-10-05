@@ -39,6 +39,7 @@ import { baglantiyiIzle, sureSinirli, useBaglanti } from "./baglanti";
 import { tanimlariIzle } from "./tanimAbonelik";
 import { kuyruguIzle } from "./kuyruk";
 import { acikOturum, bekleyenPinIzle, girisKuruldu, kilitle, oturumuYukle, useOturum } from "./oturum";
+import SiparisFisiUyarisi from "./components/SiparisFisiUyarisi";
 
 function App() {
   const { oturum, kilitli } = useOturum();
@@ -148,6 +149,7 @@ function App() {
     <Ekran>
     <BrowserRouter key={ayarTik}>
       <GorunumKapisi />
+      <SiparisFisiUyarisi />
       <YetkiKapisi>
         {/* Mobil arayüz kendi ekranlarıyla; masaüstü sayfaları olduğu gibi kalıyor. */}
         <Route path="/mobil" element={<MobilAcilis />} />

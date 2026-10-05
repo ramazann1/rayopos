@@ -54,7 +54,7 @@ import {
 import type { AdisyonVerisi } from "../adisyonlar";
 import { servisEtiketi, servisSatirlari, servisTutarlari, servisVar } from "../servis";
 import { kdvDokumu } from "../kdv";
-import { adisyonFisiYaz } from "../yazicilar";
+import { useFisYazdirma } from "../components/FisYazdirma";
 import { bekleyenKayit, kuyrugaEkle, kuyruguGonder, yoldakiKayit } from "../kuyruk";
 import { useMasayiTut } from "../mesguliyet";
 import { SINYAL, useCanli } from "../canli";
@@ -157,6 +157,7 @@ export default function MobilSiparis() {
   const [acikAdisyonId, setAcikAdisyonId] = useState<number | undefined>();
   const [gecmisAcik, setGecmisAcik] = useState(false);
   const [uyari, setUyari] = useState<string | null>(null);
+  const fis = useFisYazdirma();
   const [cikisSorusu, setCikisSorusu] = useState(false);
   const [gonderiliyor, setGonderiliyor] = useState(false);
 
@@ -451,10 +452,7 @@ export default function MobilSiparis() {
     setIslemlerAcik(false);
     try {
       const okunan = await adisyonGetir(masaId);
-      const adet = await adisyonFisiYaz({ ...okunan, ad: okunan.ad || masaAdi });
-      setUyari(
-        adet > 0 ? "Fiş yazdırmaya gönderildi." : "Hesap fişi basacak açık bir yazıcı tanımlı değil."
-      );
+      await fis.yazdir({ ...okunan, ad: okunan.ad || masaAdi });
     } catch {
       setUyari("Fiş yazdırmaya gönderilemedi.");
     }
@@ -1251,6 +1249,8 @@ export default function MobilSiparis() {
       )}
 
       {uyari && <OnayModal tekTus mesaj={uyari} onKapat={() => setUyari(null)} />}
+
+      {fis.pencere}
     </div>
   );
 }

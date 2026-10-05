@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { fisIcerigi, fisPaketi } from "./fis";
 import type { AdisyonVerisi } from "./adisyonlar";
+import { denetimYaz } from "./denetim";
 import type { SepetKalemi } from "./types";
 import { yerelBas } from "./yerelYazdirma";
 import { hataysaFirlat, onbellegiTazele, onbellekliGetir } from "./onbellek";
@@ -494,9 +495,11 @@ async function kuyrugaEkle(
 
   const { error } = await supabase.from("yazdirma_kuyrugu").insert(satir);
   if (error) {
-    if (yerel.basildi) return; // kâğıt çıktı; kayıt bağlantı gelince değil, hiç yazılmıyor
+    if (yerel.basildi) return null; // kâğıt çıktı; kayıt bağlantı gelince değil, hiç yazılmıyor
     throw new Error(`Fiş kuyruğa yazılamadı: ${error.message}`);
   }
+  // Köprüyü beklemesi gereken fişin kimliği; yerelde basılan zaten bitti.
+  return yerel.basildi ? null : kimlik;
 }
 
 /**
@@ -554,15 +557,48 @@ function turunYazicilari(yazicilar: Yazici[], tur: YaziciTuru) {
   return yazicilar.filter((y) => y.aktif && y.turler.includes(tur));
 }
 
-/** Hesap fişi: adisyon türündeki bütün açık yazıcılara gider. */
-export async function adisyonFisiYaz(adisyon: AdisyonVerisi) {
+export type FisSonucu =
+  | { durum: "basildi" | "yazici_yok" }
+  | { durum: "basarisiz"; hata: string }
+  | { durum: "ulasmadi"; kimlikler: string[] };
+
+/**
+ * Hesap fişi: adisyon türündeki bütün açık yazıcılara gider. Fiş sıraya
+ * konduktan sonra köprünün cevabı en çok üç saniye bekleniyor. Köprü açıksa
+ * cevap bir saniyede geliyor; basamadıysa yazıcının bildirdiği sebeple
+ * geliyor. Hiç cevap yoksa kasadaki program çalışmıyor demektir.
+ */
+export async function adisyonFisiYaz(adisyon: AdisyonVerisi): Promise<FisSonucu> {
   const [yazicilar, sablon] = await Promise.all([yazicilariOku(), sablonOku("adisyon")]);
   const hedefler = turunYazicilari(yazicilar, "adisyon");
-  if (!hedefler.length) return 0;
+  if (!hedefler.length) return { durum: "yazici_yok" };
 
   const icerik = fisPaketi(fisIcerigi(sablon, adisyon));
-  for (const y of hedefler) await kuyrugaEkle("adisyon", adisyon.id, y.id, icerik);
-  return hedefler.length;
+  const kimlikler: string[] = [];
+  for (const y of hedefler) {
+    const kimlik = await kuyrugaEkle("adisyon", adisyon.id, y.id, icerik);
+    if (kimlik) kimlikler.push(kimlik);
+  }
+  // Kuyruk doksan günde temizleniyor; fişin ne zaman gönderildiği defterde kalıyor.
+  if (adisyon.id) denetimYaz([{ islem: "fis_yazdir", adisyonId: adisyon.id, yer: adisyon.ad }]);
+
+  return kimlikler.length ? fisSonucunuBekle(kimlikler) : { durum: "basildi" };
+}
+
+async function fisSonucunuBekle(kimlikler: string[]): Promise<FisSonucu> {
+  const sonuclar = [...(await kuyrukSonuclari(kimlikler)).values()];
+  const basamayan = sonuclar.find((s) => s.durum === "basarisiz");
+  if (basamayan) return { durum: "basarisiz", hata: basamayan.hata || "Yazıcı basamadı." };
+  if (sonuclar.length === kimlikler.length && sonuclar.every((s) => s.durum === "basildi")) {
+    return { durum: "basildi" };
+  }
+  return { durum: "ulasmadi", kimlikler };
+}
+
+/** Köprüye ulaşmayan fiş sırada beklemesin; program açılınca saatler sonra çıkmasın. */
+export async function bekleyenFisiBirak(kimlikler: string[]) {
+  const { error } = await supabase.rpc("bekleyen_fisi_birak", { p_kimlikler: kimlikler });
+  if (error) throw new Error(error.message || "Fiş sıradan kaldırılamadı.");
 }
 
 /** Mutfak fişi: o turda gönderilen ürünler tezgâhlara dağıtılıyor. */
@@ -614,7 +650,8 @@ async function istasyonlaraYaz(
     gruplar.set(istasyon, liste);
   }
 
-  let sayi = 0;
+  const istasyonAdi = new Map((await istasyonlariGetir()).map((i) => [i.id, i.ad]));
+  const isler: SiparisFisi[] = [];
   for (const [istasyonId, liste] of gruplar) {
     for (const y of hedefler.filter((h) => h.istasyonlar.includes(istasyonId))) {
       // İçerik yazıcı başına üretiliyor: aynı istasyona 58 mm ve 80 mm yazıcı
@@ -622,11 +659,88 @@ async function istasyonlaraYaz(
       const icerik = fisPaketi(
         fisIcerigi(sablon, adisyon, liste, siparisNo, iptal, y.kagitGenislik)
       );
-      await kuyrugaEkle("mutfak", adisyon.id, y.id, icerik);
-      sayi++;
+      const kimlik = await kuyrugaEkle("mutfak", adisyon.id, y.id, icerik);
+      isler.push({ kimlik, istasyon: istasyonAdi.get(istasyonId) ?? "", yaziciId: y.id, icerik });
     }
   }
-  return sayi;
+  // İptal fişi izlenmiyor: ürün zaten masadan çıktı, kâğıt gelmese de iş bozulmuyor.
+  if (!iptal) siparisFisleriniIzle(isler, adisyon);
+  return isler.length;
+}
+
+type SiparisFisi = { kimlik: string | null; istasyon: string; yaziciId: number; icerik: string };
+
+export type SiparisFisiSorunu = {
+  yer: string;
+  /** Bildirilen sebep; köprüden hiç cevap gelmediyse boş. */
+  sorunlar: { istasyon: string; hata: string | null }[];
+  yenidenYaz: () => void;
+};
+
+const sorunDinleyicileri = new Set<(s: SiparisFisiSorunu) => void>();
+
+/** Uygulamanın kökündeki uyarı penceresi buradan haber alıyor. */
+export function siparisFisiSorununuDinle(dinleyici: (s: SiparisFisiSorunu) => void) {
+  sorunDinleyicileri.add(dinleyici);
+  return () => {
+    sorunDinleyicileri.delete(dinleyici);
+  };
+}
+
+/**
+ * Sipariş fişi beklenmeden gönderiliyor; garson salona dönmüş olabilir.
+ * Sonuç arkada üç saniye izleniyor, sorun varsa hangi ekran açıksa orada
+ * uyarı çıkıyor. Köprüye ulaşmayan fiş sırada kalıyor: sipariş geç de olsa
+ * istasyona gitmeli.
+ */
+async function siparisFisleriniIzle(isler: SiparisFisi[], adisyon: AdisyonVerisi) {
+  const izlenen = isler.filter((i) => i.kimlik);
+  if (!izlenen.length) return;
+
+  const sonuclar = await kuyrukSonuclari(izlenen.map((i) => i.kimlik!));
+  const sorunlu = izlenen.filter((i) => sonuclar.get(i.kimlik!)?.durum !== "basildi");
+  if (!sorunlu.length) return;
+
+  const sorun: SiparisFisiSorunu = {
+    yer: adisyon.ad ?? "",
+    sorunlar: sorunlu.map((i) => {
+      const s = sonuclar.get(i.kimlik!);
+      return { istasyon: i.istasyon, hata: s?.durum === "basarisiz" ? s.hata || "Yazıcı basamadı." : null };
+    }),
+    // Yalnız basılamayan fişler yeniden gönderiliyor; sırada bekleyen zaten basılacak.
+    yenidenYaz: () => {
+      const tekrar = sorunlu.filter((i) => sonuclar.get(i.kimlik!)?.durum === "basarisiz");
+      Promise.all(
+        tekrar.map(async (i) => ({
+          ...i,
+          kimlik: await kuyrugaEkle("mutfak", adisyon.id, i.yaziciId, i.icerik),
+        }))
+      )
+        .then((yeni) => siparisFisleriniIzle(yeni, adisyon))
+        .catch((e) => console.error("Sipariş fişi yeniden yazılamadı:", e));
+    },
+  };
+  for (const d of sorunDinleyicileri) d(sorun);
+}
+
+/** Kuyruktaki fişlerin durumu; hepsi sonuçlanınca ya da süre dolunca dönüyor. */
+async function kuyrukSonuclari(kimlikler: string[], sure = 3000) {
+  const sonuclar = new Map<string, { durum: string; hata: string | null }>();
+  const son = Date.now() + sure;
+  while (Date.now() < son) {
+    await new Promise((t) => setTimeout(t, 300));
+    const { data } = await supabase
+      .from("yazdirma_kuyrugu")
+      .select("istemci_kimlik, durum, hata")
+      .in("istemci_kimlik", kimlikler);
+    for (const s of (data as any[]) ?? []) {
+      sonuclar.set(s.istemci_kimlik, { durum: s.durum, hata: s.hata });
+    }
+    if (kimlikler.every((k) => ["basildi", "basarisiz"].includes(sonuclar.get(k)?.durum ?? ""))) {
+      break;
+    }
+  }
+  return sonuclar;
 }
 
 tazeleyiciTanit(ISTASYON_ANAHTAR, istasyonlariOku);

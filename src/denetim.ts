@@ -1,5 +1,4 @@
 import { supabase } from "./supabase";
-import { kisaAd } from "./personel";
 
 /**
  * Denetim defteri: hassas işlemlerin "kim, ne zaman, ne yaptı" kaydı.
@@ -17,7 +16,8 @@ export type DenetimIslemi =
   | "tahsilat_tip_duzelt"
   | "hesap_eksik_kapat"
   | "adisyon_masa_degisti"
-  | "adisyon_birlestirildi";
+  | "adisyon_birlestirildi"
+  | "fis_yazdir";
 
 export type DenetimKaydi = {
   islem: DenetimIslemi;
@@ -45,6 +45,7 @@ const ISLEM_ADLARI: Record<DenetimIslemi, string> = {
   hesap_eksik_kapat: "Hesap eksik kapatıldı",
   adisyon_masa_degisti: "Başka masaya taşındı",
   adisyon_birlestirildi: "Başka masayla birleştirildi",
+  fis_yazdir: "Hesap fişi yazdırmaya gönderildi",
 };
 
 export function islemAdi(islem: string) {
@@ -97,10 +98,11 @@ export type DenetimSatiri = {
  * bir hesapta da açılabiliyor, o kayıt seçili dönemin dışında kalır.
  */
 export async function adisyonDenetimi(adisyonId: number): Promise<DenetimSatiri[]> {
+  // Aktarılmış adisyonun kimliği eksi işaretli; defterde kendi sütununda.
   const { data } = await supabase
     .from("denetim_kayitlari")
     .select("id, zaman, kisi_id, kisi_ad, islem, adisyon_id, yer, konu, adet, tutar, sebep, odenmez")
-    .eq("adisyon_id", adisyonId)
+    .eq(adisyonId < 0 ? "gecmis_kaynak_id" : "adisyon_id", Math.abs(adisyonId))
     .order("zaman", { ascending: true });
 
   return satirlaraCevir(data as any[]);
@@ -112,6 +114,8 @@ export async function denetimGetir(bas: string, bit: string): Promise<DenetimSat
     .select("id, zaman, kisi_id, kisi_ad, islem, adisyon_id, yer, konu, adet, tutar, sebep, odenmez")
     .gte("zaman", bas)
     .lt("zaman", bit)
+    // Fiş basımı hassas işlem değil, yalnız sipariş geçmişinde görünüyor.
+    .neq("islem", "fis_yazdir")
     .order("zaman", { ascending: false })
     .limit(2000);
 
@@ -122,10 +126,7 @@ function satirlaraCevir(data: any[] | null): DenetimSatiri[] {
   return (data ?? []).map((s) => ({
     id: s.id,
     zaman: s.zaman,
-    // Defterdeki ad sunucuda tam yazılıyor ("Ramazan Aktaş"); ekranın her yerinde
-    // kısa biçim kullanıldığı için burada da kısaltılıyor. Aynı kişi bir satırda
-    // "Ramazan A.", diğerinde "Ramazan AKTAŞ" görünüyordu.
-    kisi: s.kisi_ad ? kisaAd(s.kisi_ad) : "—",
+    kisi: s.kisi_ad || "—",
     kisiId: s.kisi_id ?? null,
     islem: s.islem,
     islemAd: islemAdi(s.islem),

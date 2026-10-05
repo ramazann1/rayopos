@@ -45,7 +45,7 @@ import {
 import type { AdisyonVerisi } from "../adisyonlar";
 import type { IndirimKaynagi } from "../indirimler";
 import { servisSatirlari } from "../servis";
-import { adisyonFisiYaz } from "../yazicilar";
+import { useFisYazdirma } from "../components/FisYazdirma";
 import { acikOturum, yetkiVar } from "../oturum";
 import OnayModal from "../components/OnayModal";
 import SecimHapi from "../components/SecimHapi";
@@ -175,6 +175,7 @@ export default function MobilMasalar() {
   // İkramın kime yazıldığı soruluyor; liste ekran açılırken bir kez okunuyor.
   // Liste sunucuda değişince ekran kendiliğinden yeniliyor.
   const [uyari, setUyari] = useState<string | null>(null);
+  const fis = useFisYazdirma();
   const [, setTik] = useState(0);
   // Masa tanımları en son ne zaman sunucudan okundu (bkz. oku).
   const sonTanimOkumasi = useRef(0);
@@ -325,10 +326,7 @@ export default function MobilMasalar() {
     setIslemMasasi(null);
     try {
       const veri = await adisyonGetir(masa.id);
-      const adet = await adisyonFisiYaz({ ...veri, ad: veri.ad || masa.ad });
-      setUyari(
-        adet > 0 ? "Fiş yazdırmaya gönderildi." : "Hesap fişi basacak açık bir yazıcı tanımlı değil."
-      );
+      await fis.yazdir({ ...veri, ad: veri.ad || masa.ad });
     } catch {
       setUyari("Fiş yazdırmaya gönderilemedi.");
     }
@@ -744,6 +742,8 @@ export default function MobilMasalar() {
       )}
 
       {uyari && <OnayModal tekTus mesaj={uyari} onKapat={() => setUyari(null)} />}
+
+      {fis.pencere}
     </>
   );
 }

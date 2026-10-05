@@ -5,7 +5,6 @@ import { masraflariGetir, odemeAdi, type Masraf } from "./masraflar";
 import { denetimGetir, denetimYaz } from "./denetim";
 export type { DenetimSatiri } from "./denetim";
 import { odemeTipleriniGetir } from "./odemeTipleri";
-import { kisaAd } from "./personel";
 import { yetkiVar } from "./oturum";
 import { supabase } from "./supabase";
 import { istasyonlariGetir, urunIstasyonlari } from "./yazicilar";
@@ -286,8 +285,8 @@ export type AnalizAdisyon = {
    */
   acikHesap: number;
   /**
-   * Önceki programdan aktarılmış adisyon. Bütün sayımlara giriyor ama ürün
-   * kalemi yok; açılıp ayrıntısı görülemediği için adisyon listesinde yok.
+   * Önceki programdan aktarılmış adisyon. Bütün sayımlara giriyor; yalnız
+   * okunuyor, detayında işlem yapılamıyor.
    */
   gecmis?: boolean;
 };
@@ -326,7 +325,7 @@ function satiraCevir(s: any, varsayilanKdv?: number): AnalizAdisyon {
         // Ciro masayı açana değil satışı yapana yazılıyor. Taşınan kalem
         // kendi satanını taşıyor; eski kalemlerde o boş, turu yazan geçerli.
         turGarsonId: (k.satan ?? tur.garson)?.id ?? undefined,
-        turGarson: (k.satan ?? tur.garson)?.ad ? kisaAd((k.satan ?? tur.garson).ad) : undefined,
+        turGarson: (k.satan ?? tur.garson)?.ad ? (k.satan ?? tur.garson).ad : undefined,
         ad: k.ad,
         kategoriAd: k.kategori_ad ?? undefined,
         secimler: k.secimler?.length ? k.secimler : undefined,
@@ -376,7 +375,7 @@ function satiraCevir(s: any, varsayilanKdv?: number): AnalizAdisyon {
     bolgeId: s.masa?.bolge_id ?? null,
     bolgeAd: s.masa?.bolgeler?.ad ?? "",
     garsonId: s.acan?.id ?? null,
-    garson: s.acan?.ad ? kisaAd(s.acan.ad) : "",
+    garson: s.acan?.ad ? s.acan.ad : "",
     acilis: s.acilis,
     kapanis: s.kapanis ?? null,
     kisiSayisi: Number(s.kisi_sayisi ?? 0),
@@ -488,9 +487,7 @@ async function gecmisAdisyonlar(bas: Date, bit: Date): Promise<AnalizAdisyon[]> 
   for (let i = 0; ; i += 1000) {
     const { data } = await supabase
       .from("gecmis_adisyonlar")
-      .select(
-        "kaynak_id, no, tip, masa_ad, garson_ad, musteri_ad, acilis, kapanis, kisi_sayisi, indirim, bahsis, servis, toplam, odemeler"
-      )
+      .select(GECMIS_ALANLARI)
       .gte("kapanis", bas.toISOString())
       .lt("kapanis", bit.toISOString())
       .order("kapanis", { ascending: false })
@@ -501,49 +498,75 @@ async function gecmisAdisyonlar(bas: Date, bit: Date): Promise<AnalizAdisyon[]> 
     if (parca.length < 1000) break;
   }
 
-  return ham.map((s) => {
-    const toplam = Number(s.toplam);
-    const servis = Number(s.servis);
-    const odemeler = ((s.odemeler ?? []) as any[]).map((o) => ({
-      tip: String(o.tip),
-      tutar: Number(o.tutar),
-    }));
-    const odenen = odemeler.reduce((t, o) => t + o.tutar, 0);
-    return {
-      id: -Number(s.kaynak_id),
-      no: s.no ?? 0,
-      tip: (s.tip ?? "masa") as AdisyonTipi,
-      durum: "kapali" as const,
-      iptalSebep: "",
-      masaId: null,
-      masaAd: s.masa_ad ?? "",
-      bolgeId: null,
-      bolgeAd: "",
-      garsonId: null,
-      garson: s.garson_ad ? kisaAd(s.garson_ad) : "",
-      acilis: s.acilis,
-      kapanis: s.kapanis,
-      kisiSayisi: Number(s.kisi_sayisi ?? 0),
-      ad: "",
-      musteri: s.musteri_ad ?? "",
-      kalemler: [],
-      adet: 0,
-      araToplam: toplam - servis + Number(s.indirim),
-      indirim: Number(s.indirim),
-      ikram: 0,
-      matrah: 0,
-      kdv: 0,
-      kuver: servis,
-      garsoniye: 0,
-      toplam,
-      odenen,
-      kalan: Math.max(0, Math.round((toplam - odenen) * 100) / 100),
-      bahsis: Number(s.bahsis),
-      odemeler,
-      acikHesap: 0,
-      gecmis: true,
-    };
-  });
+  return ham.map(gecmisSatiri);
+}
+
+const GECMIS_ALANLARI =
+  "kaynak_id, no, tip, masa_ad, garson_ad, musteri_ad, acilis, kapanis, kisi_sayisi, indirim, bahsis, servis, toplam, odemeler, kalemler, durum, iptal_sebep";
+
+function gecmisSatiri(s: any): AnalizAdisyon {
+  const toplam = Number(s.toplam);
+  const servis = Number(s.servis);
+  const kalemler = gecmisKalemleri(s);
+  const ikram = kalemler
+    .filter((k) => k.durum === "ikram")
+    .reduce((t, k) => t + k.fiyat * k.adet, 0);
+  const odemeler = ((s.odemeler ?? []) as any[]).map((o) => ({
+    tip: String(o.tip),
+    tutar: Number(o.tutar),
+  }));
+  const odenen = odemeler.reduce((t, o) => t + o.tutar, 0);
+  return {
+    id: -Number(s.kaynak_id),
+    no: s.no ?? 0,
+    tip: (s.tip ?? "masa") as AdisyonTipi,
+    durum: s.durum === "iptal" ? "iptal" : "kapali",
+    iptalSebep: s.iptal_sebep ?? "",
+    masaId: null,
+    masaAd: s.masa_ad ?? "",
+    bolgeId: null,
+    bolgeAd: "",
+    garsonId: null,
+    garson: s.garson_ad ? s.garson_ad : "",
+    acilis: s.acilis,
+    kapanis: s.kapanis,
+    kisiSayisi: Number(s.kisi_sayisi ?? 0),
+    ad: "",
+    musteri: s.musteri_ad ?? "",
+    kalemler,
+    adet: kalemler.filter((k) => k.durum !== "iptal").reduce((t, k) => t + k.adet, 0),
+    araToplam: toplam - servis + Number(s.indirim),
+    indirim: Number(s.indirim),
+    ikram: Math.round(ikram * 100) / 100,
+    matrah: 0,
+    kdv: 0,
+    kuver: servis,
+    garsoniye: 0,
+    toplam,
+    odenen,
+    kalan: Math.max(0, Math.round((toplam - odenen) * 100) / 100),
+    bahsis: Number(s.bahsis),
+    odemeler,
+    acikHesap: 0,
+    gecmis: true,
+  };
+}
+
+/**
+ * Aktarılmış kalemler RayoPOS kaydına bağlı değil: ürün adıyla sayılıyor,
+ * satışı yapan olarak masayı açan yazılıyor. Kimlikleri adisyon içinde sıra.
+ */
+function gecmisKalemleri(s: any): SepetKalemi[] {
+  return ((s.kalemler ?? []) as any[]).map((k, i) => ({
+    id: i + 1,
+    ad: String(k.ad),
+    adet: Number(k.adet),
+    fiyat: Number(k.fiyat),
+    durum: (k.durum ?? "normal") as SepetKalemi["durum"],
+    indirim: Number(k.indirim ?? 0) || undefined,
+    not: k.not ?? undefined,
+    turGarson: s.garson_ad || undefined,
+  }));
 }
 
 /**
@@ -632,6 +655,8 @@ const DETAY_ALANLARI = `id, adisyon_no, gunluk_no, tip, durum, iptal_sebep, acil
                     kisi:personel!tahsilatlar_kisi_id_fkey (ad))`;
 
 export async function adisyonDetayi(adisyonId: number): Promise<AdisyonDetay | null> {
+  if (adisyonId < 0) return gecmisDetayi(-adisyonId);
+
   const [{ data }, varsayilanKdv] = await Promise.all([
     supabase.from("adisyonlar").select(DETAY_ALANLARI).eq("id", adisyonId).maybeSingle(),
     varsayilanKdvOrani(),
@@ -643,7 +668,7 @@ export async function adisyonDetayi(adisyonId: number): Promise<AdisyonDetay | n
     .map((t) => ({
       sira: t.sira,
       saat: t.olusturma,
-      garson: t.garson?.ad ? kisaAd(t.garson.ad) : "",
+      garson: t.garson?.ad ? t.garson.ad : "",
       kalemler: ((t.adisyon_kalemleri ?? []) as any[]).map((k) => ({
         id: k.id,
         ad: k.ad,
@@ -669,7 +694,7 @@ export async function adisyonDetayi(adisyonId: number): Promise<AdisyonDetay | n
     not: s.not_metni ?? "",
     telefon: s.musteri_telefon ?? "",
     adres: s.adres ?? "",
-    kapatan: s.kapatan?.ad ? kisaAd(s.kapatan.ad) : "",
+    kapatan: s.kapatan?.ad ? s.kapatan.ad : "",
     turlar,
     tahsilatlar: ((s.tahsilatlar ?? []) as any[])
       .map((t) => ({
@@ -678,10 +703,69 @@ export async function adisyonDetayi(adisyonId: number): Promise<AdisyonDetay | n
         tutar: Number(t.tutar),
         bahsis: Number(t.bahsis ?? 0),
         olusturma: t.olusturma,
-        kisi: t.kisi?.ad ? kisaAd(t.kisi.ad) : "",
+        kisi: t.kisi?.ad ? t.kisi.ad : "",
       }))
       .sort((a, b) => a.olusturma.localeCompare(b.olusturma)),
   };
+}
+
+/**
+ * Aktarılmış adisyonun detayı. Önceki programda tur kaydı yok; aynı dakikada
+ * girilen kalemler bir tur sayılıyor. Tahsilatların saati bilinmediği için
+ * kapanış saati yazılıyor.
+ */
+async function gecmisDetayi(kaynakId: number): Promise<AdisyonDetay | null> {
+  const { data } = await supabase
+    .from("gecmis_adisyonlar")
+    .select(GECMIS_ALANLARI)
+    .eq("kaynak_id", kaynakId)
+    .maybeSingle();
+  if (!data) return null;
+
+  const s = data as any;
+  const adisyon = gecmisSatiri(s);
+  const turlar: DetayTur[] = [];
+  ((s.kalemler ?? []) as any[]).forEach((k, i) => {
+    // Aktarımda saat "+03" diye yazıldı; tarayıcı yalnız "+03:00"ı tarih sayıyor.
+    const saat = k.saat ? String(k.saat).replace(/\+03$/, "+03:00") : s.acilis;
+    const dakika = saat.slice(0, 16);
+    let tur = turlar.find((t) => t.saat.slice(0, 16) === dakika);
+    if (!tur) {
+      tur = { sira: turlar.length + 1, saat, garson: adisyon.garson, kalemler: [] };
+      turlar.push(tur);
+    }
+    tur.kalemler.push(adisyon.kalemler[i]);
+  });
+  turlar.sort((a, b) => a.saat.localeCompare(b.saat));
+
+  return {
+    ...adisyon,
+    indirimAd: "",
+    eksikKisi: "",
+    eksikSebep: "",
+    not: "",
+    telefon: "",
+    adres: "",
+    kapatan: "",
+    turlar,
+    tahsilatlar: adisyon.odemeler.map((o, i) => ({
+      id: i + 1,
+      tip: o.tip,
+      tutar: o.tutar,
+      bahsis: i === 0 ? adisyon.bahsis : 0,
+      olusturma: adisyon.kapanis!,
+      kisi: "",
+    })),
+  };
+}
+
+/** Aktarılmış adisyon yeniden açılamadığı için doğrudan iptal ediliyor. */
+export async function gecmisAdisyonIptal(adisyonId: number, sebep: string) {
+  const { error } = await supabase.rpc("gecmis_adisyon_iptal", {
+    p_kaynak_id: -adisyonId,
+    p_sebep: sebep,
+  });
+  if (error) throw new Error(error.message || "Adisyon iptal edilemedi.");
 }
 
 /**
@@ -719,6 +803,18 @@ export async function tahsilatTipiDuzelt(
 ) {
   const tahsilat = detay.tahsilatlar.find((t) => t.id === tahsilatId);
   if (!tahsilat) return;
+
+  // Aktarılmış adisyonda ödemeler adisyonun içinde liste; kimlik sıra + 1.
+  if (detay.gecmis) {
+    const { error } = await supabase.rpc("gecmis_odeme_tipi_duzelt", {
+      p_kaynak_id: -detay.id,
+      p_sira: tahsilatId - 1,
+      p_tip: yeniTip,
+      p_sebep: sebep,
+    });
+    if (error) throw new Error(error.message || "Ödeme tipi düzeltilemedi.");
+    return;
+  }
 
   const { error } = await supabase
     .from("tahsilatlar")

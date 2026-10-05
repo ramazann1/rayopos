@@ -203,7 +203,7 @@ async function sayfalar(bolum: string, v: AnalizVerisi): Promise<Sayfa[]> {
             { ad: "Tahsilatlar", genislik: 30 },
             { ad: "İptal sebebi", genislik: 24 },
           ],
-          satirlar: v.adisyonlar.filter((a) => !a.gecmis).map((a) => [
+          satirlar: v.adisyonlar.map((a) => [
             a.no,
             zaman(a.acilis),
             zaman(a.kapanis),

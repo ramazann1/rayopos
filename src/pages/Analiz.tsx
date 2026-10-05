@@ -105,7 +105,6 @@ import {
 import { SAKIN, useCanli } from "../canli";
 import { DISA_AKTARILAN_BOLUMLER, analiziIndir } from "../analizExcel";
 import { odemeAdi, type Masraf } from "../masraflar";
-import { kisaAd } from "../personel";
 import { useKutuBoyu } from "../kutuBoyu";
 import { kayiplariGetir, sebepAdi, type KayipSatiri } from "../stokHareket";
 import { miktarGoster } from "../stok";
@@ -439,6 +438,8 @@ function adisyonDegeri(a: AnalizAdisyon, alan: AdisyonAlani): string | number {
 const adisyonMetni = (alan: AdisyonAlani) =>
   ["tip", "masa", "garson", "durum", "tahsilat", "kapanis", "acilis"].includes(alan);
 
+const PARCA_SATIR = 200;
+
 /** Saat ve tutar sütunlarında en büyükle başlamak doğal; adlarda alfabetik. */
 const adisyonIlkYon = (alan: AdisyonAlani) =>
   adisyonMetni(alan) && alan !== "acilis" && alan !== "kapanis";
@@ -469,7 +470,6 @@ function Adisyonlar({
   const adisyonlar = useMemo(() => {
     const ara = arama.trim().toLocaleLowerCase("tr");
     const liste = hepsi.filter((a) => {
-      if (a.gecmis) return false;
       if (sadeceEksik && !(a.durum === "kapali" && a.kalan > 0)) return false;
       if (!ara) return true;
       const metin = `${a.no} ${a.masaAd} ${a.bolgeAd} ${a.garson} ${a.ad} ${a.musteri}`;
@@ -486,6 +486,17 @@ function Adisyonlar({
       return (Number(x) - Number(y)) * yon;
     });
   }, [hepsi, sadeceEksik, arama, sira]);
+
+  // Aktarılmış geçmişle bir yıl on binlerce satır; hepsi birden çizilince
+  // sayfa donuyordu. Satırlar kaydırdıkça ekleniyor, toplamlar listenin tamamından.
+  const [gorunen, setGorunen] = useState(PARCA_SATIR);
+  useEffect(() => setGorunen(PARCA_SATIR), [adisyonlar]);
+  const kaydirinca = (e: React.UIEvent<HTMLDivElement>) => {
+    const k = e.currentTarget;
+    if (gorunen < adisyonlar.length && k.scrollTop + k.clientHeight > k.scrollHeight - 400) {
+      setGorunen((g) => g + PARCA_SATIR);
+    }
+  };
 
   const sirala = (alan: AdisyonAlani) =>
     setSira((s) =>
@@ -579,7 +590,12 @@ function Adisyonlar({
         <AramaKutusu deger={arama} degistir={setArama} yer="Adisyon no, masa, müşteri" />
       </div>
 
-      <div className="tablo-kaydir tablo-kaydir-dikey" ref={kutu} style={{ maxHeight: boy || undefined }}>
+      <div
+        className="tablo-kaydir tablo-kaydir-dikey"
+        ref={kutu}
+        style={{ maxHeight: boy || undefined }}
+        onScroll={kaydirinca}
+      >
         <table className="analiz-tablo">
           <thead>
             <tr>
@@ -604,7 +620,7 @@ function Adisyonlar({
             </tr>
           </thead>
           <tbody>
-            {adisyonlar.map((a) => (
+            {adisyonlar.slice(0, gorunen).map((a) => (
               <tr
                 key={a.id}
                 className={a.durum === "kapali" && a.kalan > 0 ? "adisyon-eksik" : undefined}
@@ -3581,7 +3597,7 @@ function AcikHesap({ hareketler }: { hareketler: CariHareketSatiri[] }) {
                       ? `Adisyon #${h.adisyonId}`
                       : h.aciklama || h.odemeTipi || "—"}
                   </td>
-                  <td>{kisaAd(h.kisi) || "—"}</td>
+                  <td>{h.kisi || "—"}</td>
                   <td className="sag">{paraGoster(tutar(h))}</td>
                 </tr>
               ))}

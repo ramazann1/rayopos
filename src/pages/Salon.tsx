@@ -69,7 +69,7 @@ import {
 } from "../adisyonlar";
 import { servisSatirlari } from "../servis";
 import type { AdisyonVerisi, MasaOzeti, MasasizAdisyon } from "../adisyonlar";
-import { adisyonFisiYaz } from "../yazicilar";
+import { useFisYazdirma } from "../components/FisYazdirma";
 import {
   BOLGE_ANAHTAR,
   kopyadakiBolgeler,
@@ -237,6 +237,7 @@ export default function Salon() {
     onOnay: () => void;
   } | null>(null);
   const [uyari, setUyari] = useState<string | null>(null);
+  const fis = useFisYazdirma();
   // İkram penceresindeki "kime yazılsın" listesi; ekran açılırken bir kez okunuyor.
   // Liste sunucuda değişince ekran kendiliğinden yeniliyor.
   // Adisyonun tamamına iptal/ikram: ikisi de sebep sorduğu için ayrı pencere.
@@ -550,12 +551,7 @@ export default function Salon() {
   async function fisYazdir(masa: Masa) {
     try {
       const veri = await adisyonGetir(masa.id);
-      const adet = await adisyonFisiYaz({ ...veri, ad: veri.ad || masa.ad });
-      setUyari(
-        adet > 0
-          ? "Fiş yazdırmaya gönderildi."
-          : "Adisyon fişi basacak açık bir yazıcı tanımlı değil."
-      );
+      await fis.yazdir({ ...veri, ad: veri.ad || masa.ad });
     } catch {
       setUyari("Fiş yazdırmaya gönderilemedi.");
     }
@@ -1046,6 +1042,8 @@ export default function Salon() {
         )}
 
         {uyari && <OnayModal mesaj={uyari} tekTus onKapat={() => setUyari(null)} />}
+
+        {fis.pencere}
       </div>
     </>
   );

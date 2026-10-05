@@ -46,4 +46,5 @@
 - [Vite son düzenlemeyi kaçırır](rayopos-vite-son-duzenlemeyi-kacirir.md) — beyaz sayfa/eski görünüm: sunulan metne bak, dosyaya dokun.
 - [Tarayıcıda önce hesabı söyle](rayopos-tarayicida-once-hesabi-soyle.md) — Chrome'da işlemden önce açık hesap/işletmeyi yaz; tıklama sepete yazabilir.
 - [Mobil test iframe ile](rayopos-mobil-test-iframe.md) — Chrome tam ekran; telefon ekranı sekme içinde 400 px iframe'de açılır.
+- [Auto mod engeli](rayopos-auto-mod-engeli.md) — Adisyo çekimi ve canlı SQL Auto'da engelleniyor; önce Manual'a aldır.
 - [RLS sorgu başına bir kez](rayopos-rls-sorgu-basina-bir-kez.md) — politikada kişiye bağlı fonksiyon (select ...) içinde; satır başına çalışınca rapor dakikalar sürüyor.
