@@ -1,34 +1,41 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (5 Eki 2026 güncellendi)
+## 0. SIRADAKİ İŞ (6 Eki 2026 güncellendi)
 
-> **Masa kilidi (6 Eki çözüldü, Ramazan denedi):** uygulama arka plana
-> atılınca işaret anında siliniyor; tamamen kapatılınca telefon bir şey
-> yazamıyor, onun için masadaki cihaz Supabase canlı hattında (presence,
-> `masada-<isletme>` kanalı) "buradayım" diyor, hattan düşünce ızgara 12 sn
-> sonra kilidi kaldırıyor (internet titremesi kilidi düşürmesin). Arkadan
-> dönüşte masa başkasındaysa geri alınmıyor, "Masa devralındı" ile salona
-> dönülüyor (Ramazan kararı). Hat kurulamazsa eski 60 sn kuralı geçerli.
-> Ayrıca: oturum o an tanınmazsa sunucu boş masa listesi döndürüyordu, salon
-> "masa yok" diyordu — artık boş liste `oturum_isletmesi` boşsa hata sayılıyor.
+> **YENİ SEANSIN İLK İŞİ: Analiz uzun aralıkta çok yavaş** (2025'in tamamı
+> dakikalar sürüyor). Tahminle değiştirme, önce ölç. Tarayıcıdan ölçülemedi:
+> Chrome eklentisi ve uygulama tarayıcısı rayopos.pages.dev'e girişi
+> reddediyor (localhost:5173 eklentide izinli, dev sunucusu açıksa oradan
+> ölçülebilir). Plan: Analiz'in okuma/hesaplama adımlarına süre ölçümü ekle
+> (eski adisyon paketleri kaç tane/kaç sn, yeni adisyonlar, hesaplama),
+> Ramazan'a sor, onayla canlıya gönder, Ramazan 2025'i açıp rakamı iletsin;
+> rakama göre karar ver. Şüpheliler: `gecmis_adisyonlar` 1000'er satır
+> SIRAYLA iniyor ve kalemler (jsonb) her satırda geliyor; kalıcı çözüm
+> "Analiz hesapları sunucuya" (Sonrakiler'de).
 >
-> **YENİ SEANSIN İLK İŞİ: 5 Eki seansında yazılıp denenmemiş olanların
-> testi.** Önce Ramazan `sql/2026-10-05-gecmis-duzeltme.sql`'i çalıştırmış
-> mı, sor (çalışmadıysa eski adisyonlar Analiz'de boş gelir). Sonra sırayla:
+> **6 Eki'de yapılanlar (hepsi canlıda):** masa kilidi uygulama arkaya
+> atılınca/kapatılınca kalkıyor (presence `masada-<isletme>`, düşünce 12 sn;
+> dönüşte masa başkasındaysa geri alınmıyor) — Ramazan denedi. Adisyonlar
+> listesi toplamı Analiz'le aynı (iptal ve açık hesap toplamda değil, kartın
+> altında). Eski adisyonda iptali geri al (`sql/2026-10-06-gecmis-iptal-
+> geri.sql`), yeni adisyonda iptal edileni "Siparişi aktif et" (masa doluysa
+> salondan boş masa seçiliyor) — denendi. Kayıt tarihleri her yerde yıllı.
+> Eski kalemlere Adisyo kategorisi + İngilizce menünün Türkçe karşılığı
+> (`adisyo-kategori.js`, Oyun Ücreti = Okey Ücreti, derbiler ayrı; Deneme'de
+> çalıştı, Ramazan baktı). Eski adisyon masaya aktif edilemez (Ramazan:
+> gerek yok).
+>
+> **Sonra: 5 Eki'nin denenmemiş testleri** (eski adisyon iptal/ödeme tipi
+> 6 Eki'de denendi, çıkarıldı):
 > - Hesap fişi: altta "gönderildi" bildirimi; köprü kapalı → "ulaşmadı"
 >   (Vazgeç → program açılınca fiş ÇIKMAMALI, Beklesin → çıkmalı); her şey
 >   açık → pencere yok. (Yazıcı kapalı → "basılamadı: sebep" denendi, çalıştı.)
 > - Sipariş fişi uyarısı (`SiparisFisiUyarisi`, uygulama kökünde): yazıcı
 >   kapalı → istasyon adıyla "basılamadı" + Yeniden yazdır; köprü kapalı →
 >   "ulaşmadı" tek Tamam; iptal fişi izlenmiyor (Ramazan kararı).
-> - Eski (Adisyo) adisyonda doğrudan İptal et ve ödeme tipi düzeltme;
->   iptal edilen ciroya girmiyor mu, sipariş geçmişinde görünüyor mu.
 > - Sipariş geçmişinde "Hesap fişi yazdırmaya gönderildi" (gönderme anı,
 >   Ramazan kararı; yalnız 5 Eki sonrası fişler).
-> - Analiz Adisyonlar'da 10 aylık aralık: donma gitti mi (200'er satır
->   kaydırdıkça), veri kaç saniyede geliyor. Yavaşsa ölç: büyük olasılıkla
->   `gecmis_adisyonlar.kalemler`in indirilmesi (Ürünler sekmesi için gerekli).
 >
 > **Oturum tanınmayan istekler (6 Eki, iki kez görüldü):** salon "masa yok",
 > sonra Analiz eski adisyonları boş gösterdi; ikisi de hatasız boş liste,
