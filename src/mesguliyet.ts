@@ -1,5 +1,6 @@
 import { durumluModul } from "./sicakGuncelleme";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { acikOturum, yetkiVar } from "./oturum";
 import { kisaAd } from "./personel";
@@ -20,6 +21,63 @@ import { useCanli } from "./canli";
 const KALP_ATISI = 20_000;
 /** Bu kadar süredir ses çıkmayan işaret ölü sayılıyor. */
 export const OLU_SURE = 60_000;
+
+/**
+ * Sahibi canlı hattan düştükten sonra işaretin ekranda kalma süresi. İnternetin
+ * kısa titremesi kilidi düşürüp geri koymasın diye.
+ */
+const HAT_PAYI = 12_000;
+
+/**
+ * Canlı hat: masadaki cihaz "buradayım" diyor. Uygulama kapatılınca telefon
+ * bir şey yazamadan ölüyor, veritabanındaki işaret yerinde kalıyor; hat ise
+ * telefonla birlikte kopuyor ve sunucu bunu hemen herkese duyuruyor. İşaretin
+ * kendisi yine tabloda — devralma ve "masa kimde" sorusu oradan çalışıyor,
+ * hat yalnız sahibinin hâlâ orada olup olmadığını söylüyor.
+ */
+type Varlik = { masaId: number; kisiId: number };
+
+let kanal: RealtimeChannel | null = null;
+let kanalIsletmesi: number | undefined;
+let hatHazir = false;
+let hattakiler = new Set<string>();
+let bildirilen: Varlik | null = null;
+const hatIzleyicileri = new Set<() => void>();
+
+const varlikAnahtari = (masaId: number, kisiId: number | null) => `${masaId}:${kisiId}`;
+
+function hattiAc() {
+  const isletme = acikOturum()?.isletmeId;
+  if (kanal && kanalIsletmesi === isletme) return kanal;
+  if (kanal) supabase.removeChannel(kanal);
+  kanalIsletmesi = isletme;
+  hatHazir = false;
+  hattakiler = new Set();
+
+  const yeni = supabase.channel(`masada-${isletme}`);
+  yeni
+    .on("presence", { event: "sync" }, () => {
+      const kume = new Set<string>();
+      for (const liste of Object.values(yeni.presenceState<Varlik>()))
+        for (const v of liste) kume.add(varlikAnahtari(v.masaId, v.kisiId));
+      hattakiler = kume;
+      hatHazir = true;
+      hatIzleyicileri.forEach((f) => f());
+    })
+    // Bağlantı kopup geri gelince hat yeniden kuruluyor; masa hâlâ bizdeyse
+    // tekrar söyleniyor.
+    .subscribe((durum) => {
+      if (durum === "SUBSCRIBED" && bildirilen) yeni.track(bildirilen).catch(() => {});
+    });
+  kanal = yeni;
+  return yeni;
+}
+
+function hattaBildir(v: Varlik | null) {
+  bildirilen = v;
+  const k = hattiAc();
+  (v ? k.track(v) : k.untrack()).catch(() => {});
+}
 
 export type Mesguliyet = {
   masaId: number;
@@ -155,6 +213,7 @@ export function useMasayiTut(masaId: number | null) {
         ilkGiris = false;
         await isaretiKoy(masaId).catch(() => {});
         bizde = true;
+        hattaBildir({ masaId, kisiId });
         return;
       }
       // Masa alınmışsa atış duruyor. Yeniden konulsaydı geri çalmış olurduk;
@@ -162,6 +221,7 @@ export function useMasayiTut(masaId: number | null) {
       const duruyor = await kalpAtisi(masaId, kisiId).catch(() => true);
       if (duruyor) return;
       birakildi = true;
+      hattaBildir(null);
       sahibiSor().catch(() => {});
     };
 
@@ -171,6 +231,7 @@ export function useMasayiTut(masaId: number | null) {
     const birak = () => {
       if (!bizde || birakildi) return;
       bizde = false;
+      hattaBildir(null);
       isaretiKaldir(masaId, kisiId).catch(() => {});
     };
     const gorunurlukDegisti = () => (document.hidden ? birak() : vur());
@@ -185,6 +246,7 @@ export function useMasayiTut(masaId: number | null) {
       clearInterval(zaman);
       document.removeEventListener("visibilitychange", gorunurlukDegisti);
       window.removeEventListener("pagehide", birak);
+      hattaBildir(null);
       if (baglantiVar()) isaretiKaldir(masaId, kisiId).catch(() => {});
     };
   }, [masaId]);
@@ -214,6 +276,31 @@ export async function masayiDevral(masaId: number) {
  */
 export function useMesguliyetler() {
   const [liste, setListe] = useState<Record<number, Mesguliyet>>({});
+  // İşaretin bu cihazda ilk görüldüğü ve sahibinin hattan düştüğü an. Yeni
+  // girilen masanın sahibi hatta birkaç saniye geç görünebiliyor; o arada
+  // işaret gizlenmesin diye ilk görülme de HAT_PAYI kadar korunuyor.
+  const ilkGorulme = useRef(new Map<string, number>());
+  const dustu = useRef(new Map<string, number>());
+  const [, setTik] = useState(0);
+
+  useEffect(() => {
+    hattiAc();
+    let onceki = new Set(hattakiler);
+    const degisti = () => {
+      const simdi = Date.now();
+      for (const a of onceki) if (!hattakiler.has(a)) dustu.current.set(a, simdi);
+      for (const a of hattakiler) dustu.current.delete(a);
+      onceki = new Set(hattakiler);
+      setTik((t) => t + 1);
+    };
+    hatIzleyicileri.add(degisti);
+    // Düşen sahibin payı dolunca ekran olay beklemeden yeniden çiziliyor.
+    const zaman = setInterval(() => setTik((t) => t + 1), 3000);
+    return () => {
+      hatIzleyicileri.delete(degisti);
+      clearInterval(zaman);
+    };
+  }, []);
 
   const oku = () => {
     if (!baglantiVar()) return;
@@ -241,7 +328,22 @@ export function useMesguliyetler() {
     return () => clearInterval(zaman);
   }, []);
 
-  return liste;
+  // Hat kurulamadıysa tablo tek başına karar veriyor (OLU_SURE).
+  if (!hatHazir) return liste;
+  const simdi = Date.now();
+  const gorunen: Record<number, Mesguliyet> = {};
+  for (const [masaId, kayit] of Object.entries(liste)) {
+    const a = varlikAnahtari(kayit.masaId, kayit.kisiId);
+    if (!ilkGorulme.current.has(a)) ilkGorulme.current.set(a, simdi);
+    const yeni = simdi - ilkGorulme.current.get(a)! < HAT_PAYI;
+    const dusme = dustu.current.get(a);
+    const payda = dusme !== undefined && simdi - dusme < HAT_PAYI;
+    if (hattakiler.has(a) || yeni || payda) gorunen[Number(masaId)] = kayit;
+  }
+  // Kalkan işaretin kaydı siliniyor; aynı kişi masaya yeniden girince yeni sayılsın.
+  const duran = new Set(Object.values(liste).map((k) => varlikAnahtari(k.masaId, k.kisiId)));
+  for (const a of ilkGorulme.current.keys()) if (!duran.has(a)) ilkGorulme.current.delete(a);
+  return gorunen;
 }
 
 // Modül kendi durumunu bellekte tutuyor: sıcak güncelleme yerine tam yenileme.
