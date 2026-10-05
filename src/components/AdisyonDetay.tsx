@@ -35,7 +35,7 @@ const saat = (t: string) =>
   new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 
 const gunSaat = (t: string) =>
-  `${new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" })} ${saat(t)}`;
+  `${new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })} ${saat(t)}`;
 
 const TIP_ADLARI = { masa: "Masa", gelal: "Gel Al", paket: "Paket" };
 

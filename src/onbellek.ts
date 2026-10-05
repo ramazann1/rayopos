@@ -233,7 +233,7 @@ export function zamanMetni(zaman: number) {
   const saat = t.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
   const bugun = new Date().toDateString() === t.toDateString();
   if (bugun) return saat;
-  return `${t.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} ${saat}`;
+  return `${t.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })} ${saat}`;
 }
 
 // Modül kendi durumunu bellekte tutuyor: sıcak güncelleme yerine tam yenileme.

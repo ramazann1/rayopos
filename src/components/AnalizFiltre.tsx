@@ -69,6 +69,7 @@ export default function AnalizFiltre({
       ad: `Vardiya · ${new Date(vardiya.acilis).toLocaleDateString("tr-TR", {
         day: "numeric",
         month: "short",
+        year: "numeric",
       })} ${new Date(vardiya.acilis).toLocaleTimeString("tr-TR", {
         hour: "2-digit",
         minute: "2-digit",
@@ -206,6 +207,7 @@ export default function AnalizFiltre({
                         {new Date(v.acilis).toLocaleDateString("tr-TR", {
                           day: "numeric",
                           month: "short",
+                          year: "numeric",
                         })}{" "}
                         {new Date(v.acilis).toLocaleTimeString("tr-TR", {
                           hour: "2-digit",

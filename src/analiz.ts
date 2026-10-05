@@ -230,7 +230,7 @@ export function aralikMetni(bas: Date, bit: Date) {
 export function donemMetni(f: AnalizFiltre) {
   if (f.vardiyaId && f.vardiyaBas) {
     const bas = new Date(f.vardiyaBas);
-    return `${bas.toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} vardiyası`;
+    return `${bas.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })} vardiyası`;
   }
 
   const hazir = DONEMLER.find((d) => d.kod === f.donem);
@@ -240,7 +240,7 @@ export function donemMetni(f: AnalizFiltre) {
   if (f.ozelBas.includes("T")) return aralikMetni(bas, bit);
   const son = gunEkle(bit, -1);
   const bicim = (t: Date) =>
-    t.toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
+    t.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
   return bas.toDateString() === son.toDateString()
     ? bicim(bas)
     : `${bicim(bas)} – ${bicim(son)}`;

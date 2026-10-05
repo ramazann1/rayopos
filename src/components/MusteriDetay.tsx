@@ -29,7 +29,7 @@ import {
 } from "../cari";
 
 const gunMetni = (t: string) =>
-  new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
+  new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
 
 const saatMetni = (t: string) =>
   new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });

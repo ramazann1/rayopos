@@ -378,7 +378,7 @@ const saatMetni = (t: string) =>
   new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 
 const gunMetni = (t: string) =>
-  new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" });
+  new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 type AdisyonAlani =
   | "no"
