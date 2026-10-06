@@ -1,20 +1,20 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (6 Eki 2026 güncellendi)
+## 0. SIRADAKİ İŞ (7 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ: Analiz uzun aralıkta çok yavaş** (2025'in tamamı
-> dakikalar sürüyor). Tahminle değiştirme, önce ölç. **Ölçümü Claude,
-> Ramazan'ın Chrome'unda yapıyor (Ramazan kararı)** — ama rayopos.pages.dev
-> eklentide izinli değil, yalnız `localhost:5173` izinli: Ramazan
-> `npm.cmd run dev`'i açar, Claude Chrome'da yeni sekme grubu açıp
-> (tabs_context createIfEmpty) `https://localhost:5173/analiz`'e gider,
-> deneme işletmesinde 2025'in tamamını açıp ağ isteklerini ve süreleri
-> ölçer (eski adisyon paketleri kaç tane/kaç sn, yeni adisyonlar,
-> hesaplama). Rakama göre plan anlatılır, onayla düzeltilir, canlıya
-> göndermeden önce sorulur. Şüpheliler: `gecmis_adisyonlar` 1000'er satır
-> SIRAYLA iniyor ve kalemler (jsonb) her satırda geliyor; kalıcı çözüm
-> "Analiz hesapları sunucuya" (Sonrakiler'de).
+> **YENİ SEANSIN İLK İŞİ: Analiz → Karşılaştırma sekmesi** (aşağıda 4.
+> madde; Ramazan sıranın başına aldı). Önce Adisyo'da karşılaştırma turu,
+> sonra taslak, onayla kodlama.
+>
+> **7 Eki'de yapılanlar (canlıda):** Analiz hızlandı — eski adisyon
+> parçaları altışar birlikte iniyor (2025+2024: ~9 sn → ~5 sn), bitmiş
+> dönem masa hareketinde baştan indirilmiyor (önceden ikinci kez ~8 sn).
+> Kalan darboğaz veri boyu: 1000 eski adisyon ~1 MB, üçte ikisi kalemler.
+> Eski masa adları bugünkü masaya eşleniyor (SALON→S, BAR→B, İB→IB,
+> LOCA→L; 73.564 adisyonun hepsi eşleşti), "Bölgesiz" kalktı, masa/bölge
+> filtresi eski adisyonda da çalışıyor. Filtrede bölge ve masa çoklu
+> seçim (çip; bölge seçilince masaları açılıyor).
 >
 > **6 Eki'de yapılanlar (hepsi canlıda):** masa kilidi uygulama arkaya
 > atılınca/kapatılınca kalkıyor (presence `masada-<isletme>`, düşünce 12 sn;
@@ -65,6 +65,14 @@
 >    kod değiştirilerek); `2026-10-04-gecmis-kalemler.sql` ve
 >    `2026-10-05-gecmis-duzeltme.sql` canlıda çalışmış olmalı;
 >    1-ara-tablo → CSV parçaları → 2-tasi.
+> 4. **Analiz → Karşılaştırma sekmesi (7 Eki, Ramazan kararı):** otomatik
+>    "önceki döneme göre" mantığı karmaşık bulundu (13–17 Haz Cmt–Çrş,
+>    önceki Pzt–Cuma ile kıyaslanıyordu). Yerine ayrı sekme: kullanıcı
+>    **2–4 aralığı kendisi seçer**, yan yana sütunlarda ciro, adisyon,
+>    ortalama, misafir, ürün, bölge ve farklar. Hazır seçenekler (geçen
+>    haftanın aynı günleri, geçen yılın aynı dönemi) düşünülecek. Özet'teki
+>    "%" etiketi ve arka plandaki önceki dönem indirmesi kalkar. Başlamadan
+>    önce Adisyo turu + taslak.
 >
 > **BİTTİ (5 Eki 2026): Adisyo kalemleri Deneme'de.** 73.567 adisyon,
 > 383.573 kalem, `gecmis_adisyonlar.kalemler` (jsonb). Eski adisyonlar

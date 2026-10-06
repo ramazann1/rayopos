@@ -57,9 +57,20 @@ export default function AnalizFiltre({
 
   const yaz = (parca: Partial<Filtre>) => degistir({ ...filtre, ...parca });
 
-  const bolge = bolgeler.find((b) => b.id === filtre.bolgeId);
-  const masalar = bolge ? bolge.masalar : bolgeler.flatMap((b) => b.masalar);
-  const masa = masalar.find((m) => m.id === filtre.masaId);
+  const seciliBolgeler = bolgeler.filter((b) => filtre.bolgeIdler.includes(b.id));
+  const seciliMasalar = bolgeler
+    .flatMap((b) => b.masalar)
+    .filter((m) => filtre.masaIdler.includes(m.id));
+  const ac = (liste: number[], id: number) =>
+    liste.includes(id) ? liste.filter((x) => x !== id) : [...liste, id];
+  // Bölge çıkınca o bölgenin masaları seçimde kalırsa rapor sessizce boşalıyor.
+  const bolgeDegis = (id: number) => {
+    const bolgeIdler = ac(filtre.bolgeIdler, id);
+    const kalanMasalar = new Set(
+      bolgeler.filter((b) => bolgeIdler.includes(b.id)).flatMap((b) => b.masalar.map((m) => m.id))
+    );
+    yaz({ bolgeIdler, masaIdler: filtre.masaIdler.filter((m) => kalanMasalar.has(m)) });
+  };
   const kisi = kisiler.find((k) => k.id === filtre.garsonId);
   const vardiya = vardiyalar.find((v) => v.id === filtre.vardiyaId);
 
@@ -77,8 +88,10 @@ export default function AnalizFiltre({
       sil: () => yaz({ vardiyaId: null, vardiyaBas: "", vardiyaBit: "" }),
     });
   }
-  if (bolge) cipler.push({ ad: bolge.ad, sil: () => yaz({ bolgeId: null, masaId: null }) });
-  if (masa) cipler.push({ ad: `Masa ${masa.ad}`, sil: () => yaz({ masaId: null }) });
+  for (const b of seciliBolgeler) cipler.push({ ad: b.ad, sil: () => bolgeDegis(b.id) });
+  for (const m of seciliMasalar) {
+    cipler.push({ ad: `Masa ${m.ad}`, sil: () => yaz({ masaIdler: ac(filtre.masaIdler, m.id) }) });
+  }
   if (kisi) cipler.push({ ad: kisi.ad, sil: () => yaz({ garsonId: null }) });
   if (filtre.tip) {
     const adlar = { masa: "Masa", gelal: "Gel Al", paket: "Paket" };
@@ -185,6 +198,41 @@ export default function AnalizFiltre({
             </>
           }
         >
+          {bolgeler.length > 0 && (
+            <div className="analiz-yer-secimi">
+              <div className="alan">
+                <label>Bölge <em>boş = tümü</em></label>
+                <div className="cip-secim">
+                  {bolgeler.map((b) => (
+                    <button
+                      key={b.id}
+                      className={filtre.bolgeIdler.includes(b.id) ? "aktif" : ""}
+                      onClick={() => bolgeDegis(b.id)}
+                    >
+                      {b.ad}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {seciliBolgeler.map((b) => (
+                <div className="alan" key={b.id}>
+                  <label>{b.ad} masaları <em>boş = tümü</em></label>
+                  <div className="cip-secim">
+                    {b.masalar.map((m) => (
+                      <button
+                        key={m.id}
+                        className={filtre.masaIdler.includes(m.id) ? "aktif" : ""}
+                        onClick={() => yaz({ masaIdler: ac(filtre.masaIdler, m.id) })}
+                      >
+                        {m.ad}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="pnc-sutunlar analiz-filtre-panel">
             <div>
               {vardiyalar.length > 0 && (
@@ -219,43 +267,6 @@ export default function AnalizFiltre({
                   </select>
                 </label>
               )}
-
-              <label>
-                <span>Bölge</span>
-                <select
-                  value={filtre.bolgeId ?? ""}
-                  onChange={(e) =>
-                    yaz({
-                      bolgeId: e.target.value ? Number(e.target.value) : null,
-                      masaId: null,
-                    })
-                  }
-                >
-                  <option value="">Tüm bölgeler</option>
-                  {bolgeler.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.ad}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span>Masa</span>
-                <select
-                  value={filtre.masaId ?? ""}
-                  onChange={(e) =>
-                    yaz({ masaId: e.target.value ? Number(e.target.value) : null })
-                  }
-                >
-                  <option value="">Tüm masalar</option>
-                  {masalar.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.ad}
-                    </option>
-                  ))}
-                </select>
-              </label>
 
               <label>
                 <span>Adisyonu açan</span>

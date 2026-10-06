@@ -9725,6 +9725,8 @@ body {
   color: var(--mercan);
 }
 
+.analiz-yer-secimi .alan { margin-bottom: 16px; }
+
 .analiz-filtre-panel > div > label {
   display: block;
   margin-bottom: 16px;

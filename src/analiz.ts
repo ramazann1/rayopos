@@ -48,8 +48,9 @@ export type AnalizFiltre = {
   vardiyaId: number | null;
   vardiyaBas: string;
   vardiyaBit: string;
-  bolgeId: number | null;
-  masaId: number | null;
+  /** Boş liste süzgeç yok demek. */
+  bolgeIdler: number[];
+  masaIdler: number[];
   garsonId: number | null;
   tip: AdisyonTipi | null;
   odemeTipi: string | null;
@@ -67,8 +68,8 @@ export const BOS_FILTRE: AnalizFiltre = {
   vardiyaId: null,
   vardiyaBas: "",
   vardiyaBit: "",
-  bolgeId: null,
-  masaId: null,
+  bolgeIdler: [],
+  masaIdler: [],
   garsonId: null,
   tip: null,
   odemeTipi: null,
@@ -82,8 +83,8 @@ export const BOS_FILTRE: AnalizFiltre = {
 export function filtreSayisi(f: AnalizFiltre) {
   return [
     f.vardiyaId,
-    f.bolgeId,
-    f.masaId,
+    f.bolgeIdler.length ? true : null,
+    f.masaIdler.length ? true : null,
     f.garsonId,
     f.tip,
     f.odemeTipi,
@@ -479,26 +480,61 @@ async function adisyonlariCek(bas: Date, bit: Date, f: AnalizFiltre) {
 
 /**
  * Önceki programdan aktarılmış adisyonlar (`gecmis_adisyonlar`). Masa,
- * garson ve müşteri ad olarak geliyor; RayoPOS'taki kayıtlara bağlı
- * olmadıkları için masa/bölge/garson süzgecinde görünmüyorlar.
+ * garson ve müşteri ad olarak geliyor; masa adı bugünkü masaya eşlenip
+ * bölgesine bağlanıyor, garson süzgecinde görünmüyorlar.
  */
 async function gecmisAdisyonlar(bas: Date, bit: Date): Promise<AnalizAdisyon[]> {
-  const ham: any[] = [];
-  for (let i = 0; ; i += 1000) {
-    const { data } = await supabase
+  const parcaCek = (i: number, say = false) =>
+    supabase
       .from("gecmis_adisyonlar")
-      .select(GECMIS_ALANLARI)
+      .select(GECMIS_ALANLARI, say ? { count: "exact" } : undefined)
       .gte("kapanis", bas.toISOString())
       .lt("kapanis", bit.toISOString())
       .order("kapanis", { ascending: false })
       .order("kaynak_id", { ascending: false })
       .range(i, i + 999);
-    const parca = (data as any[]) ?? [];
-    ham.push(...parca);
-    if (parca.length < 1000) break;
+
+  // Bir yıllık dönem yirmi parça tutuyor; sırayla beklenince rapor dakikalar
+  // sürüyordu. İlk parça toplamı söylüyor, kalanlar altışar birlikte isteniyor.
+  const masaSozu = supabase.from("masalar").select("id, ad, bolge_id, bolgeler (ad)");
+  const ilk = await parcaCek(0, true);
+  const ham: any[] = [...((ilk.data as any[]) ?? [])];
+  const toplam = ilk.count ?? ham.length;
+  const baslangiclar: number[] = [];
+  for (let i = 1000; i < toplam; i += 1000) baslangiclar.push(i);
+  for (let i = 0; i < baslangiclar.length; i += 6) {
+    const parcalar = await Promise.all(baslangiclar.slice(i, i + 6).map((b) => parcaCek(b)));
+    for (const p of parcalar) ham.push(...((p.data as any[]) ?? []));
   }
 
-  return ham.map(gecmisSatiri);
+  const masalar = new Map(
+    (((await masaSozu).data as any[]) ?? []).map((m) => [masaAnahtari(m.ad), m])
+  );
+  return ham.map((s) => {
+    const a = gecmisSatiri(s);
+    const masa = masalar.get(masaAnahtari(a.masaAd));
+    if (masa) {
+      a.masaId = masa.id;
+      a.masaAd = masa.ad;
+      a.bolgeId = masa.bolge_id;
+      a.bolgeAd = masa.bolgeler?.ad ?? "";
+    }
+    return a;
+  });
+}
+
+// Önceki programda bölgeler uzun adla yazılıyordu ("SALON 5" bugünkü "S 5").
+const ESKI_BOLGE_ADLARI: [RegExp, string][] = [
+  [/^SALON/, "S"],
+  [/^BAR/, "B"],
+  [/^İB/, "IB"],
+  [/^LOCA/, "L"],
+];
+
+function masaAnahtari(ad: string) {
+  let anahtar = (ad ?? "").toLocaleUpperCase("tr").replace(/\s+/g, "");
+  for (const [eski, yeni] of ESKI_BOLGE_ADLARI) anahtar = anahtar.replace(eski, yeni);
+  return anahtar;
 }
 
 const GECMIS_ALANLARI =
@@ -592,8 +628,8 @@ export function durumMetni(a: AnalizAdisyon) {
 // altı sekmeye birden besleniyor, her filtre değişiminde yeniden sorgu atmak
 // yerine gelen liste yerinde daraltılıyor.
 function uyuyor(a: AnalizAdisyon, f: AnalizFiltre) {
-  if (f.bolgeId && a.bolgeId !== f.bolgeId) return false;
-  if (f.masaId && a.masaId !== f.masaId) return false;
+  if (f.bolgeIdler.length && !f.bolgeIdler.includes(a.bolgeId!)) return false;
+  if (f.masaIdler.length && !f.masaIdler.includes(a.masaId!)) return false;
   if (f.garsonId && a.garsonId !== f.garsonId) return false;
   if (f.tip && a.tip !== f.tip) return false;
   // İkram ayrı bir seçenek: "Kapanmış" dendiğinde parası tahsil edilen hesaplar

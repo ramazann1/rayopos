@@ -148,6 +148,8 @@ export default function Analiz() {
   // denetim, açık hesap, önceki dönem) o sekme açılınca ayrıca çekiliyor —
   // hepsi birlikte istenince en ağırları birbirini bekletiyordu.
   const yuklemeSuruyor = useRef(false);
+  const filtreRef = useRef(filtre);
+  filtreRef.current = filtre;
   const bekleyenTazeleme = useRef(false);
 
   useEffect(() => {
@@ -206,6 +208,9 @@ export default function Analiz() {
   useCanli(
     ["masa_degisim", "masraflar"],
     () => {
+      // Bitmiş dönemi bugünkü satış değiştirmiyor; uzun aralıkta her masa
+      // hareketi bir yıllık raporu baştan indiriyordu.
+      if (donemAraligi(filtreRef.current).bit.getTime() < Date.now()) return;
       if (yuklemeSuruyor.current) {
         bekleyenTazeleme.current = true;
         return;
