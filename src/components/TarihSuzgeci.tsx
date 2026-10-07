@@ -59,15 +59,16 @@ function baslangicDurumu(d: Donem) {
   if (d.kod === "ozel" && d.bas.includes("T") && d.bit.includes("T")) {
     const [basGun, basSaat] = d.bas.split("T");
     const [bitTarih, bitSaat] = d.bit.split("T");
-    const bitGun = bitSaat <= basSaat ? gunKaydir(bitTarih, -1) : bitTarih;
-    return { basGun, bitGun, basSaat, bitSaat };
+    return { basGun, bitTarih, basSaat, bitSaat };
   }
   const bugun = gunMetni(new Date());
+  const basSaat = a.kasaGunuBaslangic;
+  const bitSaat = a.kasaGunuBitis;
   return {
     basGun: d.kod === "ozel" && d.bas ? d.bas : bugun,
-    bitGun: d.kod === "ozel" && d.bit ? d.bit : bugun,
-    basSaat: a.kasaGunuBaslangic,
-    bitSaat: a.kasaGunuBitis,
+    bitTarih: bitisGunu(d.kod === "ozel" && d.bit ? d.bit : bugun, basSaat, bitSaat),
+    basSaat,
+    bitSaat,
   };
 }
 
@@ -87,7 +88,9 @@ export function DonemPenceresi({
   const ilk = baslangicDurumu(donem);
   const [ozel, setOzel] = useState(donem.kod === "ozel");
   const [basGun, setBasGun] = useState(ilk.basGun);
-  const [bitGun, setBitGun] = useState<string | null>(ilk.bitGun);
+  // Bitiş kutusunda ne yazıyorsa o: kasa gününe çevrilip saklanınca saat
+  // değişince tarih kendiliğinden kayıyordu. Takvimde ikinci tık beklenirken boş.
+  const [bitYazili, setBitYazili] = useState<string | null>(ilk.bitTarih);
   const [basSaat, setBasSaat] = useState(ilk.basSaat);
   const [bitSaat, setBitSaat] = useState(ilk.bitSaat);
   const [ay, setAy] = useState(() => {
@@ -102,18 +105,23 @@ export function DonemPenceresi({
     ...DONEMLER.filter((d) => d.kod !== "ozel"),
   ];
 
+  // Takvimde güne dokunmak o günün kasa gününü seçiyor; bitiş kutusu buna
+  // göre (gerekirse ertesi sabah) doluyor ve elle değiştirilebiliyor.
   const gunSec = (gun: string) => {
-    if (bitGun !== null || gun < basGun) {
+    if (bitYazili !== null || gun < basGun) {
       setBasGun(gun);
-      setBitGun(null);
+      setBitYazili(null);
     } else {
-      setBitGun(gun);
+      setBitYazili(bitisGunu(gun, basSaat, bitSaat));
     }
   };
 
-  const sonGun = bitGun ?? basGun;
-  const saatlerGecerli = SAAT.test(basSaat) && SAAT.test(bitSaat);
-  const bitTarih = saatlerGecerli ? bitisGunu(sonGun, basSaat, bitSaat) : sonGun;
+  const bitTarih = bitYazili ?? bitisGunu(basGun, basSaat, bitSaat);
+  // Takvimde boyanan son gün: bitiş ertesi sabahsa bir önceki günün kasa günü.
+  const kasaSonu = SAAT.test(bitSaat) && bitSaat <= basSaat ? gunKaydir(bitTarih, -1) : bitTarih;
+  const sonGun = bitYazili === null || kasaSonu < basGun ? basGun : kasaSonu;
+  const ters = `${bitTarih}T${bitSaat}` <= `${basGun}T${basSaat}`;
+  const saatlerGecerli = SAAT.test(basSaat) && SAAT.test(bitSaat) && !ters;
 
   const uygula = () =>
     onSec({ kod: "ozel", bas: `${basGun}T${basSaat}`, bit: `${bitTarih}T${bitSaat}` });
@@ -132,16 +140,13 @@ export function DonemPenceresi({
 
   const basYaz = (gun: string) => {
     setBasGun(gun);
-    if (sonGun < gun) setBitGun(gun);
+    if (bitTarih < gun) setBitYazili(bitisGunu(gun, basSaat, bitSaat));
     ayaGit(gun);
   };
 
-  // Kutuya yazılan bitişin tarihi; gece yarısını aşan kasa gününde bu,
-  // bir önceki günün kasa günü demek.
   const bitYaz = (tarih: string) => {
-    const gun = SAAT.test(bitSaat) && bitSaat <= basSaat ? gunKaydir(tarih, -1) : tarih;
-    setBitGun(gun < basGun ? basGun : gun);
-    ayaGit(gun);
+    setBitYazili(tarih);
+    ayaGit(tarih);
   };
 
   return (
@@ -242,7 +247,7 @@ export function DonemPenceresi({
               <label>
                 <span>Bitiş</span>
                 <div>
-                  <TarihKutusu gun={bitTarih} degis={bitYaz} />
+                  <TarihKutusu gun={bitTarih} degis={bitYaz} className={ters ? "ts-tarih hatali" : "ts-tarih"} />
                   <SaatKutusu deger={bitSaat} degis={setBitSaat} />
                 </div>
               </label>

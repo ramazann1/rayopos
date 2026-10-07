@@ -60,7 +60,8 @@ type Ek =
   | { tur: "kaydir"; birim: "onceki" | "hafta" | "ay" | "yil" }
   | { tur: "sabit"; donem: DonemKodu; bas: string; bit: string };
 
-type Donem = { ad: string; bas: Date; bit: Date; filtre: Filtre };
+// yazili: aralığı kişi takvimden girdi; tarih kasa gününe çevrilmeden, yazıldığı gibi gösteriliyor.
+type Donem = { ad: string; bas: Date; bit: Date; filtre: Filtre; yazili?: boolean };
 
 const HAZIRLAR: { birim: "onceki" | "hafta" | "ay" | "yil"; ad: string; ikon: LucideIcon }[] = [
   { birim: "onceki", ad: "Önceki dönem", ikon: History },
@@ -102,7 +103,7 @@ function donemKur(ek: Ek, ana: Filtre): Donem | null {
   if (ek.tur === "sabit") {
     const filtre = { ...temel, donem: ek.donem, ozelBas: ek.bas, ozelBit: ek.bit };
     const { bas, bit } = donemAraligi(filtre);
-    return { ad: donemAdi(filtre), bas, bit, filtre };
+    return { ad: donemAdi(filtre), bas, bit, filtre, yazili: ek.donem === "ozel" };
   }
   const a = donemAraligi(ana);
   const aralik = ek.birim === "onceki" ? oncekiAralik(ana) : kaydir(a.bas, a.bit, ek.birim);
@@ -116,11 +117,40 @@ const sonGun = (d: { bit: Date }) => kasaGunuBasi(new Date(d.bit.getTime() - 600
 const gunSayisi = (d: { bas: Date; bit: Date }) =>
   Math.max(1, Math.round((sonGun(d).getTime() - kasaGunuBasi(d.bas).getTime()) / GUN) + 1);
 
+/**
+ * Takvim en son eklenen dönemin günlerinde açılıyor: geçen ayı seçmek için
+ * her seferinde bugünden geri sarılmasın. Saatler A'nınki — kaydırılan
+ * dönemin dakikası kayık olabiliyor, yeni seçilen günlere o geçmesin.
+ */
+function takvimBaslangici(donemler: Donem[]) {
+  const a = donemler[0];
+  const son = donemler[donemler.length - 1];
+  const gun = (t: Date) => yerel(t).slice(0, 10);
+  const saat = (t: Date) => yerel(t).slice(11);
+  // Süren dönem akşam bitiyor; bitiş o kasa gününün sonuna, gerekirse ertesi sabaha.
+  const bitis = sonGun(son);
+  if (saat(a.bit) <= saat(a.bas)) bitis.setDate(bitis.getDate() + 1);
+  return {
+    kod: "ozel" as const,
+    bas: `${gun(kasaGunuBasi(son.bas))}T${saat(a.bas)}`,
+    bit: `${gun(bitis)}T${saat(a.bit)}`,
+  };
+}
+
 const kisaGun = (t: Date) => t.toLocaleDateString("tr-TR", { weekday: "short" });
 const tarihYaz = (t: Date, yil = true) =>
   t.toLocaleDateString("tr-TR", { day: "numeric", month: "short", ...(yil ? { year: "numeric" } : {}) });
 
 function aralikYazisi(d: Donem) {
+  if (d.yazili) {
+    const saat = (t: Date) => t.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+    const ayniGun = d.bas.toDateString() === d.bit.toDateString();
+    const ayniYil = d.bas.getFullYear() === d.bit.getFullYear();
+    return {
+      tarih: ayniGun ? tarihYaz(d.bas) : `${tarihYaz(d.bas, !ayniYil)} – ${tarihYaz(d.bit)}`,
+      gunler: `${kisaGun(d.bas)} ${saat(d.bas)} – ${kisaGun(d.bit)} ${saat(d.bit)}`,
+    };
+  }
   const ilk = kasaGunuBasi(d.bas);
   const son = sonGun(d);
   if (ilk.toDateString() === son.toDateString()) {
@@ -288,7 +318,7 @@ export default function Karsilastirma({
   const a = donemAraligi(filtre);
   const donemler: Donem[] = useMemo(
     () => [
-      { ad: donemAdi(filtre), bas: a.bas, bit: a.bit, filtre },
+      { ad: donemAdi(filtre), bas: a.bas, bit: a.bit, filtre, yazili: filtre.donem === "ozel" && !filtre.vardiyaId },
       ...ekler.map((e) => donemKur(e, filtre)).filter((d): d is Donem => d !== null),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -421,7 +451,7 @@ export default function Karsilastirma({
       {takvim && (
         <DonemPenceresi
           tumu={false}
-          donem={{ kod: "ozel", bas: "", bit: "" }}
+          donem={takvimBaslangici(donemler)}
           onSec={(d) => {
             ekle({ tur: "sabit", donem: d.kod === "tumu" ? "bugun" : d.kod, bas: d.bas, bit: d.bit });
             setTakvim(false);

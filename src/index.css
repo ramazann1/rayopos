@@ -9727,6 +9727,14 @@ body {
 
 .analiz-yer-secimi .alan { margin-bottom: 16px; }
 
+/* Kırk masalık ızgarada ince kenar çizgisi seçili olanı belli etmiyordu. */
+.pnc-govde .analiz-yer-secimi .cip-secim button.aktif {
+  border-color: var(--metin);
+  background: var(--metin);
+  color: #fff;
+  box-shadow: none;
+}
+
 .analiz-filtre-panel > div > label {
   display: block;
   margin-bottom: 16px;
@@ -23200,6 +23208,12 @@ body:has(.up-fon, .menu-perde) {
   color: var(--metin);
 }
 
+.ts-uygula:disabled {
+  background: var(--kart-ust);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
 @media (max-width: 820px) {
   .ts-ozel {
     grid-template-columns: 1fr;
@@ -25277,4 +25291,417 @@ span.kys-daha { cursor: inherit; margin-top: 4px; }
   .kys-cubuk-satir { grid-template-columns: 22px minmax(0, 1fr) 76px auto; gap: 6px; }
   .kys-cubuk-tutar { font-size: 13px; }
   .kys-balon { min-width: 170px; }
+}
+
+/* ---- Telefon: Satış sekmesi — Analiz Özet'inin telefondaki hâli ----
+   Sayfa tek ekrana sığıyor: üst boşluk ve alt sekme çubuğu düşülünce kalan
+   yükseklik. Fazla yer grafiğe gidiyor; yazı büyütülmüş telefonda içerik
+   kesilmesin diye yükseklik alt sınır, aşılırsa sayfa kayıyor. */
+.m-oz {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: calc(100dvh - 14px - 78px - env(safe-area-inset-bottom));
+}
+
+.m-oz > .yukleniyor,
+.m-oz > .analiz-okunamadi {
+  flex: 1;
+}
+
+.analiz-filtre.kompakt {
+  position: static;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+
+.analiz-filtre.kompakt .analiz-filtre-ust {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.analiz-filtre-baslik {
+  flex: 1;
+  min-width: 0;
+}
+
+.analiz-filtre-baslik h1 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.analiz-filtre-baslik p {
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--soluk);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.analiz-filtre.kompakt .stok-yan-tus {
+  padding: 8px 11px;
+  border-radius: 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.analiz-filtre.kompakt .stok-yan-tus svg {
+  color: var(--mercan);
+}
+
+.analiz-filtre.kompakt .analiz-filtre-dugme {
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.analiz-filtre.kompakt .analiz-cipler {
+  margin-top: 8px;
+}
+
+.analiz-okunamadi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 16px;
+  font-size: 15px;
+  color: var(--metin);
+  text-align: center;
+}
+
+.analiz-okunamadi > svg {
+  color: var(--mercan);
+}
+
+.analiz-okunamadi button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.analiz-ozet.mobil {
+  flex: 1;
+  gap: 10px;
+}
+
+.analiz-ozet.mobil .oz-kahraman {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.analiz-ozet.mobil .oz-kahraman::after {
+  top: -120px;
+  right: -100px;
+  width: 260px;
+  height: 260px;
+}
+
+/* Kırılım ve künye kutuları tek ızgarada: aradaki kapsayıcılar ızgaraya karışıyor. */
+.analiz-ozet.mobil .oz-kahraman-sol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.analiz-ozet.mobil .oz-kahraman-sol > .oz-etiket,
+.analiz-ozet.mobil .oz-dev,
+.analiz-ozet.mobil .oz-alt {
+  grid-column: 1 / -1;
+}
+
+.analiz-ozet.mobil .oz-etiket {
+  font-size: 12.5px;
+}
+
+.analiz-ozet.mobil .oz-dev {
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+
+.analiz-ozet.mobil .oz-alt {
+  min-height: 0;
+  margin-bottom: 4px;
+}
+
+.analiz-ozet.mobil .oz-alt em {
+  font-size: 12.5px;
+}
+
+.analiz-ozet.mobil .oz-kirilim,
+.analiz-ozet.mobil .oz-kunye {
+  display: contents;
+}
+
+.analiz-ozet.mobil .oz-arti,
+.analiz-ozet.mobil .oz-kirilim em,
+.analiz-ozet.mobil .kunye-ikincil,
+.analiz-ozet.mobil .oz-kunye dd .gr-degisim {
+  display: none;
+}
+
+.analiz-ozet.mobil .oz-kirilim > div,
+.analiz-ozet.mobil .oz-kunye > div {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #222c38;
+}
+
+.analiz-ozet.mobil .oz-kirilim .oz-acik-blok {
+  background: #2b2129;
+}
+
+.analiz-ozet.mobil .oz-kirilim .oz-acik-blok.bos {
+  background: #222c38;
+}
+
+.analiz-ozet.mobil .oz-kirilim dt,
+.analiz-ozet.mobil .oz-kunye dt {
+  margin: 0 0 2px;
+  font-size: 11.5px;
+  color: #c3cdd9;
+}
+
+.analiz-ozet.mobil .oz-kirilim dd,
+.analiz-ozet.mobil .oz-kunye dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+/* Kasaya kalan: tam genişlikte şerit, gider notu adının altında. */
+.analiz-ozet.mobil .oz-kunye .kunye-net {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  background: #4a2216;
+}
+
+.analiz-ozet.mobil .oz-kunye .kunye-net dt {
+  color: #ffd9cc;
+}
+
+.analiz-ozet.mobil .oz-kunye .kunye-net dd {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  font-size: 17px;
+  color: #fff;
+}
+
+.analiz-ozet.mobil .oz-kunye .kunye-net em {
+  font-size: 11px;
+  color: #ffd9cc;
+}
+
+/* Grafik kartta kalan boşluğu dolduruyor; ekran kısaysa hiç çizilmiyor. */
+.analiz-ozet.mobil .oz-kahraman-sag {
+  flex: 1;
+  min-height: 90px;
+}
+
+.analiz-ozet.mobil .oz-egri-bas {
+  margin-bottom: 4px;
+}
+
+.analiz-ozet.mobil .oz-egri-bas h2 {
+  font-size: 13px;
+}
+
+.analiz-ozet.mobil .oz-egri-lejant {
+  gap: 5px;
+  font-size: 11.5px;
+}
+
+.analiz-ozet.mobil .gr-orta {
+  min-height: 50px;
+  gap: 6px;
+}
+
+.analiz-ozet.mobil .gr-y {
+  width: 34px;
+  font-size: 10.5px;
+}
+
+.analiz-ozet.mobil .gr-x {
+  height: 14px;
+  margin: 4px 0 0 40px;
+  font-size: 10.5px;
+}
+
+.analiz-ozet.mobil .oz-egri-bos {
+  min-height: 0;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+/* Bölüm kutuları: dokununca içerik ortada açılan pencerede. */
+.m-oz-bolumler {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.m-oz-bolum {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #e6ebf1;
+  border-radius: 14px;
+  background: var(--kart);
+  font: inherit;
+  color: var(--metin);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--gecis), transform var(--gecis);
+}
+
+.m-oz-bolum:active {
+  border-color: var(--mercan);
+  transform: scale(0.97);
+}
+
+.m-oz-bolum b {
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.m-oz-bolum small {
+  max-width: 100%;
+  font-size: 11px;
+  color: #4b5563;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-oz-ikon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.m-oz-ikon.mercan { background: #fff1ec; color: #e8603c; }
+.m-oz-ikon.yesil { background: #e3f5ee; color: #0f6e56; }
+.m-oz-ikon.mor { background: #eeedfe; color: #534ab7; }
+.m-oz-ikon.amber { background: #faeeda; color: #854f0b; }
+.m-oz-ikon.pembe { background: #fbeaf0; color: #993556; }
+.m-oz-ikon.mavi { background: #e6f1fb; color: #185fa5; }
+
+/* Pencerede geniş tablolar yana kayıyor, sayfa taşmıyor. */
+.m-oz-pencere {
+  overflow-x: auto;
+}
+
+.m-oz-pencere .kasa-dokum {
+  border-top: none;
+}
+
+/* Küçük telefon: kutular sıkılaşıyor, fark grafikten düşüyor. Dört kutu tek
+   sıraya dizilince "Masalarda açık" iki satıra kırılıp kutuları eziyordu. */
+@media (max-height: 700px) {
+  .analiz-ozet.mobil .oz-kahraman {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .analiz-ozet.mobil .oz-kahraman-sol {
+    gap: 5px;
+  }
+
+  .analiz-ozet.mobil .oz-dev {
+    font-size: 26px;
+  }
+
+  .analiz-ozet.mobil .oz-kirilim > div,
+  .analiz-ozet.mobil .oz-kunye > div {
+    padding: 6px 9px;
+  }
+
+  .analiz-ozet.mobil .oz-kahraman-sag {
+    min-height: 60px;
+  }
+}
+
+@media (max-height: 600px) {
+  .analiz-ozet.mobil .oz-kahraman-sag {
+    display: none;
+  }
+}
+
+/* Değişim rozeti "Toplam satış" yazısının sağında; tek başına bir satır yiyordu. */
+.analiz-ozet.mobil .oz-kahraman-sol > .oz-etiket {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.analiz-ozet.mobil .oz-alt {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  margin: 0;
+}
+
+.analiz-ozet.mobil .oz-alt em {
+  display: none;
+}
+
+.analiz-ozet.mobil .oz-dev {
+  grid-row: 2;
+  margin-bottom: 2px;
+}
+
+/* SVG kendi en-boy oranıyla boy almasın: çizim kutuya yerleşiyor, kutu esniyor. */
+.analiz-ozet.mobil .gr-tuval svg {
+  position: absolute;
+  inset: 0;
+}
+
+.analiz-ozet.mobil .m-oz-bolum {
+  padding: 8px 9px;
+}
+
+.analiz-ozet.mobil .m-oz-ikon,
+.m-oz-bolum .m-oz-ikon {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+}
+
+.m-oz-bolum b {
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@media (max-height: 700px) {
+  .analiz-ozet.mobil .gr-orta {
+    min-height: 36px;
+  }
+}
+
+/* Tarih ekseni dar ekranda üst üste biniyordu; dönem zaten başlıkta yazıyor. */
+.analiz-ozet.mobil .gr-x {
+  display: none;
 }

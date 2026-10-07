@@ -44,6 +44,9 @@ import {
   FileSpreadsheet,
   Flame,
   LoaderCircle,
+  CloudOff,
+  RotateCw,
+  type LucideIcon,
 } from "lucide-react";
 import { analizBolumleri } from "../components/Duzen";
 import BolumSecici from "../components/BolumSecici";
@@ -109,12 +112,34 @@ import { odemeAdi, type Masraf } from "../masraflar";
 import { useKutuBoyu } from "../kutuBoyu";
 import { kayiplariGetir, sebepAdi, type KayipSatiri } from "../stokHareket";
 import { miktarGoster } from "../stok";
+import { acikOturum } from "../oturum";
+import { useBaglanti } from "../baglanti";
 
-export default function Analiz() {
-  const { bolum = "ozet" } = useParams();
+// Salona inip dönünce seçilen aralık ve masalar baştan girilmesin. Sayfa
+// yenilenince Bugün'e dönüyor; başka işletmeye geçilince eskisi kullanılmıyor.
+let saklananFiltre: { isletme: number; filtre: Filtre } | null = null;
+
+/**
+ * `mobil`: telefonun Satış sekmesi. Ayrı bir ekran değil, bu sayfanın Özet'i —
+ * veri, filtre ve canlı tazeleme aynı kod; telefonda sekme menüsü ve Excel
+ * yok, Özet'in bölümleri karta dokununca pencerede açılıyor. Telefon her
+ * açılışta Bugün'le başlıyor, kasada seçilen aralık oraya taşınmıyor.
+ */
+export default function Analiz({ mobil = false }: { mobil?: boolean }) {
+  const { bolum: yoldakiBolum = "ozet" } = useParams();
+  const bolum = mobil ? "ozet" : yoldakiBolum;
   const navigate = useNavigate();
 
-  const [filtre, setFiltre] = useState<Filtre>(BOS_FILTRE);
+  const [filtre, setFiltreHam] = useState<Filtre>(() => {
+    const isletme = acikOturum()?.isletmeId;
+    if (mobil || !saklananFiltre || saklananFiltre.isletme !== isletme) return BOS_FILTRE;
+    return saklananFiltre.filtre;
+  });
+  const setFiltre = (f: Filtre) => {
+    const isletme = acikOturum()?.isletmeId;
+    if (!mobil) saklananFiltre = isletme ? { isletme, filtre: f } : null;
+    setFiltreHam(f);
+  };
   const [adisyonlar, setAdisyonlar] = useState<AnalizAdisyon[]>([]);
   // Karşılaştırma listesi: seçili dönemin bir öncesi. Yalnız Özet kullanıyor.
   const [oncekiler, setOncekiler] = useState<AnalizAdisyon[]>([]);
@@ -123,6 +148,8 @@ export default function Analiz() {
   const [cariHareketler, setCariHareketler] = useState<CariHareketSatiri[]>([]);
   const [mutfak, setMutfak] = useState<MutfakSuresiOzeti | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [okunamadi, setOkunamadi] = useState(false);
+  const cevrimici = useBaglanti();
   const [secili, setSecili] = useState<number | null>(null);
   // Adisyon yeniden açılınca liste eskiyor; sayaç değişince sorgu tekrarlanıyor.
   const [tazele, setTazele] = useState(0);
@@ -157,19 +184,27 @@ export default function Analiz() {
     let gecerli = true;
     if (!sessizTazeleme.current) setYukleniyor(true);
     yuklemeSuruyor.current = true;
-    Promise.all([analizAdisyonlari(filtre), analizGiderleri(filtre)]).then(([a, g]) => {
-      if (!gecerli) return;
-      setAdisyonlar(a);
-      setGiderler(g);
-      setYukleniyor(false);
-      sessizTazeleme.current = false;
-      yuklemeSuruyor.current = false;
-      if (bekleyenTazeleme.current) {
-        bekleyenTazeleme.current = false;
-        sessizTazeleme.current = true;
-        setTazele((t) => t + 1);
-      }
-    });
+    Promise.all([analizAdisyonlari(filtre), analizGiderleri(filtre)])
+      .then(([a, g]) => {
+        if (!gecerli) return;
+        setAdisyonlar(a);
+        setGiderler(g);
+        setOkunamadi(false);
+        if (bekleyenTazeleme.current) {
+          bekleyenTazeleme.current = false;
+          sessizTazeleme.current = true;
+          setTazele((t) => t + 1);
+        }
+      })
+      // Bağlantı düşünce halka sonsuza kadar dönüyordu. Bayat rakam da yanlış
+      // bilgi: eski sayı bırakılmıyor, okunamadığı söyleniyor.
+      .catch(() => gecerli && setOkunamadi(true))
+      .finally(() => {
+        if (!gecerli) return;
+        setYukleniyor(false);
+        sessizTazeleme.current = false;
+        yuklemeSuruyor.current = false;
+      });
     return () => {
       gecerli = false;
     };
@@ -221,6 +256,13 @@ export default function Analiz() {
     },
     SAKIN
   );
+
+  // Bağlantı geri gelince okunamayan rapor kendiliğinden tazeleniyor.
+  const oncekiBaglanti = useRef(cevrimici);
+  useEffect(() => {
+    if (cevrimici && !oncekiBaglanti.current && okunamadi) setTazele((t) => t + 1);
+    oncekiBaglanti.current = cevrimici;
+  }, [cevrimici, okunamadi]);
 
   const ozet = useMemo(() => analizOzeti(adisyonlar, giderler), [adisyonlar, giderler]);
   // Karşılaştırmada gider yok: giderin kendi dönemi var, ciroyla aynı pencereye
@@ -281,6 +323,41 @@ export default function Analiz() {
     }
   };
 
+  const okunamadiKutusu = (
+    <div className="analiz-okunamadi">
+      {cevrimici ? <BarChart3 size={24} /> : <CloudOff size={24} />}
+      <p>{cevrimici ? "Rapor okunamadı." : "Bağlantı yok, rapor okunamıyor."}</p>
+      <button className="pnc-vazgec" onClick={() => setTazele((t) => t + 1)}>
+        <RotateCw size={16} /> Yeniden dene
+      </button>
+    </div>
+  );
+
+  if (mobil) {
+    return (
+      <div className="m-oz">
+        <AnalizFiltre filtre={filtre} degistir={setFiltre} baslik="Satış" />
+        {okunamadi ? (
+          okunamadiKutusu
+        ) : yukleniyor ? (
+          <div className="yukleniyor">
+            <div className="cember" />
+          </div>
+        ) : (
+          <Ozet
+            mobil
+            ozet={ozet}
+            onceki={oncekiOzet}
+            seri={seri}
+            oncekiSeri={oncekiSeri}
+            yogunluk={yogunluk}
+            gunluk={gunluk}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="sayfa analiz-sayfa">
@@ -315,7 +392,9 @@ export default function Analiz() {
           }
         />
 
-        {yukleniyor || (ekYukleniyor && ekVeri !== "onceki") ? (
+        {okunamadi ? (
+          okunamadiKutusu
+        ) : yukleniyor || (ekYukleniyor && ekVeri !== "onceki") ? (
           <div className="yukleniyor">
             <div className="cember" />
           </div>
@@ -746,7 +825,28 @@ function TahsilatCipi({ adisyon: a }: { adisyon: AnalizAdisyon }) {
   );
 }
 
+/** Dilimlerin en büyüğü ve payı: "Nakit %60". */
+function enBuyukPay(dilimler: OzetDilimi[], toplam: number) {
+  if (!dilimler.length || toplam <= 0) return null;
+  const en = dilimler.reduce((a, b) => (b.tutar > a.tutar ? b : a));
+  return `${en.ad} %${Math.round((en.tutar / toplam) * 100)}`;
+}
+
+type OzetBolumu = {
+  kod: string;
+  ad: string;
+  /** Telefondaki kutunun adı; dar kutuda uzun ad iki satıra kırılıyordu. */
+  kisa: string;
+  ikon: LucideIcon;
+  renk: string;
+  /** Kutuda adın altındaki tek satırlık özet. */
+  ozet: string;
+  ipucu?: React.ReactNode;
+  icerik: React.ReactNode;
+};
+
 function Ozet({
+  mobil = false,
   ozet,
   onceki,
   seri,
@@ -755,18 +855,216 @@ function Ozet({
   yogunluk,
   gunluk,
 }: {
+  mobil?: boolean;
   ozet: AnalizOzeti;
   onceki: AnalizOzeti | null;
   seri: ZamanSerisi;
   oncekiSeri: ZamanSerisi | null;
-  onEksigeGit: () => void;
+  /** Telefonda adisyon listesi yok; eksik tahsilat orada yalnız yazıyor. */
+  onEksigeGit?: () => void;
   yogunluk: Yogunluk;
   gunluk: GunlukCiro;
 }) {
   const kdvDahil = ayarlar().kdvDahil;
+  const [acikKod, setAcikKod] = useState<string | null>(null);
+
+  const enYogunSaat = ozet.saatler.reduce<{ saat: number; tutar: number } | null>(
+    (a, s) => (s.tutar > (a?.tutar ?? 0) ? s : a),
+    null
+  );
+  let enYogunGun = "";
+  let enYogunGunSaati = 0;
+  let enYogunAdet = 0;
+  for (const s of yogunluk.satirlar) {
+    for (let i = 0; i < s.hucreler.length; i++) {
+      if (s.hucreler[i].adet <= enYogunAdet) continue;
+      enYogunAdet = s.hucreler[i].adet;
+      // Günlük satırın etiketi "Pzt 05.10"; kutuda yalnız gün adı yetiyor.
+      enYogunGun = s.etiket.split(" ")[0];
+      enYogunGunSaati = yogunluk.saatler[i];
+    }
+  }
+  const saatYaz = (saat: number) => `${String(saat).padStart(2, "0")}:00`;
+
+  const bolumler: OzetBolumu[] = [
+    {
+      kod: "dokum",
+      ad: "Hesap dökümü",
+      kisa: "Döküm",
+      ikon: Receipt,
+      renk: "mercan",
+      ozet: ozet.eksikTahsilat > 0 ? `Eksik ${paraGoster(ozet.eksikTahsilat)}` : `KDV ${paraGoster(ozet.kdv)}`,
+      icerik: (
+        <dl className="kasa-dokum">
+          <div>
+            <dt>Ara toplam</dt>
+            <dd>{paraGoster(ozet.araToplam)}</dd>
+          </div>
+          <div>
+            <dt>İndirim</dt>
+            <dd className={ozet.indirim ? "azalan" : ""}>
+              {ozet.indirim ? `−${paraGoster(ozet.indirim)}` : paraGoster(0)}
+            </dd>
+          </div>
+          <div>
+            <dt>Brüt {kdvDahil ? "(KDV hariç)" : "(matrah)"}</dt>
+            <dd>{paraGoster(ozet.matrah)}</dd>
+          </div>
+          <div>
+            <dt>KDV</dt>
+            <dd>{paraGoster(ozet.kdv)}</dd>
+          </div>
+          {ozet.servis > 0 && (
+            <div>
+              <dt>Kuver / garsoniye</dt>
+              <dd>{paraGoster(ozet.servis)}</dd>
+            </div>
+          )}
+          <div className="kasa-beklenen">
+            <dt>Ciro</dt>
+            <dd>{paraGoster(ozet.ciro)}</dd>
+          </div>
+          <div>
+            <dt>Kasaya giren</dt>
+            <dd>{paraGoster(ozet.tahsilEdilen)}</dd>
+          </div>
+          {ozet.eksikTahsilat > 0 && (
+            <div className="dokum-eksik">
+              <dt>Eksik tahsilat</dt>
+              <dd>
+                {onEksigeGit ? (
+                  <button type="button" onClick={onEksigeGit}>
+                    {paraGoster(ozet.eksikTahsilat)}
+                    <ChevronRight size={16} />
+                  </button>
+                ) : (
+                  paraGoster(ozet.eksikTahsilat)
+                )}
+              </dd>
+            </div>
+          )}
+          {ozet.ikram > 0 && (
+            <div>
+              <dt>İkram edilen</dt>
+              <dd>{paraGoster(ozet.ikram)}</dd>
+            </div>
+          )}
+          {ozet.bahsis > 0 && (
+            <div>
+              <dt>Bahşiş</dt>
+              <dd className="artan">{paraGoster(ozet.bahsis)}</dd>
+            </div>
+          )}
+          {mobil && (
+            <>
+              <div>
+                <dt>Ortalama adisyon</dt>
+                <dd>{paraGoster(ozet.ortalama)}</dd>
+              </div>
+              <div>
+                <dt>Misafir</dt>
+                <dd>{ozet.misafir ? sayiGoster(ozet.misafir) : "—"}</dd>
+              </div>
+            </>
+          )}
+        </dl>
+      ),
+    },
+    {
+      kod: "odeme",
+      ad: "Ödeme dağılımı",
+      kisa: "Ödemeler",
+      ikon: CreditCard,
+      renk: "yesil",
+      ozet: enBuyukPay(ozet.odemeler, ozet.tahsilEdilen || ozet.ciro) ?? "Tahsilat yok",
+      icerik:
+        ozet.odemeler.length === 0 ? (
+          <div className="ayar-bos">
+            <CreditCard size={24} />
+            <p>Bu dönemde tahsilat yok.</p>
+          </div>
+        ) : (
+          <Halka dilimler={ozet.odemeler} toplam={ozet.tahsilEdilen || ozet.ciro} />
+        ),
+    },
+    {
+      kod: "tip",
+      ad: "Sipariş tipi",
+      kisa: "Sipariş tipi",
+      ikon: ClipboardList,
+      renk: "mor",
+      ozet: enBuyukPay(ozet.tipler, ozet.ciro) ?? "Adisyon yok",
+      icerik:
+        ozet.tipler.length === 0 ? (
+          <div className="ayar-bos">
+            <ClipboardList size={24} />
+            <p>Bu dönemde kapanmış adisyon yok.</p>
+          </div>
+        ) : (
+          <Dagilim satirlar={ozet.tipler} toplam={ozet.ciro} />
+        ),
+    },
+    {
+      kod: "saat",
+      ad: "Saatlere göre",
+      kisa: "Saatler",
+      ikon: Clock,
+      renk: "amber",
+      ozet: enYogunSaat ? `En yoğun ${saatYaz(enYogunSaat.saat)}` : "Satış yok",
+      icerik: <Saatler saatler={ozet.saatler} />,
+    },
+    {
+      kod: "yogunluk",
+      ad: "Yoğunluk",
+      kisa: "Yoğunluk",
+      ikon: Flame,
+      renk: "pembe",
+      ozet: enYogunAdet ? `${enYogunGun} ${saatYaz(enYogunGunSaati)}` : "Adisyon yok",
+      ipucu: (
+        <Ipucu baslik="Yoğunluk">
+          {yogunluk.haftalik
+            ? "Haftanın hangi günü, hangi saatte kaç adisyon açıldığı; dönem uzun olduğu için günler haftaya toplandı."
+            : "Hangi gün, hangi saatte kaç adisyon açıldığı; renk koyulaştıkça kalabalık artıyor."}
+        </Ipucu>
+      ),
+      icerik: <YogunlukTablosu yogunluk={yogunluk} />,
+    },
+    ...(gunluk.satirlar.length > 1
+      ? [
+          {
+            kod: "gunluk",
+            ad: "Gün gün ciro",
+            kisa: "Gün gün",
+            ikon: CalendarDays,
+            renk: "mavi",
+            ozet: `${gunluk.satirlar.length} gün`,
+            ipucu: (
+              <Ipucu baslik="Gün gün ciro">
+                Her kasa gününün kapanan cirosu, ödeme tiplerine ayrılmış hâliyle.
+              </Ipucu>
+            ),
+            icerik: <GunlukCiroTablosu gunluk={gunluk} />,
+          },
+        ]
+      : []),
+  ];
+
+  const acikBolum = bolumler.find((b) => b.kod === acikKod);
+
+  const kart = (b: OzetBolumu) => (
+    <section className="ayar-bolum" key={b.kod}>
+      <div className="ayar-bolum-ust">
+        <h2>
+          <b.ikon size={16} /> {b.ad}
+          {b.ipucu}
+        </h2>
+      </div>
+      {b.icerik}
+    </section>
+  );
 
   return (
-    <div className="analiz-ozet">
+    <div className={mobil ? "analiz-ozet mobil" : "analiz-ozet"}>
       {/*
         Kahraman kart. Önce dokuz beyaz kutu yan yana diziliydi ve ekranın en
         önemli sayısı olan ciro, "kasaya kalan" ile aynı ağırlıkta duruyordu —
@@ -819,14 +1117,15 @@ function Ozet({
                 <Degisim simdi={ozet.adisyon} onceki={onceki?.adisyon ?? null} />
               </dd>
             </div>
-            <div>
+            {/* Telefonda bu ikisi Hesap dökümü penceresinde: dört kutu tek sıraya sığsın. */}
+            <div className="kunye-ikincil">
               <dt>Ortalama adisyon</dt>
               <dd>
                 {paraGoster(ozet.ortalama)}
                 <Degisim simdi={ozet.ortalama} onceki={onceki?.ortalama ?? null} />
               </dd>
             </div>
-            <div>
+            <div className="kunye-ikincil">
               <dt>Misafir</dt>
               <dd>
                 {ozet.misafir ? sayiGoster(ozet.misafir) : "—"}
@@ -868,147 +1167,43 @@ function Ozet({
               <p>Bu dönemde kapanmış adisyon yok.</p>
             </div>
           ) : (
-            <CizgiGrafik noktalar={seri.noktalar} onceki={oncekiSeri?.noktalar} koyu />
+            <CizgiGrafik noktalar={seri.noktalar} onceki={oncekiSeri?.noktalar} koyu yukseklik={mobil ? 0 : undefined} />
           )}
         </div>
       </section>
 
-      <div className="analiz-uclu">
-        <section className="ayar-bolum">
-          <div className="ayar-bolum-ust">
-            <h2>
-              <Receipt size={16} /> Hesap dökümü
-            </h2>
-          </div>
-          <dl className="kasa-dokum">
-            <div>
-              <dt>Ara toplam</dt>
-              <dd>{paraGoster(ozet.araToplam)}</dd>
-            </div>
-            <div>
-              <dt>İndirim</dt>
-              <dd className={ozet.indirim ? "azalan" : ""}>
-                {ozet.indirim ? `−${paraGoster(ozet.indirim)}` : paraGoster(0)}
-              </dd>
-            </div>
-            <div>
-              <dt>Brüt {kdvDahil ? "(KDV hariç)" : "(matrah)"}</dt>
-              <dd>{paraGoster(ozet.matrah)}</dd>
-            </div>
-            <div>
-              <dt>KDV</dt>
-              <dd>{paraGoster(ozet.kdv)}</dd>
-            </div>
-            {ozet.servis > 0 && (
-              <div>
-                <dt>Kuver / garsoniye</dt>
-                <dd>{paraGoster(ozet.servis)}</dd>
-              </div>
-            )}
-            <div className="kasa-beklenen">
-              <dt>Ciro</dt>
-              <dd>{paraGoster(ozet.ciro)}</dd>
-            </div>
-            <div>
-              <dt>Kasaya giren</dt>
-              <dd>{paraGoster(ozet.tahsilEdilen)}</dd>
-            </div>
-            {ozet.eksikTahsilat > 0 && (
-              <div className="dokum-eksik">
-                <dt>Eksik tahsilat</dt>
-                <dd>
-                  <button type="button" onClick={onEksigeGit}>
-                    {paraGoster(ozet.eksikTahsilat)}
-                    <ChevronRight size={16} />
-                  </button>
-                </dd>
-              </div>
-            )}
-            {ozet.ikram > 0 && (
-              <div>
-                <dt>İkram edilen</dt>
-                <dd>{paraGoster(ozet.ikram)}</dd>
-              </div>
-            )}
-            {ozet.bahsis > 0 && (
-              <div>
-                <dt>Bahşiş</dt>
-                <dd className="artan">{paraGoster(ozet.bahsis)}</dd>
-              </div>
-            )}
-          </dl>
-        </section>
-
-        <section className="ayar-bolum">
-          <div className="ayar-bolum-ust">
-            <h2>
-              <CreditCard size={16} /> Ödeme dağılımı
-            </h2>
-          </div>
-          {ozet.odemeler.length === 0 ? (
-            <div className="ayar-bos">
-              <CreditCard size={24} />
-              <p>Bu dönemde tahsilat yok.</p>
-            </div>
-          ) : (
-            <Halka dilimler={ozet.odemeler} toplam={ozet.tahsilEdilen || ozet.ciro} />
-          )}
-        </section>
-
-        <section className="ayar-bolum">
-          <div className="ayar-bolum-ust">
-            <h2>
-              <ClipboardList size={16} /> Sipariş tipi
-            </h2>
-          </div>
-          {ozet.tipler.length === 0 ? (
-            <div className="ayar-bos">
-              <ClipboardList size={24} />
-              <p>Bu dönemde kapanmış adisyon yok.</p>
-            </div>
-          ) : (
-            <Dagilim satirlar={ozet.tipler} toplam={ozet.ciro} />
-          )}
-        </section>
-      </div>
-
-      {/* Saat grafiği yarım sütuna sıkışınca okunmuyordu; tam genişlikte. */}
-      <section className="ayar-bolum">
-        <div className="ayar-bolum-ust">
-          <h2>
-            <Clock size={16} /> Saatlere göre
-          </h2>
+      {mobil ? (
+        // Telefonda sayfa tek ekrana sığıyor: bölümler kutu, içerik dokununca
+        // ortada açılan pencerede — masaüstündeki kartın aynısı.
+        <div className="m-oz-bolumler">
+          {bolumler.map((b) => (
+            <button key={b.kod} className="m-oz-bolum" onClick={() => setAcikKod(b.kod)}>
+              <span className={`m-oz-ikon ${b.renk}`}>
+                <b.ikon size={17} />
+              </span>
+              <b>{b.kisa}</b>
+              <small>{b.ozet}</small>
+            </button>
+          ))}
         </div>
-        <Saatler saatler={ozet.saatler} />
-      </section>
+      ) : (
+        <>
+          <div className="analiz-uclu">{bolumler.slice(0, 3).map(kart)}</div>
+          {/* Saat grafiği yarım sütuna sıkışınca okunmuyordu; tam genişlikte. */}
+          {bolumler.slice(3).map(kart)}
+        </>
+      )}
 
-      <section className="ayar-bolum">
-        <div className="ayar-bolum-ust">
-          <h2>
-            <Flame size={16} /> Yoğunluk
-            <Ipucu baslik="Yoğunluk">
-              {yogunluk.haftalik
-                ? "Haftanın hangi günü, hangi saatte kaç adisyon açıldığı; dönem uzun olduğu için günler haftaya toplandı."
-                : "Hangi gün, hangi saatte kaç adisyon açıldığı; renk koyulaştıkça kalabalık artıyor."}
-            </Ipucu>
-          </h2>
-        </div>
-        <YogunlukTablosu yogunluk={yogunluk} />
-      </section>
-
-      {gunluk.satirlar.length > 1 ? (
-        <section className="ayar-bolum">
-          <div className="ayar-bolum-ust">
-            <h2>
-              <CalendarDays size={16} /> Gün gün ciro
-              <Ipucu baslik="Gün gün ciro">
-                Her kasa gününün kapanan cirosu, ödeme tiplerine ayrılmış hâliyle.
-              </Ipucu>
-            </h2>
-          </div>
-          <GunlukCiroTablosu gunluk={gunluk} />
-        </section>
-      ) : null}
+      {acikBolum && (
+        <OrtaPencere
+          ikon={acikBolum.ikon}
+          baslik={acikBolum.ad}
+          aciklama={acikBolum.ozet}
+          onKapat={() => setAcikKod(null)}
+        >
+          <div className="m-oz-pencere">{acikBolum.icerik}</div>
+        </OrtaPencere>
+      )}
     </div>
   );
 }

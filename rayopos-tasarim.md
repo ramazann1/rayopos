@@ -3,13 +3,36 @@
 
 ## 0. SIRADAKİ İŞ (7 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ: Karşılaştırma sekmesi üzerine Ramazan'la biraz
-> daha düşünmek** (Ramazan: "bu ekranla alakalı biraz daha düşünüp sonra
-> yeni işe geçeriz"). Ekran kodlandı (aşağıda 4. madde, kararların hepsi
-> orada); Ramazan'ın ilk izlenimini ve eklemek istediklerini sor, sonra
-> sıradaki maddeye geç. Denenmesi gerekenler: harf balonu kenarda taşmıyor
-> mu, takvimden dönem ekleme, Kategoriler/Ürünler/Bölgeler pencereleri,
-> adet farkları, telefon görünümü, uzun dönemde (geçen yıl) yükleme süresi.
+> **YENİ SEANSIN İLK İŞİ: telefondaki yeni Satış ekranını Ramazan'la
+> gözden geçirmek.** Ramazan telefonda denesin (dönem değiştir, kutulara
+> dokun); bilgisayarda Analiz → Özet'in eskisi gibi göründüğüne bakılsın
+> (Chrome telefon modunda kaldığı için seans sonunda gözle bakılamadı).
+> Gerçek telefonda Safari adres çubuğu açıkken sığıyor mu, büyük telefonda
+> (412 × 915) boşluk grafiğe gidiyor mu — bunlar da denenmedi. Sonra
+> aşağıdaki "Sonra sıradakiler" 1. maddeye geç.
+>
+> **7 Eki (3. seans) yapılanlar:**
+> - Analiz filtresi Salon'a gidip dönünce kaybolmuyor (sayfa yenilenince /
+>   işletme değişince Bugün'e döner). Bölge+masa çipi bölge başına tek:
+>   `S · 1, 3, 10`, 4'ten fazlası `S · 6 masa`; filtre penceresinde seçili
+>   masa koyu dolgu.
+> - Tarih penceresi (`TarihSuzgeci.tsx`, Analiz/Stok/Giderler ortak):
+>   bitiş kutusuna yazılan tarih-saat AYNEN kullanılıyor, kasa gününe
+>   çevrilmiyor; saat değişince tarih kaymıyor (Ramazan: "sistem kafasına
+>   göre hareket ediyor"). Takvime tıklamak kasa gününü seçer (8 → 09.10
+>   07:55). Ters aralıkta bitiş kırmızı, Uygula kesik çizgili ve kapalı.
+> - Karşılaştırma: Dönem ekle takvimi son dönemin günlerinde açılıyor; elle
+>   girilen aralık kutuda/balonda yazıldığı gibi ("6 Eki – 12 Eki", saatli).
+> - **Mobil Satış = masaüstü Özet** (karar aşağıda "Satış sekmesi"nde):
+>   `<Analiz mobil />`; koyu kart + 3'lü bölüm kutuları, dokununca ortada
+>   `OrtaPencere`; tek ekrana sığıyor (iPhone SE 375×667 ölçüldü). Ortalama
+>   adisyon ve misafir telefonda Döküm penceresinde. Rapor okunamazsa
+>   (bağlantı) masaüstünde de "Yeniden dene" — önceden halka sonsuz dönüyordu.
+>
+> **Yeni iş (bu seansta bulundu): "Önceki dönem" 5 dk kayık.** Kasa günü
+> 08:00–07:55 (23 sa 55 dk) olduğu için önceki dönem süre kadar geri
+> kaydırılınca 08:05'te başlıyor (`analiz.ts` → `oncekiAralik`). Özet ve
+> Karşılaştırma ikisi de etkileniyor; günlük dönemde kasa gününe hizalanmalı.
 >
 > **7 Eki (2. seans) yapılanlar:** Analiz → Karşılaştırma sekmesi
 > (`components/Karsilastirma.tsx`, stiller `kys-`). A = üstteki dönem
@@ -3559,8 +3582,12 @@ Yapılanlar:
   birleştir · Adisyonu iptal et. Taşıma/birleştirme **ızgaranın kendi üstünde**
   seçiliyor (uygun olmayan masa soluyor, altta Vazgeç/Uygula şeridi).
   Sipariş ekranının ⋮ menüsünde de aynı işlemler + misafir sayısı.
-- **Satış sekmesi** (`mobil/Satis.tsx`): bugünün cirosu, açık masalar, ödeme
-  tipi dökümü (oran çubuklu), kasaya giren / eksik tahsilat. Gider ve kâr yok.
+- **Satış sekmesi** (`mobil/Satis.tsx`): ~~bugünün cirosu, açık masalar, ödeme
+  tipi dökümü, gider ve kâr yok~~ → **7 Eki 2026 kararı (Ramazan): rapor
+  yetkisi olana masaüstündeki Özet'in aynısı** — dönem seçici, Filtreler,
+  kahraman kart, ciro seyri, kasaya kalan, dökümler. Ayrı mobil kod kalkıyor,
+  telefon Analiz'in Özet bileşenini açıyor, fark yalnız CSS. Rapor yetkisi
+  olmayan personel eskisi gibi yalnız kendi satışını görüyor.
 - **İstasyon sekmesi** (`mobil/Istasyon.tsx`): tek sütun kartlar, Bekleyen /
   Hazırlanan sekmeleri, kalem düğmeleri, 10 sn geri alma şeridi. Alt çubuktaki
   ad "Mutfak" değil **İstasyon**.
@@ -3665,8 +3692,8 @@ React Native ile ayrı mobil uygulama **reddedildi**: ikinci kod tabanı her
 
 **Mutfak sekmesi** şimdilik mevcut İstasyon ekranının mobil hâli. Derinleşmesi
 (pişirme/paketleme aşamaları, hazırlık süresi) KDS'in kalanıyla birlikte, sırası
-geldiğinde. **Satış sekmesi** Analiz'in tamamı değil, telefonda bakılacak kadarı:
-günün cirosu, açık masalar, ödeme tipi dökümü.
+geldiğinde. **Satış sekmesi** ~~Analiz'in tamamı değil, telefonda bakılacak kadarı~~
+— 7 Eki 2026'dan beri masaüstü Özet'in aynısı (yukarıdaki karar).
 
 Aşamalar: **(1) kabuk + rol bazlı alt sekmeler + Masalar**, (2) sipariş ekranı
 (kategori/ürün, hep görünen sepet), (3) ödeme (adisyon ekranında).
