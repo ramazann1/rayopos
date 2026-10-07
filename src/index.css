@@ -25442,9 +25442,18 @@ span.kys-daha { cursor: inherit; margin-top: 4px; }
 
 .analiz-ozet.mobil .oz-arti,
 .analiz-ozet.mobil .oz-kirilim em,
-.analiz-ozet.mobil .kunye-ikincil,
-.analiz-ozet.mobil .oz-kunye dd .gr-degisim {
+.analiz-ozet.mobil .kunye-ikincil {
   display: none;
+}
+
+/* Önceki döneme göre değişim rakamın yanında, kutuya sığacak boyda. */
+.analiz-ozet.mobil .oz-kunye dd {
+  gap: 5px;
+}
+
+.analiz-ozet.mobil .gr-degisim {
+  padding: 2px 6px;
+  font-size: 11px;
 }
 
 .analiz-ozet.mobil .oz-kirilim > div,
@@ -25704,4 +25713,10 @@ span.kys-daha { cursor: inherit; margin-top: 4px; }
 /* Tarih ekseni dar ekranda üst üste biniyordu; dönem zaten başlıkta yazıyor. */
 .analiz-ozet.mobil .gr-x {
   display: none;
+}
+
+.dokum-degisimli {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }

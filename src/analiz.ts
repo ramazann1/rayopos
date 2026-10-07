@@ -189,13 +189,27 @@ function hamAralik(f: AnalizFiltre): { bas: Date; bit: Date } {
   }
 }
 
+/** Bir ay önceki aynı gün ve saat; 31 Ekim'in karşılığı 30 Eylül. */
+function birAyOnce(t: Date) {
+  const y = new Date(t);
+  y.setDate(1);
+  y.setMonth(y.getMonth() - 1);
+  const ayinSonGunu = new Date(y.getFullYear(), y.getMonth() + 1, 0).getDate();
+  y.setDate(Math.min(t.getDate(), ayinSonGunu));
+  return y;
+}
+
 /**
- * Karşılaştırma aralığı: seçili dönemin hemen öncesindeki aynı uzunlukta pencere.
- * Bugünü dünle, bu haftayı geçen haftayla kıyaslıyor.
+ * Karşılaştırma aralığı: seçili dönemin hemen öncesi, takvime göre. Saatler
+ * aynı kalıyor, günler geri gidiyor — bugün dünle, bu hafta geçen haftayla,
+ * bu ay geçen ayın aynı günleriyle, üç günlük aralık ondan önceki üç günle.
+ * Önceden süre kadar geri kaydırılıyordu: kasa günü 08:00–07:55 (23 sa 55 dk)
+ * olunca önceki gün 08:05'te başlıyor, saatleri yuvarlak olmayan özel
+ * aralıkta önceki dönem akşamdan sabaha anlamsız bir pencereye düşüyordu.
  *
  * Süren dönem kırpılıyor. "Bugün" saat 14:00'te yarım bir gündür; dünün
- * tamamıyla kıyaslanırsa her öğleden önce "düşüş var" görünür. Önceki pencere
- * de aynı süre kadar alınıyor — dün de saat 14:00'e kadar.
+ * tamamıyla kıyaslanırsa her öğleden önce "düşüş var" görünür. Önceki dönem
+ * de aynı yere kadar alınıyor — dün de saat 14:00'e kadar.
  *
  * Vardiyada karşılaştırma yok: vardiyalar eşit uzunlukta değil, bir öncekinin
  * nerede başladığı da buradan bilinmiyor.
@@ -205,13 +219,19 @@ export function oncekiAralik(f: AnalizFiltre): { bas: Date; bit: Date } | null {
 
   const { bas, bit } = donemAraligi(f);
   const simdi = new Date();
-  // Dönem henüz bitmediyse geçen süre kadarı ölçülüyor.
+  // Dönem henüz bitmediyse geçen kadarı ölçülüyor.
   const son = bit > simdi ? simdi : bit;
-  const uzunluk = son.getTime() - bas.getTime();
-  if (uzunluk <= 0) return null;
+  if (son <= bas) return null;
 
-  const oncekiBas = new Date(bas.getTime() - (bit.getTime() - bas.getTime()));
-  return { bas: oncekiBas, bit: new Date(oncekiBas.getTime() + uzunluk) };
+  if (f.donem === "buAy") return { bas: birAyOnce(bas), bit: birAyOnce(son) };
+
+  // Dönemin kaç kasa gününe yayıldığı; o kadar gün geri gidiliyor. "Bu hafta"
+  // bugünde bitiyor ama karşılığı geçen haftanın aynı günleri: hep 7 gün.
+  const ilkGun = kasaGunuBasi(bas);
+  const sonGun = kasaGunuBasi(new Date(bit.getTime() - 60000));
+  const gun =
+    f.donem === "buHafta" ? 7 : Math.round((sonGun.getTime() - ilkGun.getTime()) / 86400000) + 1;
+  return { bas: gunEkle(bas, -gun), bit: gunEkle(son, -gun) };
 }
 
 /** Saatli aralık: "20.09.2026 08:45 – 26.09.2026 08:40". */

@@ -959,11 +959,17 @@ function Ozet({
             <>
               <div>
                 <dt>Ortalama adisyon</dt>
-                <dd>{paraGoster(ozet.ortalama)}</dd>
+                <dd className="dokum-degisimli">
+                  <Degisim simdi={ozet.ortalama} onceki={onceki?.ortalama ?? null} />
+                  {paraGoster(ozet.ortalama)}
+                </dd>
               </div>
               <div>
                 <dt>Misafir</dt>
-                <dd>{ozet.misafir ? sayiGoster(ozet.misafir) : "—"}</dd>
+                <dd className="dokum-degisimli">
+                  <Degisim simdi={ozet.misafir} onceki={onceki?.misafir ?? null} />
+                  {ozet.misafir ? sayiGoster(ozet.misafir) : "—"}
+                </dd>
               </div>
             </>
           )}

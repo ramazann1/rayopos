@@ -1,7 +1,7 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (7 Eki 2026 güncellendi)
+## 0. SIRADAKİ İŞ (8 Eki 2026 güncellendi)
 
 > **YENİ SEANSIN İLK İŞİ: telefondaki yeni Satış ekranını Ramazan'la
 > gözden geçirmek.** Ramazan telefonda denesin (dönem değiştir, kutulara
@@ -29,10 +29,23 @@
 >   adisyon ve misafir telefonda Döküm penceresinde. Rapor okunamazsa
 >   (bağlantı) masaüstünde de "Yeniden dene" — önceden halka sonsuz dönüyordu.
 >
-> **Yeni iş (bu seansta bulundu): "Önceki dönem" 5 dk kayık.** Kasa günü
-> 08:00–07:55 (23 sa 55 dk) olduğu için önceki dönem süre kadar geri
-> kaydırılınca 08:05'te başlıyor (`analiz.ts` → `oncekiAralik`). Özet ve
-> Karşılaştırma ikisi de etkileniyor; günlük dönemde kasa gününe hizalanmalı.
+> **8 Eki yapılanlar:**
+> - Telefonda değişim rozetleri geri geldi: Adisyon ve Kişi başı kutusunda,
+>   Ortalama adisyon/Misafir Döküm penceresinde. "önceki döneme göre"
+>   yazısı telefonda yok (Ramazan: gerek yok).
+> - **Önceki dönem takvime göre** (`analiz.ts` → `oncekiAralik`, Özet
+>   rozetleri + ciro grafiği + Karşılaştırma "Önceki dönem" ortak): saatler
+>   aynı, günler geri. Dün → önceki kasa günü 08:00–07:55 (eskiden 08:05);
+>   Bu hafta → geçen haftanın Pzt'sinden aynı gün/saate (eskiden hemen
+>   önceki 3,5 gün: Cum–Pzt); Bu ay → geçen ayın aynı günleri (eskiden
+>   Eylül'ün son haftası); özel aralık → gün sayısı kadar geri. Süren dönem
+>   yine "şu ana kadarı". 07:55 kasa günü bitişi Ramazan'ın bilinçli ayarı;
+>   07:55–08:00 arası hiçbir güne girmiyor, dokunulmadı.
+>
+> **Yeni iş (8 Eki bulundu): eski adisyonlarda KDV yok.** Son 30 gün Döküm
+> penceresinde ciro ₺2,5 milyon ama Brüt ₺378, KDV ₺37 — Adisyo'dan aktarılan
+> adisyonların matrah/KDV'si boş görünüyor. Sebebi araştırılacak (aktarımda
+> KDV sütunu mu yok, hesap mı yalnız RayoPOS kalemlerine bakıyor).
 >
 > **7 Eki (2. seans) yapılanlar:** Analiz → Karşılaştırma sekmesi
 > (`components/Karsilastirma.tsx`, stiller `kys-`). A = üstteki dönem
