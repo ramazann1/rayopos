@@ -3,9 +3,22 @@
 
 ## 0. SIRADAKİ İŞ (7 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ: Analiz → Karşılaştırma sekmesi** (aşağıda 4.
-> madde; Ramazan sıranın başına aldı). Önce Adisyo'da karşılaştırma turu,
-> sonra taslak, onayla kodlama.
+> **YENİ SEANSIN İLK İŞİ: Karşılaştırma sekmesi üzerine Ramazan'la biraz
+> daha düşünmek** (Ramazan: "bu ekranla alakalı biraz daha düşünüp sonra
+> yeni işe geçeriz"). Ekran kodlandı (aşağıda 4. madde, kararların hepsi
+> orada); Ramazan'ın ilk izlenimini ve eklemek istediklerini sor, sonra
+> sıradaki maddeye geç. Denenmesi gerekenler: harf balonu kenarda taşmıyor
+> mu, takvimden dönem ekleme, Kategoriler/Ürünler/Bölgeler pencereleri,
+> adet farkları, telefon görünümü, uzun dönemde (geçen yıl) yükleme süresi.
+>
+> **7 Eki (2. seans) yapılanlar:** Analiz → Karşılaştırma sekmesi
+> (`components/Karsilastirma.tsx`, stiller `kys-`). A = üstteki dönem
+> seçici, B–D hazır (önceki dönem / bir hafta / bir ay önce / geçen yıl
+> aynı günler — A'ya bağlı kayar, süren dönem kırpılır) ya da takvimden
+> sabit. Filtreler bütün dönemlere uygulanıyor (masa/bölge seçimi buradan).
+> 6 ölçü kartı → gün gün/saat saat pencere + en büyük fark cümlesi;
+> Kategoriler/Ürünler/Bölgeler önizleme kartı → büyük pencere. Harf balonu
+> portal ile en üst katmanda, kenarda içeri kayıyor. Özet'teki % duruyor.
 >
 > **7 Eki'de yapılanlar (canlıda):** Analiz hızlandı — eski adisyon
 > parçaları altışar birlikte iniyor (2025+2024: ~9 sn → ~5 sn), bitmiş
@@ -70,9 +83,28 @@
 >    önceki Pzt–Cuma ile kıyaslanıyordu). Yerine ayrı sekme: kullanıcı
 >    **2–4 aralığı kendisi seçer**, yan yana sütunlarda ciro, adisyon,
 >    ortalama, misafir, ürün, bölge ve farklar. Hazır seçenekler (geçen
->    haftanın aynı günleri, geçen yılın aynı dönemi) düşünülecek. Özet'teki
->    "%" etiketi ve arka plandaki önceki dönem indirmesi kalkar. Başlamadan
->    önce Adisyo turu + taslak.
+>    haftanın aynı günleri, geçen yılın aynı dönemi) düşünülecek. **Özet'teki
+>    "önceki döneme göre %" etiketi KALIYOR** (7 Eki, Ramazan vazgeçti).
+>    Adisyo turu yapıldı (7 Eki): Adisyo'da karşılaştırma yok, Restaurant
+>    İstatistikleri tek aralık; Rapor Sihirbazı Pro paket, bakılamadı.
+>    İstek: ikonlu, şık, modern, amatör durmayan; **mercana boğulmaz**, mevcut
+>    Analiz'e benzemek zorunda değil. Taslak (7 Eki): dönemler harfli renkli
+>    çip (A lacivert-gri, B turkuaz, C mor, D kehribar), metrik başına ikonlu
+>    kart. **A taban**; B/C/D satırında rozet A'nın o döneme göre farkı ("A
+>    %6,8 önde / geride"). **Harfin üstüne gelince her tabloda koyu balon:**
+>    dönem adı + tarih aralığı + gün aralığı. **Kategoriler bloğu da var**
+>    (Ramazan, 7 Eki): kategori rengiyle satır, dönem başına tutar + adet,
+>    A'ya göre fark; kategoriye tıklayınca Ürünler bloğu o kategoriye süzülür.
+>    **Masa seçimi** (Ramazan, 7 Eki): üst şeritte bölge/masa süzgeci (Analiz
+>    filtresindeki çoklu çip seçimi), bütün dönemlere aynı anda uygulanır;
+>    Bölgeler bloğunda bölgeye tıklayınca masaları tek tek açılır.
+>    **Metrik kartına tıklayınca ortada pencere** (Ramazan, 7 Eki; OrtaPencere):
+>    üstte dönemler büyük rakamla, altında gün gün (tek günlük dönemde saat
+>    saat) yan yana tablo — haftanın aynı günü aynı satırda — ve en büyük
+>    farkı söyleyen tek cümle. Grafik değil tablo + cümle.
+>    **Önde/geride adede göre** (Ramazan, 7 Eki): kategori (satılan adet),
+>    bölge ve masa (adisyon sayısı), ürün (adet) farkı sayıdan; tutar yalnız
+>    gösteriliyor. Ölçü kartları kendi ölçüsüyle (ciro kartı ciroyla).
 >
 > **BİTTİ (5 Eki 2026): Adisyo kalemleri Deneme'de.** 73.567 adisyon,
 > 383.573 kalem, `gecmis_adisyonlar.kalemler` (jsonb). Eski adisyonlar

@@ -54,6 +54,7 @@ import Bilgi from "../components/Bilgi";
 import Ipucu from "../components/Ipucu";
 import OrtaPencere from "../components/OrtaPencere";
 import AdisyonDetay from "../components/AdisyonDetay";
+import Karsilastirma from "../components/Karsilastirma";
 import { yolaGirebilir } from "../rotaYetkileri";
 import { paraGoster } from "../para";
 import { ayarlar } from "../isletmeAyarlari";
@@ -345,6 +346,8 @@ export default function Analiz() {
               navigate("/analiz/ozet");
             }}
           />
+        ) : bolum === "karsilastirma" ? (
+          <Karsilastirma filtre={filtre} adisyonlar={adisyonlar} kategoriler={kategoriler} menu={menuUrunleri} />
         ) : bolum === "urunler" ? (
           <Urunler ozet={urunler} />
         ) : bolum === "karlilik" ? (
