@@ -5,13 +5,19 @@
 # olduğu gibi bas" demenin tek yolu spooler'ın kendi arayüzü, o da PowerShell'de
 # doğrudan yok — aşağıdaki köprü sınıfı Windows'un yazdırma kütüphanesini
 # çağırıyor. Ek kurulum istemiyor, Windows'un kendi parçası.
-
-param(
-  [Parameter(Mandatory = $true)][string]$Yazici,
-  [Parameter(Mandatory = $true)][string]$Dosya
-)
+#
+# Betik köprü açıkken hep çalışır durumda kalıyor. Eskiden her fişte yeniden
+# açılıyordu: PowerShell'in açılışı ve aşağıdaki sınıfın derlenmesi fiş başına
+# iki saniyeyi geçiyordu. Artık köprü her satıra bir istek yazıyor, betik her
+# isteğe bir satır cevap veriyor; derleme yalnız ilk açılışta.
+#
+# İstek:  {"no":1,"islem":"durum","yazici":"..."}
+#         {"no":2,"islem":"bas","yazici":"...","veri":"<base64>"}
+# Cevap:  {"no":1,"kurulu":true,"cevrimdisi":false,"hataDurumu":2}
+#         {"no":2,"tamam":true}   ya da   {"no":2,"hata":"..."}
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
 
 Add-Type @"
 using System;
@@ -89,4 +95,45 @@ public class RayoposHamYazdir
 }
 "@
 
-[RayoposHamYazdir]::Gonder($Yazici, [System.IO.File]::ReadAllBytes($Dosya))
+function Durum([string]$ad) {
+  # Filtre sorgusu kullanılmıyor: paylaşılan yazıcı adındaki ters bölü ve
+  # tırnak sorgu dilinde ayrıca kaçırılmak istiyor, liste zaten kısa.
+  $yazici = Get-CimInstance Win32_Printer | Where-Object { $_.Name -eq $ad } | Select-Object -First 1
+  if (-not $yazici) { return @{ kurulu = $false } }
+  @{
+    kurulu     = $true
+    cevrimdisi = [bool]$yazici.WorkOffline
+    hataDurumu = [int]$yazici.DetectedErrorState
+  }
+}
+
+while ($true) {
+  $satir = [Console]::In.ReadLine()
+  if ($null -eq $satir) { break }
+
+  $cevap = @{ no = $null }
+  try {
+    $istek = $satir | ConvertFrom-Json
+    $cevap.no = $istek.no
+    if ($istek.islem -eq "durum") {
+      $cevap += Durum $istek.yazici
+    }
+    elseif ($istek.islem -eq "bas") {
+      [RayoposHamYazdir]::Gonder($istek.yazici, [Convert]::FromBase64String($istek.veri))
+      $cevap.tamam = $true
+    }
+    else {
+      $cevap.hata = "Bilinmeyen istek."
+    }
+  }
+  catch {
+    # Sınıftan atılan hata PowerShell'in "Exception calling ..." kabuğuyla
+    # geliyor; okunacak olan içindeki cümle.
+    $hata = $_.Exception
+    if ($hata.InnerException) { $hata = $hata.InnerException }
+    $cevap.hata = $hata.Message
+  }
+
+  [Console]::Out.WriteLine(($cevap | ConvertTo-Json -Compress))
+  [Console]::Out.Flush()
+}

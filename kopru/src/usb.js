@@ -1,8 +1,4 @@
 import { spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
-import { writeFile, unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { varlik } from "./yerler.js";
 
 /**
@@ -17,6 +13,90 @@ import { varlik } from "./yerler.js";
 const BETIK = varlik("ham-yazdir.ps1");
 
 /**
+ * İlk istekte betiğin açılıp sınıfı derlemesi birkaç saniye sürebiliyor;
+ * sonrakiler kısa. Bu süreyi aşan servis takılmış sayılıyor (Windows
+ * yazdırma servisi cevap vermiyor) ve kapatılıyor, sonraki istek yenisini açar.
+ */
+const ZAMAN_ASIMI = 20_000;
+
+/** Açık duran PowerShell; fiş başına yeniden açılmıyor (bkz. ham-yazdir.ps1). */
+let servis = null;
+
+function servisiAc() {
+  const surec = spawn(
+    "powershell.exe",
+    ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", BETIK],
+    { windowsHide: true }
+  );
+  const s = { surec, bekleyenler: new Map(), sira: 0, tampon: "", sorun: "" };
+
+  surec.stdout.setEncoding("utf8");
+  surec.stdout.on("data", (parca) => {
+    s.tampon += parca;
+    let son;
+    while ((son = s.tampon.indexOf("\n")) >= 0) {
+      const satir = s.tampon.slice(0, son).replace(/^﻿/, "").trim();
+      s.tampon = s.tampon.slice(son + 1);
+      let cevap;
+      try {
+        cevap = JSON.parse(satir);
+      } catch {
+        continue;
+      }
+      s.bekleyenler.get(cevap.no)?.(cevap);
+    }
+  });
+
+  surec.stderr.setEncoding("utf8");
+  surec.stderr.on("data", (parca) => {
+    s.sorun = (s.sorun + parca).slice(-4000);
+  });
+
+  // Süreç düşerse bekleyen her istek hatayla dönüyor; sonraki istek yenisini açıyor.
+  const kapandi = (hata) => {
+    if (servis === s) servis = null;
+    for (const bekleyen of s.bekleyenler.values()) bekleyen({ hata });
+    s.bekleyenler.clear();
+  };
+  surec.once("error", () => kapandi("Windows yazdırma servisi çağrılamadı."));
+  surec.once("close", () => kapandi(sadeHata(s.sorun)));
+  surec.stdin.on("error", () => {
+    /* süreç kapanırken yazılan satır; "close" zaten bekleyenleri bitiriyor */
+  });
+
+  return s;
+}
+
+/**
+ * Betiğe bir istek. Yazıcı adı Türkçe harf taşıyabiliyor; satır ASCII'ye
+ * kaçırılarak gönderiliyor ki konsolun kod sayfası adı bozmasın.
+ */
+function sor(istek) {
+  if (!servis) servis = servisiAc();
+  const s = servis;
+  const no = ++s.sira;
+  const satir = JSON.stringify({ no, ...istek }).replace(
+    /[\u007f-￿]/g,
+    (h) => "\\u" + h.charCodeAt(0).toString(16).padStart(4, "0")
+  );
+
+  return new Promise((tamam) => {
+    const zaman = setTimeout(() => {
+      s.bekleyenler.delete(no);
+      s.surec.kill();
+      tamam({ hata: "Windows yazdırma servisi cevap vermedi." });
+    }, ZAMAN_ASIMI);
+
+    s.bekleyenler.set(no, (cevap) => {
+      clearTimeout(zaman);
+      s.bekleyenler.delete(no);
+      tamam(cevap);
+    });
+    s.surec.stdin.write(satir + "\n");
+  });
+}
+
+/**
  * Yazıcı basmaya hazır mı.
  *
  * Windows yazıcı fişten çekilmiş olsa bile işi kuyruğuna alıp "aldım" diyor —
@@ -28,38 +108,22 @@ export async function usbDurumu(sistemAd) {
     return { cevrimici: false, hata: "USB yazıcı yalnız Windows'ta çalışıyor." };
   }
 
-  let cikti;
-  try {
-    cikti = await powershell([
-      "-NoProfile",
-      "-Command",
-      `Get-CimInstance Win32_Printer -Filter "Name='${String(sistemAd).replace(/'/g, "''")}'" |` +
-        " Select-Object WorkOffline, PrinterStatus, DetectedErrorState | ConvertTo-Json -Compress",
-    ]);
-  } catch (e) {
-    return { cevrimici: false, hata: e.message };
-  }
+  const durum = await sor({ islem: "durum", yazici: String(sistemAd) });
+  if (durum.hata) return { cevrimici: false, hata: "Yazıcı durumu okunamadı." };
 
-  if (!cikti.trim()) {
+  if (!durum.kurulu) {
     return {
       cevrimici: false,
       hata: "Bu adda kurulu bir yazıcı yok — sistemdeki adı birebir yazılmalı.",
     };
   }
 
-  let durum;
-  try {
-    durum = JSON.parse(cikti);
-  } catch {
-    return { cevrimici: false, hata: "Yazıcı durumu okunamadı." };
-  }
-
-  if (durum.WorkOffline) return { cevrimici: false, hata: "Yazıcı çevrimdışı (kapalı ya da kablosu çıkmış)." };
+  if (durum.cevrimdisi) return { cevrimici: false, hata: "Yazıcı çevrimdışı (kapalı ya da kablosu çıkmış)." };
 
   // Windows'un hata tablosundan işletmecinin anlayacağı olanlar; gerisi tek
   // cümlede toplanıyor.
   const HATALAR = { 3: "Kapağı açık.", 4: "Kâğıt sıkışmış.", 5: "Kâğıdı bitmiş.", 9: "Çevrimdışı." };
-  const kod = durum.DetectedErrorState;
+  const kod = durum.hataDurumu;
   if (kod && kod !== 2) {
     return { cevrimici: false, hata: HATALAR[kod] ?? "Yazıcı hata durumunda." };
   }
@@ -75,22 +139,13 @@ export async function usbBas(sistemAd, baytlar) {
   const durum = await usbDurumu(sistemAd);
   if (!durum.cevrimici) throw new Error(durum.hata);
 
-  // Baytlar komut satırından geçirilemiyor (ESC/POS'ta her değer var, metin
-  // değil); geçici bir dosyaya yazılıp yolu veriliyor.
-  const dosya = join(tmpdir(), `rayopos-fis-${randomUUID()}.bin`);
-  await writeFile(dosya, baytlar);
-
-  try {
-    await powershell([
-      "-NoProfile",
-      "-ExecutionPolicy", "Bypass",
-      "-File", BETIK,
-      "-Yazici", sistemAd,
-      "-Dosya", dosya,
-    ]);
-  } finally {
-    await unlink(dosya).catch(() => {});
-  }
+  // ESC/POS baytlarında her değer var, metin satırına olduğu gibi konamıyor.
+  const cevap = await sor({
+    islem: "bas",
+    yazici: String(sistemAd),
+    veri: Buffer.from(baytlar).toString("base64"),
+  });
+  if (cevap.hata) throw new Error(sadeHata(cevap.hata));
 }
 
 /**

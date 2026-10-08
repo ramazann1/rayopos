@@ -18,12 +18,18 @@ const ADRES = `http://127.0.0.1:${PORT}`;
 
 /** Köprü aynı makinede; cevap gelmiyorsa yok demektir, uzun beklenmiyor. */
 const ZAMAN_ASIMI = 1500;
+/**
+ * Köprü fişi kâğıt çıktıktan sonra cevaplıyor; USB yazıcıda bu Windows'a
+ * uğradığı için bir saniyeyi geçebiliyor. Erken vazgeçilirse fiş buluta da
+ * gidiyor ve yerel kopya henüz bitmediyse ikinci kez basılıyordu.
+ */
+const YAZDIRMA_SURESI = 5000;
 /** Yoklamanın tazeliği: her fişte sormak sipariş kaydını yavaşlatır. */
 const YOKLAMA_OMRU = 30_000;
 
-async function istek(yol: string, ayar?: RequestInit) {
+async function istek(yol: string, ayar?: RequestInit, sure = ZAMAN_ASIMI) {
   const durdurucu = new AbortController();
-  const zaman = setTimeout(() => durdurucu.abort(), ZAMAN_ASIMI);
+  const zaman = setTimeout(() => durdurucu.abort(), sure);
   try {
     const cevap = await fetch(ADRES + yol, { ...ayar, signal: durdurucu.signal });
     return (await cevap.json()) as {
@@ -104,7 +110,7 @@ export async function yerelBas(is: {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(is),
-    });
+    }, YAZDIRMA_SURESI);
     return { basildi: cevap.tamam === true, hata: cevap.hata };
   } catch {
     // Köprü az önce kapanmış olabilir; bir sonraki fişte yeniden yoklansın.

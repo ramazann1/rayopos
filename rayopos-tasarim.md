@@ -1,25 +1,39 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (8 Eki 2026 güncellendi)
+## 0. SIRADAKİ İŞ (9 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ: güvenlik konuşması + `rayopos.net`.** Ramazan
-> `rayopos.com.tr`'den (TRABIS) dönüş gelmediği için **8 Eki'de Turhost'tan
-> `rayopos.net` aldı.** Bağlamadan önce Ramazan'ın soruları konuşulacak:
-> - Her şey tek Cloudflare hesabında (rayopos Pages + egzozcafe.com) kalırsa
->   risk ne; gerekirse **rayopos.net ayrı bir Cloudflare hesabına** bağlanır
->   (Ramazan istedi). 8 Eki'de anlatılan: ayrı alan adları tarayıcıda ve
->   sunucuda birbirinden yalıtık; ortak risk yalnız hesap girişi ve aynı
->   şifrenin birden çok yerde kullanılması → her hesapta ayrı şifre + iki
->   adımlı doğrulama (Cloudflare, Turhost, Supabase, GitHub). Turhost'ta
->   otomatik yenileme açılmalı. `pos.egzozcafe.com` yedek planı (aşağıda
->   "Kendi alan adı") bırakılmalı — iki siteyi aynı çatıya sokuyor.
+> **YENİ SEANSIN İLK İŞİ: aşağıdaki "Sonra sıradakiler" listesinin 00.
+> maddesi (ikinci kasada fiş yavaş).**
+>
+> **9 Eki: hesap güvenliği tamam (Ramazan yaptı).** Yeni Cloudflare hesabı
+> açıldı (egzozcafe'den ayrı e-posta). İki adımlı doğrulama doğrulama
+> uygulamasıyla açıldı: yeni + eski Cloudflare, Turhost, Supabase, GitHub.
+> Kurtarma kodları kaydedildi. Turhost'ta `rayopos.net` otomatik yenileme
+> (ve varsa transfer kilidi) açıldı.
+>
+> **Bekleyen: `rayopos.net` bağlama** (Ramazan "sonra" dedi; zamanını o
+> söyler, cafe kapalıyken). `rayopos.com.tr`'den (TRABIS) dönüş gelmediği
+> için 8 Eki'de Turhost'tan alındı. Notlar:
+> - Ayrı alan adları tarayıcıda ve sunucuda birbirinden yalıtık. Ortak risk
+>   yalnız hesap girişiydi, iki adımlı doğrulamayla kapandı.
+>   `pos.egzozcafe.com` yedek planı (aşağıda "Kendi alan adı") bırakıldı,
+>   iki siteyi aynı çatıya sokuyor.
+> - **Karar (8 Eki, Ramazan): `rayopos.net` ayrı Cloudflare hesabında.**
+>   Eski hesabı yalnız Ramazan kullanıyor, güvenlik farkı küçük. Ama ürün
+>   cafeden ayrı dursun (ileride ortak/çalışan yalnız RayoPOS'a girebilsin).
+>   Pages projesi hesaplar arasında taşınamıyor. Yeni hesapta aynı GitHub
+>   deposundan yeni proje kurulacak (`npm run build`, `dist`, Node 22,
+>   `VITE_SUPABASE_URL` + `VITE_SUPABASE_KEY`). Yedek adresi
+>   `rayopos-xxx.pages.dev` olur. Eski proje herkes geçene kadar açık kalır.
+>   **Önce güvenlik ayarları, bağlama sonra** (Ramazan).
 > - Kota (8 Eki, Cloudflare sayfasından okundu): Pages ücretsiz planda
 >   statik dosya istekleri "free and unlimited"; ayda 500 derleme, 20.000
 >   dosya, dosya başına 25 MiB, proje başına 100 alan adı. Pages Functions
 >   kullanılmıyor.
-> - Bağlama adımları: alan adı Cloudflare'e eklenir → verilen iki ad
->   sunucusu Turhost panelinde yazılır → Pages → rayopos → Özel alan adları:
+> - Bağlama adımları (hepsi YENİ hesapta): Pages projesi kurulur (yukarıdaki
+>   ayarlar) → alan adı Cloudflare'e eklenir → verilen iki ad
+>   sunucusu Turhost panelinde yazılır → Pages → yeni proje → Özel alan adları:
 >   `rayopos.net` + `www.rayopos.net` → Supabase izinli adreslerine eklenir.
 >   Kodda değişen yok: köprü her kaynağa açık (`access-control-allow-origin:
 >   *`), giriş uzantısı `@rayopos.com.tr` yalnız iç etiket, kalabilir.
@@ -130,16 +144,21 @@
 > tekrarla). Masalar için geçici koruma `masalar.ts`'te.
 >
 > Sonra sıradakiler:
-> 00. **İkinci kasa bilgisayarında fiş yavaş (8 Eki gece, Deneme).** Köprü o
->    bilgisayarda kurulu, uyarı yok. `yazdirma_kuyrugu` son 20 satır
->    (03:24–03:43): mutfak fişleri çoğu `yerel`, gecikme 0. **Hesap
->    fişlerinin hepsi `bulut`**, 2–2,5 sn, aynı saniyede çift kayıt (biri
->    `basildi`, öteki `basarisiz`) → Deneme'de iki hesap yazıcısı mı var,
->    yoksa `yerelBas` 1,5 sn zaman aşımına (`yerelYazdirma.ts` ZAMAN_ASIMI)
->    takılıp buluta mı düşüyor? **#617 mutfak `bulut`, 72 sn** — köprü
->    buluttaki fişi geç almış (canlı kanal düşmüş olabilir). Bakılacak: o
->    bilgisayarın köprü günlüğü, Deneme yazıcı tanımları, hangi satır hangi
->    bilgisayardan (kuyrukta cihaz bilgisi yok — eklenebilir).
+> 00. **Hesap fişi yavaş: kasada dene (9 Eki düzeltildi, 1.3.80).** Sebep:
+>    USB yazıcıda köprü her fişte PowerShell'i iki kez açıyor, betik C#
+>    sınıfını her seferinde derliyordu (>2 sn); kasa programı köprüyü 1,5 sn
+>    bekleyip buluta da gönderiyordu (hesap fişleri hep `bulut`, 2–2,5 sn).
+>    Şimdi `ham-yazdir.ps1` köprüyle açık kalan tek süreç (satır başına
+>    istek/cevap, derleme bir kez); bu bilgisayarda fiş başına ~1,5 → ~0,3 sn.
+>    `yerelYazdirma.ts` → `/yazdir` 5 sn bekliyor (`/durum` 1,5 sn kaldı).
+>    Ağ yazıcıları (mutfak) zaten 0 sn, etkilenmedi. **Kâğıtla denenmedi**:
+>    Ramazan kasaya 1.3.80 köprüsünü kurup hesap fişini 3 kez yazdıracak,
+>    sonra kuyruk sorgusu (kaynak `yerel` olmalı, çift kâğıt çıkmamalı).
+>    Çift kayıt: Deneme'de iki hesap yazıcısı vardı (3 eski kasanın, 10 yeni
+>    bilgisayarın; 3 hep başarısız) — Ramazan kullanılmayanı pasif yapıyor,
+>    tek kasa var. #617 (72 sn): iş JGCK52N köprüsüne düşmüş, o bilgisayar
+>    mutfak yazıcısına geç ulaşıyor (#601 "yanıt vermedi") — hangi bilgisayar
+>    olduğu sorulacak.
 > 0. **"Yeni sürüm geldi, güncelle" uyarısı (8 Eki, Ramazan; Adisyo böyle
 >    yapıyor).** Başka bir bilgisayar 29 Eyl öncesi saklı kopyayı
 >    gösteriyordu (köprü indirme düğmesi sönük), Ctrl+Shift+R ile düzeldi.
