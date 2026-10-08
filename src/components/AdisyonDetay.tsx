@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Ban,
+  ChevronDown,
   Gift,
   HandCoins,
   History,
@@ -87,11 +88,37 @@ export default function AdisyonDetay({
     });
   }, [adisyonId]);
 
-  const siparisYolu = detay
-    ? detay.masaId
-      ? `/siparis/${detay.masaId}`
-      : `/adisyon/${detay.id}`
-    : "";
+  // Telefonun sipariş ekranı yalnız masayla açılıyor; masasız adisyona oradan
+  // gidilmiyor, düğme hiç çıkmıyor.
+  const mobil = useLocation().pathname.startsWith("/mobil");
+  const siparisYolu = !detay
+    ? ""
+    : mobil
+      ? detay.masaId
+        ? `/mobil/siparis/${detay.masaId}`
+        : ""
+      : detay.masaId
+        ? `/siparis/${detay.masaId}`
+        : `/adisyon/${detay.id}`;
+
+  // Telefonda bilgiler ve ürün listesi kapalı geliyor, başlıkta tek satır özet:
+  // hepsi açıkken toplam ve tahsilat ekranın çok altında kalıyordu.
+  const [katli, setKatli] = useState({ bilgi: true, urun: true });
+  const acik = { bilgi: !mobil || !katli.bilgi, urun: !mobil || !katli.urun };
+  const baslik = (kod: "bilgi" | "urun", ad: string, ozet: string) =>
+    mobil ? (
+      <button
+        type="button"
+        className={acik[kod] ? "detay-katla acik" : "detay-katla"}
+        onClick={() => setKatli((k) => ({ ...k, [kod]: !k[kod] }))}
+      >
+        <h4>{ad}</h4>
+        <span>{ozet}</span>
+        <ChevronDown size={18} />
+      </button>
+    ) : (
+      <h4>{ad}</h4>
+    );
 
   const aktifEt = async () => {
     if (!detay) return;
@@ -114,7 +141,7 @@ export default function AdisyonDetay({
             Adisyon #{detay?.no ?? "…"}
             {detay?.gunlukNo ? ` · ${masasizEtiketi(detay.tip, detay.gunlukNo)}` : ""}
             {detay && (
-              <span className={detay.durum === "acik" ? "detay-rozet acik" : "detay-rozet"}>
+              <span className={detay.durum === "kapali" ? "detay-rozet" : `detay-rozet ${detay.durum}`}>
                 {durumAdi(detay)}
               </span>
             )}
@@ -132,7 +159,7 @@ export default function AdisyonDetay({
             )}
             {/* Aktarılmış adisyon yeniden açılamıyor; iptal doğrudan yapılıyor. */}
             {detay?.gecmis && detay.durum !== "iptal" && yetkiVar("siparis.iptal") && (
-              <button className="detay-dugme" onClick={() => setIslem("iptal")}>
+              <button className="detay-dugme tehlike" onClick={() => setIslem("iptal")}>
                 <Ban size={16} /> İptal et
               </button>
             )}
@@ -151,15 +178,19 @@ export default function AdisyonDetay({
                       </button>
                     )}
                     {yetkiVar("siparis.iptal") && (
-                      <button className="detay-dugme" onClick={() => setIslem("iptal")}>
+                      <button className="detay-dugme tehlike" onClick={() => setIslem("iptal")}>
                         <Ban size={16} /> İptal et
                       </button>
                     )}
-                    <button className="detay-dugme ana" onClick={() => navigate(siparisYolu)}>
-                      Siparişe git <ArrowRight size={16} />
-                    </button>
+                    {siparisYolu && (
+                      <button className="detay-dugme ana" onClick={() => navigate(siparisYolu)}>
+                        Siparişe git <ArrowRight size={16} />
+                      </button>
+                    )}
                   </>
                 ) : (
+                  // Telefonda masasız adisyonun açılacağı ekran yok.
+                  (!mobil || detay.masaId) &&
                   yetkiVar("siparis.aktif_et") && (
                     <button className="detay-dugme ana" onClick={() => setAktifSor(true)}>
                       <LockOpen size={16} /> Siparişi aktif et
@@ -187,13 +218,17 @@ export default function AdisyonDetay({
         ) : (
           <div className="detay-govde">
             <section className="detay-sutun">
-              <h4>Sipariş bilgileri</h4>
-              <Bilgiler detay={detay} />
+              {baslik(
+                "bilgi",
+                "Sipariş bilgileri",
+                [detay.tip === "masa" ? detay.masaAd : TIP_ADLARI[detay.tip], detay.garson].filter(Boolean).join(" · ")
+              )}
+              {acik.bilgi && <Bilgiler detay={detay} />}
             </section>
 
             <section className="detay-sutun orta">
-              <h4>Ürünler</h4>
-              {detay.turlar.length === 0 ? (
+              {baslik("urun", "Ürünler", `${adetGoster(detay.adet)} ürün`)}
+              {!acik.urun ? null : detay.turlar.length === 0 ? (
                 <p className="detay-bos">Bu adisyona hiç ürün girilmemiş.</p>
               ) : (
                 <ul className="detay-kalemler">
@@ -383,7 +418,7 @@ export default function AdisyonDetay({
           onOnay={() => {
             setMasaDolu(false);
             navigate(
-              "/",
+              mobil ? "/mobil/masalar" : "/",
               salonaSecimle({ tip: "aktif", masaId: detay.masaId!, adisyonId: detay.id })
             );
           }}

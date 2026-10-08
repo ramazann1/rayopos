@@ -115,8 +115,11 @@ export function CizgiGrafik({
     `L${x(0).toFixed(1)},${ustBosluk + cizimY} Z`;
 
   // Etiketler sıkışınca üst üste biniyor; kaç noktada bir yazılacağı nokta
-  // sayısından çıkıyor, ilk ve son her zaman yazılıyor.
+  // sayısından çıkıyor, ilk ve son her zaman yazılıyor. Sona aralıktan yakın
+  // düşen etiket atlanıyor, yoksa son etiketle çakışıyor (06 ve 07 gibi).
   const atla = Math.ceil(noktalar.length / 12);
+  const son = noktalar.length - 1;
+  const etiketli = (i: number) => i === son || (i % atla === 0 && son - i >= atla);
   const secili = uzerinde != null ? noktalar[uzerinde] : null;
 
   return (
@@ -191,7 +194,7 @@ export function CizgiGrafik({
           yarım sütun kayıyor ve tarih çizginin altına denk gelmiyordu. */}
       <div className="gr-x">
         {noktalar.map((n, i) =>
-          i % atla === 0 || i === noktalar.length - 1 ? (
+          etiketli(i) ? (
             <span
               key={n.etiket}
               className={uzerinde === i ? "acik" : ""}

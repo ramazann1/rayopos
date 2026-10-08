@@ -47,6 +47,6 @@
 - [Tarayıcıda önce hesabı söyle](rayopos-tarayicida-once-hesabi-soyle.md) — Chrome'da işlemden önce açık hesap/işletmeyi yaz; tıklama sepete yazabilir.
 - [Mobil test iframe ile](rayopos-mobil-test-iframe.md) — Chrome tam ekran; telefon ekranı sekme içinde 400 px iframe'de açılır.
 - [Auto mod engeli](rayopos-auto-mod-engeli.md) — Adisyo çekimi ve canlı SQL Auto'da engelleniyor; önce Manual'a aldır.
-- [Canlı adres](rayopos-canli-adres.md) — rayopos.pages.dev; Chrome eklentisinde izin gerekebilir.
+- [Canlı adres](rayopos-canli-adres.md) — rayopos.pages.dev; rayopos.net alındı (bağlanmadı); canlı iframe'de açılmaz.
 - [Canlıya sormadan gönderme](rayopos-canliya-sormadan-gonderme.md) — push öncesi her görevde "göndereyim mi?" diye sor, onay görev başına.
 - [RLS sorgu başına bir kez](rayopos-rls-sorgu-basina-bir-kez.md) — politikada kişiye bağlı fonksiyon (select ...) içinde; satır başına çalışınca rapor dakikalar sürüyor.

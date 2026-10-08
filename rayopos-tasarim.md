@@ -3,13 +3,47 @@
 
 ## 0. SIRADAKİ İŞ (8 Eki 2026 güncellendi)
 
-> **YENİ SEANSIN İLK İŞİ: telefondaki yeni Satış ekranını Ramazan'la
-> gözden geçirmek.** Ramazan telefonda denesin (dönem değiştir, kutulara
-> dokun); bilgisayarda Analiz → Özet'in eskisi gibi göründüğüne bakılsın
-> (Chrome telefon modunda kaldığı için seans sonunda gözle bakılamadı).
-> Gerçek telefonda Safari adres çubuğu açıkken sığıyor mu, büyük telefonda
-> (412 × 915) boşluk grafiğe gidiyor mu — bunlar da denenmedi. Sonra
-> aşağıdaki "Sonra sıradakiler" 1. maddeye geç.
+> **YENİ SEANSIN İLK İŞİ: güvenlik konuşması + `rayopos.net`.** Ramazan
+> `rayopos.com.tr`'den (TRABIS) dönüş gelmediği için **8 Eki'de Turhost'tan
+> `rayopos.net` aldı.** Bağlamadan önce Ramazan'ın soruları konuşulacak:
+> - Her şey tek Cloudflare hesabında (rayopos Pages + egzozcafe.com) kalırsa
+>   risk ne; gerekirse **rayopos.net ayrı bir Cloudflare hesabına** bağlanır
+>   (Ramazan istedi). 8 Eki'de anlatılan: ayrı alan adları tarayıcıda ve
+>   sunucuda birbirinden yalıtık; ortak risk yalnız hesap girişi ve aynı
+>   şifrenin birden çok yerde kullanılması → her hesapta ayrı şifre + iki
+>   adımlı doğrulama (Cloudflare, Turhost, Supabase, GitHub). Turhost'ta
+>   otomatik yenileme açılmalı. `pos.egzozcafe.com` yedek planı (aşağıda
+>   "Kendi alan adı") bırakılmalı — iki siteyi aynı çatıya sokuyor.
+> - Kota (8 Eki, Cloudflare sayfasından okundu): Pages ücretsiz planda
+>   statik dosya istekleri "free and unlimited"; ayda 500 derleme, 20.000
+>   dosya, dosya başına 25 MiB, proje başına 100 alan adı. Pages Functions
+>   kullanılmıyor.
+> - Bağlama adımları: alan adı Cloudflare'e eklenir → verilen iki ad
+>   sunucusu Turhost panelinde yazılır → Pages → rayopos → Özel alan adları:
+>   `rayopos.net` + `www.rayopos.net` → Supabase izinli adreslerine eklenir.
+>   Kodda değişen yok: köprü her kaynağa açık (`access-control-allow-origin:
+>   *`), giriş uzantısı `@rayopos.com.tr` yalnız iç etiket, kalabilir.
+>   Yeni adreste herkes bir kez yeniden girecek (tarayıcı hafızası adrese
+>   bağlı) — cafe kapalıyken. `rayopos.pages.dev` çalışmaya devam eder.
+>
+> **8 Eki (2. seans) yapılanlar:**
+> - Telefon Satış ekranı gözden geçirildi (Chrome telefon modu, 440×956 ve
+>   375). Pencereler: **Yoğunluk** telefonda dönük (saatler satır, günler
+>   sütun, başlık yapışkan); **Saatler** grafiğinde saat ekseni görünüyor,
+>   tepe rakamı kesilmiyor. Grafik ekseninde sona yakın etiket atlanıyor
+>   (06/07 çakışması; masaüstünde de).
+> - **Mobilde Adisyonlar:** Satış'ta Gün gün kutusunun yerinde (telefonda
+>   Gün gün yok, altı kutu sığıyor); arama + iki satırlık kart listesi;
+>   kutu yalnız `/analiz/adisyonlar` yetkisi olana. Liste sayısı açık
+>   masaları da sayıyor (1375 ↔ kartta 1372), masaüstü listesiyle aynı.
+> - **Adisyon detayı dar ekranda** (≤860px) alt alta; telefonda Sipariş
+>   bilgileri ve Ürünler açılır başlık (kapalıyken "S 33 · UMUT BEY",
+>   "13 ürün"), toplam ve tahsilat hep açık. İptal et düğmesi, "İptal
+>   edildi" ve listedeki İptal rozeti kırmızı (masaüstünde de).
+> - **Telefonda Siparişi aktif et:** masa doluysa telefonun salonu "aktif"
+>   seçim kipinde açılıyor (boş masa → onay → `/mobil/siparis/<masa>`).
+>   Masasız adisyonda telefonda düğme yok. **Denenmedi:** son adım (boş
+>   masaya Aç) — Ramazan Deneme'de deneyecek (#76569, B 1 dolu).
 >
 > **7 Eki (3. seans) yapılanlar:**
 > - Analiz filtresi Salon'a gidip dönünce kaybolmuyor (sayfa yenilenince /
@@ -141,6 +175,10 @@
 >    **Önde/geride adede göre** (Ramazan, 7 Eki): kategori (satılan adet),
 >    bölge ve masa (adisyon sayısı), ürün (adet) farkı sayıdan; tutar yalnız
 >    gösteriliyor. Ölçü kartları kendi ölçüsüyle (ciro kartı ciroyla).
+> 5. **ÇOK SONRA hatırlat (8 Eki, Ramazan):** Adisyo'dan aktarılan eski
+>    adisyonu masaya aktif etme. Şimdilik gerek yok (6 Eki kararı duruyor);
+>    yapılırsa eski adisyon `gecmis_adisyonlar`'dan RayoPOS tablosuna
+>    taşınmalı (kalemler, ödemeler, masa eşlemesi). Liste bitmeye yakınken sor.
 >
 > **BİTTİ (5 Eki 2026): Adisyo kalemleri Deneme'de.** 73.567 adisyon,
 > 383.573 kalem, `gecmis_adisyonlar.kalemler` (jsonb). Eski adisyonlar
@@ -747,10 +785,10 @@
 >      Rakip 3,7 yıl tutarken detay silmek satışta eksik olarak karşımıza
 >      çıkar; üstelik kurtardığı para faturanın %7'si.
 > 2. **Kendi alan adı** — `rayopos.com.tr` TRABIS onayında (Turhost 15 Eyl
->    10:33: "belgeler kayıt otoritesine iletildi"). Seans başında sor/WHOIS'e
->    bak; gelince Cloudflare Pages'te özel alan adı olarak bağlanır. Erişim
->    sorunu tekrarlarsa geçici olarak `pos.egzozcafe.com` bağlanabilir
->    (ikisi de aynı Cloudflare hesabında).
+>    10:33: "belgeler kayıt otoritesine iletildi"). **8 Eki: dönüş gelmedi,
+>    yerine `rayopos.net` alındı (Turhost) — bağlama en üstte.** Önceki
+>    yedek plan `pos.egzozcafe.com` bırakıldı: RayoPOS'u egzozcafe.com'un
+>    alt adresine koymak iki siteyi aynı çatı altına sokuyor.
 > 3. **iPhone 12'de beyaz sayfa** — Redmi'de ve Ramazan'ın cihazlarında
 >    açılıyor, o telefonda açılmıyor. Denenecek: gizli sekme → Safari web
 >    sitesi verilerinden `pages.dev` silme → Ekran Süresi kısıtlaması/VPN.

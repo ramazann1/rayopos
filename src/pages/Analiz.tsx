@@ -32,6 +32,7 @@ import {
   Plus,
   Percent,
   Receipt,
+  ReceiptText,
   ShieldCheck,
   Star,
   Target,
@@ -352,6 +353,15 @@ export default function Analiz({ mobil = false }: { mobil?: boolean }) {
             oncekiSeri={oncekiSeri}
             yogunluk={yogunluk}
             gunluk={gunluk}
+            adisyonlar={yolaGirebilir("/analiz/adisyonlar") ? adisyonlar : undefined}
+            onAdisyonSec={setSecili}
+          />
+        )}
+        {secili && (
+          <AdisyonDetay
+            adisyonId={secili}
+            onKapat={() => setSecili(null)}
+            onDegisti={() => setTazele((s) => s + 1)}
           />
         )}
       </div>
@@ -758,6 +768,81 @@ function Adisyonlar({
 
 const zamanMetni = (t: string) => `${gunMetni(t)} ${saatMetni(t)}`;
 
+/**
+ * Telefonun adisyon listesi. Masaüstündeki tablo on dört sütun, telefona
+ * sığmıyor; her adisyon iki satırlık bir kart: solda no, masa, saat ve açan,
+ * sağda tutar ve durum ya da ödeme tipi. Dokununca masaüstündeki detay açılıyor.
+ */
+function MobilAdisyonlar({
+  adisyonlar: hepsi,
+  onSec,
+}: {
+  adisyonlar: AnalizAdisyon[];
+  onSec: (id: number) => void;
+}) {
+  const [arama, setArama] = useState("");
+
+  const adisyonlar = useMemo(() => {
+    const ara = arama.trim().toLocaleLowerCase("tr");
+    return hepsi
+      .filter((a) => {
+        if (!ara) return true;
+        const metin = `${a.no} ${a.masaAd} ${a.bolgeAd} ${a.garson} ${a.ad} ${a.musteri}`;
+        return metin.toLocaleLowerCase("tr").includes(ara);
+      })
+      .sort((a, b) => b.acilis.localeCompare(a.acilis));
+  }, [hepsi, arama]);
+
+  const [gorunen, setGorunen] = useState(PARCA_SATIR);
+  useEffect(() => setGorunen(PARCA_SATIR), [adisyonlar]);
+  const kaydirinca = (e: React.UIEvent<HTMLDivElement>) => {
+    const k = e.currentTarget;
+    if (gorunen < adisyonlar.length && k.scrollTop + k.clientHeight > k.scrollHeight - 400) {
+      setGorunen((g) => g + PARCA_SATIR);
+    }
+  };
+
+  return (
+    <div className="m-ads">
+      <AramaKutusu deger={arama} degistir={setArama} yer="Adisyon no, masa, müşteri" />
+      {adisyonlar.length === 0 ? (
+        <div className="ayar-bos">
+          <ReceiptText size={24} />
+          <p>{arama ? "Aramayla eşleşen adisyon yok." : "Bu dönemde adisyon yok."}</p>
+        </div>
+      ) : (
+        <div className="m-ads-liste" onScroll={kaydirinca}>
+          {adisyonlar.slice(0, gorunen).map((a) => {
+            const durumlu = DURUM_RENKLERI[durumMetni(a)];
+            return (
+              <button
+                key={a.id}
+                type="button"
+                className={a.durum === "kapali" && a.kalan > 0 ? "m-ads-satir eksik" : "m-ads-satir"}
+                onClick={() => onSec(a.id)}
+              >
+                <span className="m-ads-sol">
+                  <b>
+                    #{a.no} · {a.tip === "masa" ? a.masaAd || "—" : a.musteri || TIP_ADLARI[a.tip]}
+                  </b>
+                  <small>
+                    {zamanMetni(a.acilis)}
+                    {a.garson && ` · ${a.garson}`}
+                  </small>
+                </span>
+                <span className="m-ads-sag">
+                  <b className={a.durum === "iptal" ? "iptal" : undefined}>{paraGoster(a.toplam)}</b>
+                  {durumlu ? <Durum adisyon={a} /> : <TahsilatCipi adisyon={a} />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Özetten daraltarak gelindiğini gösteren, tek tıkla bırakılan çip. */
 function EksikCipi({ onBirak }: { onBirak: () => void }) {
   return (
@@ -854,16 +939,21 @@ function Ozet({
   onEksigeGit,
   yogunluk,
   gunluk,
+  adisyonlar,
+  onAdisyonSec,
 }: {
   mobil?: boolean;
   ozet: AnalizOzeti;
   onceki: AnalizOzeti | null;
   seri: ZamanSerisi;
   oncekiSeri: ZamanSerisi | null;
-  /** Telefonda adisyon listesi yok; eksik tahsilat orada yalnız yazıyor. */
+  /** Telefonda eksik tahsilat yalnız yazıyor; liste Adisyonlar kutusunda. */
   onEksigeGit?: () => void;
   yogunluk: Yogunluk;
   gunluk: GunlukCiro;
+  /** Telefonda Adisyonlar kutusu; liste yetkisi yoksa verilmiyor, kutu çıkmıyor. */
+  adisyonlar?: AnalizAdisyon[];
+  onAdisyonSec?: (id: number) => void;
 }) {
   const kdvDahil = ayarlar().kdvDahil;
   const [acikKod, setAcikKod] = useState<string | null>(null);
@@ -1033,9 +1123,10 @@ function Ozet({
             : "Hangi gün, hangi saatte kaç adisyon açıldığı; renk koyulaştıkça kalabalık artıyor."}
         </Ipucu>
       ),
-      icerik: <YogunlukTablosu yogunluk={yogunluk} />,
+      icerik: <YogunlukTablosu yogunluk={yogunluk} mobil={mobil} />,
     },
-    ...(gunluk.satirlar.length > 1
+    // Telefonda altı kutu tek ekrana sığıyor; Gün gün'ün yerini Adisyonlar alıyor.
+    ...(!mobil && gunluk.satirlar.length > 1
       ? [
           {
             kod: "gunluk",
@@ -1050,6 +1141,19 @@ function Ozet({
               </Ipucu>
             ),
             icerik: <GunlukCiroTablosu gunluk={gunluk} />,
+          },
+        ]
+      : []),
+    ...(mobil && adisyonlar && onAdisyonSec
+      ? [
+          {
+            kod: "adisyonlar",
+            ad: "Adisyonlar",
+            kisa: "Adisyonlar",
+            ikon: ReceiptText,
+            renk: "mor",
+            ozet: `${adisyonlar.filter((a) => a.durum !== "iptal").length} adisyon`,
+            icerik: <MobilAdisyonlar adisyonlar={adisyonlar} onSec={onAdisyonSec} />,
           },
         ]
       : []),
@@ -3426,8 +3530,10 @@ function Saatler({ saatler }: { saatler: { saat: number; tutar: number; adet: nu
  * Gün × saat ısı tablosu. Hücrede adet yazıyor, renk adetin dönemin en kalabalık
  * saatine oranı: dört basamak, en koyusu en kalabalığı. Sağda gün toplamı,
  * altta saat toplamı — "en yoğun gün" ile "en yoğun saat" tek bakışta.
+ * Telefonda tablo dönük: 24 saat sütunu sığmıyor, akşam saatleri ekranın
+ * dışında kalıyordu. Saatler satıra iniyor, günler sütunda; aşağı kayıyor.
  */
-function YogunlukTablosu({ yogunluk }: { yogunluk: Yogunluk }) {
+function YogunlukTablosu({ yogunluk, mobil }: { yogunluk: Yogunluk; mobil?: boolean }) {
   if (yogunluk.satirlar.length === 0) {
     return (
       <div className="ayar-bos">
@@ -3442,6 +3548,65 @@ function YogunlukTablosu({ yogunluk }: { yogunluk: Yogunluk }) {
   const saatToplami = saatler.map((_, i) => satirlar.reduce((t, s) => t + s.hucreler[i].adet, 0));
   const genelToplam = saatToplami.reduce((t, n) => t + n, 0);
   const iki = (n: number) => String(n).padStart(2, "0");
+  const balon = (satir: Yogunluk["satirlar"][number], i: number) => {
+    const h = satir.hucreler[i];
+    return h.adet
+      ? `${satir.baslik} · ${iki(saatler[i])}:00 – ${iki((saatler[i] + 1) % 24)}:00\n${h.adet} adisyon · ${paraGoster(h.tutar)}`
+      : undefined;
+  };
+
+  const anahtar = (
+    <div className="ygn-anahtar">
+      <span>Az</span>
+      {[1, 2, 3, 4].map((k) => (
+        <i key={k} className={`ygn-hucre k${k}`} />
+      ))}
+      <span>Çok</span>
+    </div>
+  );
+
+  if (mobil) {
+    return (
+      <>
+        <div className="ygn-kaydir ygn-dikey">
+          <div className="ygn" style={{ gridTemplateColumns: `max-content repeat(${satirlar.length}, minmax(26px, 1fr)) max-content` }}>
+            <span className="ygn-kose" />
+            {satirlar.map((satir) => {
+              const [gun, tarih] = satir.etiket.split(" ");
+              return (
+                <span key={satir.baslik} className="ygn-saat" title={satir.baslik}>
+                  {gun}
+                  {tarih && <small>{tarih.slice(0, 2)}</small>}
+                </span>
+              );
+            })}
+            <span className="ygn-saat ygn-toplam-baslik">Toplam</span>
+
+            {saatler.map((saat, i) => (
+              <Fragment key={saat}>
+                <span className="ygn-gun">{iki(saat)}</span>
+                {satirlar.map((satir) => (
+                  <span key={satir.baslik} className={`ygn-hucre k${kademe(satir.hucreler[i].adet)}`} title={balon(satir, i)}>
+                    {satir.hucreler[i].adet || ""}
+                  </span>
+                ))}
+                <span className="ygn-satir-toplam">{saatToplami[i] || "—"}</span>
+              </Fragment>
+            ))}
+
+            <span className="ygn-gun ygn-alt">Toplam</span>
+            {satirlar.map((satir) => (
+              <span key={satir.baslik} className="ygn-sutun-toplam">
+                {satir.adet || ""}
+              </span>
+            ))}
+            <span className="ygn-satir-toplam ygn-alt">{genelToplam}</span>
+          </div>
+        </div>
+        {anahtar}
+      </>
+    );
+  }
 
   return (
     <div className="ygn-kaydir">
@@ -3460,15 +3625,7 @@ function YogunlukTablosu({ yogunluk }: { yogunluk: Yogunluk }) {
               {satir.etiket}
             </span>
             {satir.hucreler.map((h, i) => (
-              <span
-                key={saatler[i]}
-                className={`ygn-hucre k${kademe(h.adet)}`}
-                title={
-                  h.adet
-                    ? `${satir.baslik} · ${iki(saatler[i])}:00 – ${iki((saatler[i] + 1) % 24)}:00\n${h.adet} adisyon · ${paraGoster(h.tutar)}`
-                    : undefined
-                }
-              >
+              <span key={saatler[i]} className={`ygn-hucre k${kademe(h.adet)}`} title={balon(satir, i)}>
                 {h.adet || ""}
               </span>
             ))}
@@ -3485,13 +3642,7 @@ function YogunlukTablosu({ yogunluk }: { yogunluk: Yogunluk }) {
         <span className="ygn-satir-toplam ygn-alt">{genelToplam}</span>
       </div>
 
-      <div className="ygn-anahtar">
-        <span>Az</span>
-        {[1, 2, 3, 4].map((k) => (
-          <i key={k} className={`ygn-hucre k${k}`} />
-        ))}
-        <span>Çok</span>
-      </div>
+      {anahtar}
     </div>
   );
 }

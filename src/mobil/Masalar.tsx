@@ -11,6 +11,7 @@ import {
   Gift,
   History,
   LockKeyhole,
+  LockOpen,
   Printer,
   RotateCw,
   Users,
@@ -50,7 +51,8 @@ import { acikOturum, yetkiVar } from "../oturum";
 import OnayModal from "../components/OnayModal";
 import SecimHapi from "../components/SecimHapi";
 import KalemTasiOnay from "../components/KalemTasiOnay";
-import { gelenSecim, type TasinanKalem } from "../salonSecimi";
+import { gelenSecim, type SecimTipi, type TasinanKalem } from "../salonSecimi";
+import { adisyonAktifEt, adisyonDetayi, MasaDoluHatasi } from "../analiz";
 import SiparisGecmisi from "../components/SiparisGecmisi";
 import IslemPenceresi from "./IslemPenceresi";
 import HizliOde from "../components/HizliOde";
@@ -145,17 +147,21 @@ export default function MobilMasalar() {
   const [gecmis, setGecmis] = useState<{ ad: string; adisyonId: number } | null>(null);
   // Izgara seçim modu: hangi işlem için hedef masa bekleniyor.
   // Ürün taşıma sipariş ekranından başlıyor, hedef yine burada seçiliyor.
+  // "aktif": kapanmış ya da iptal adisyonun masası dolu, açılacağı boş masa
+  // seçiliyor; adisyon detayından geliniyor.
   const [secimModu, setSecimModu] = useState<{
-    tip: "tasi" | "birlestir" | "kalem";
+    tip: SecimTipi;
     kaynak: Masa;
     kalem?: TasinanKalem;
+    adisyonId?: number;
   } | null>(null);
   // Hedefe dokunulunca masaüstündeki gibi onay soruluyor; göstergede ayrıca
   // "Uygula" düğmesi yok, iki yüzeyde de adım sayısı aynı.
   const [hedefSorusu, setHedefSorusu] = useState<{
-    tip: "tasi" | "birlestir" | "kalem";
+    tip: SecimTipi;
     kaynak: Masa;
     kalem?: TasinanKalem;
+    adisyonId?: number;
     hedef: Masa;
   } | null>(null);
   const location = useLocation();
@@ -167,8 +173,7 @@ export default function MobilMasalar() {
     if (!secim || bolgeler.length === 0) return;
     const kaynak = bolgeler.flatMap((b) => b.masalar).find((m) => m.id === secim.masaId);
     git(location.pathname, { replace: true, state: null });
-    // "aktif" yalnız masaüstündeki adisyon detayından geliyor.
-    if (kaynak && secim.tip !== "aktif") setSecimModu({ tip: secim.tip, kaynak, kalem: secim.kalem });
+    if (kaynak) setSecimModu({ tip: secim.tip, kaynak, kalem: secim.kalem, adisyonId: secim.adisyonId });
   }, [location.state, bolgeler]);
   const [hizliMasa, setHizliMasa] = useState<{ masa: Masa; veri: AdisyonVerisi } | null>(null);
   const [iptalSorusu, setIptalSorusu] = useState<{ masa: Masa; adisyonId: number } | null>(null);
@@ -277,11 +282,11 @@ export default function MobilMasalar() {
   const bolge = bolgeler.find((b) => b.id === seciliBolge);
   const masalar = (bolge?.masalar ?? []).filter((m) => m.aktif);
 
-  // Seçim modunda taşımada boş, birleştirmede dolu masalar seçilebilir.
+  // Seçim modunda taşımada ve yeniden açmada boş, birleştirmede dolu masalar seçilebilir.
   const secilebilir = (m: Masa) => {
     if (!secimModu || m.id === secimModu.kaynak.id) return false;
     if (secimModu.tip === "kalem") return true;
-    return secimModu.tip === "tasi" ? !adisyonlar[m.id] : !!adisyonlar[m.id];
+    return secimModu.tip === "birlestir" ? !!adisyonlar[m.id] : !adisyonlar[m.id];
   };
 
   const masayaDokun = (m: Masa) => {
@@ -310,9 +315,26 @@ export default function MobilMasalar() {
 
   const secimiUygula = async (adet?: number) => {
     if (!hedefSorusu) return;
-    const { tip, kaynak, kalem, hedef } = hedefSorusu;
+    const { tip, kaynak, kalem, adisyonId, hedef } = hedefSorusu;
     setHedefSorusu(null);
     setSecimModu(null);
+    if (tip === "aktif") {
+      try {
+        const adisyon = await adisyonDetayi(adisyonId!);
+        if (!adisyon) throw new Error("Adisyon bulunamadı.");
+        await adisyonAktifEt(adisyon, hedef.id);
+        git(`/mobil/siparis/${hedef.id}`);
+      } catch (e) {
+        setUyari(
+          e instanceof MasaDoluHatasi
+            ? `${hedef.ad} masası bu arada doldu, başka bir masa seçin.`
+            : e instanceof Error
+              ? e.message
+              : "Adisyon açılamadı."
+        );
+      }
+      return;
+    }
     try {
       if (tip === "kalem") await kalemTasi(kaynak.id, hedef.id, kalem!.id, adet ?? kalem!.adet);
       else if (tip === "tasi") await masaTasi(kaynak.id, hedef.id);
@@ -659,7 +681,18 @@ export default function MobilMasalar() {
         />
       )}
 
-      {hedefSorusu && hedefSorusu.tip !== "kalem" && (
+      {hedefSorusu?.tip === "aktif" && (
+        <OnayModal
+          baslik="Adisyon bu masada açılsın mı?"
+          ikon={<LockOpen size={20} />}
+          mesaj={`*${hedefSorusu.kaynak.ad}* masasının adisyonu *${hedefSorusu.hedef.ad}* masasında yeniden açılacak.`}
+          onayMetni="Aç"
+          onOnay={() => secimiUygula()}
+          onKapat={() => setHedefSorusu(null)}
+        />
+      )}
+
+      {hedefSorusu && (hedefSorusu.tip === "tasi" || hedefSorusu.tip === "birlestir") && (
         <OnayModal
           baslik={hedefOnayBasligi(hedefSorusu.tip)}
           ikon={hedefSorusu.tip === "tasi" ? <ArrowRightLeft size={20} /> : <Combine size={20} />}

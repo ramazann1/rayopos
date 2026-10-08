@@ -11428,9 +11428,9 @@ body {
    ton farkından güçlü, üstelik iptal bir hata değil — sessiz kalması doğru. */
 .rozet.iptal {
   padding: 2px 9px;
-  border: 1px solid #b9c3d1;
+  border: 1px solid #f0b4ae;
   background: none;
-  color: #55637a;
+  color: #b42318;
 }
 
 /* ---- Adisyon detay penceresi ---- */
@@ -11464,6 +11464,11 @@ body {
   color: #1f8f6c;
 }
 
+.detay-rozet.iptal {
+  background: #fdecea;
+  color: #b42318;
+}
+
 .detay-aksiyon {
   display: flex;
   align-items: center;
@@ -11494,6 +11499,18 @@ body {
   border-color: var(--mercan);
   background: var(--mercan-sis);
   color: #c1503a;
+}
+
+/* İptal geri dönüşü zor bir iş: düğme ilk bakışta ayrışsın. */
+.detay-dugme.tehlike {
+  border-color: #f0b4ae;
+  color: #b42318;
+}
+
+.detay-dugme.tehlike:hover {
+  border-color: #b42318;
+  background: #fdecea;
+  color: #b42318;
 }
 
 .detay-dugme.ana {
@@ -11922,6 +11939,111 @@ body {
   font-size: 13.5px;
   font-style: normal;
   color: var(--soluk);
+}
+
+/* Dar ekranda adisyon detayı: üç sütun yan yana sığmıyor, birbirinin üstüne
+   biniyordu. Bilgiler, ürünler, tahsilatlar alt alta; pencerenin tamamı
+   kayıyor. Başlıkta adla kapatma düğmesi üst sırada, işlem düğmeleri altında. */
+@media (max-width: 860px) {
+  .up-ust.detay-ust {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .up-ust.detay-ust h3 {
+    order: -2;
+    flex: 1 1 calc(100% - 50px);
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .detay-aksiyon {
+    display: contents;
+  }
+
+  .detay-aksiyon .up-kapat {
+    order: -1;
+  }
+
+  .detay-aksiyon .detay-dugme {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 9px 10px;
+    white-space: nowrap;
+  }
+
+  .detay-govde {
+    display: block;
+    overflow-y: auto;
+  }
+
+  .detay-sutun,
+  .detay-sutun.orta {
+    overflow: visible;
+    padding: 16px;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid var(--cizgi);
+  }
+
+  .detay-sutun:last-child {
+    border-bottom: none;
+  }
+
+  .detay-sutun.orta .detay-kalemler {
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+/* Telefonda katlanan bölüm başlığı: ad solda, kapalıyken özet sağda. */
+.detay-katla {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--metin);
+  text-align: left;
+  cursor: pointer;
+}
+
+.detay-katla h4 {
+  margin-bottom: 0;
+  flex: none;
+}
+
+.detay-katla span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detay-katla svg {
+  flex: none;
+  color: var(--soluk);
+  transition: transform var(--gecis);
+}
+
+.detay-katla.acik {
+  margin-bottom: 14px;
+}
+
+.detay-katla.acik span {
+  visibility: hidden;
+}
+
+.detay-katla.acik svg {
+  transform: rotate(180deg);
 }
 
 /* ---- Yazdırma kuyruğu ---- */
@@ -25625,6 +25747,77 @@ span.kys-daha { cursor: inherit; margin-top: 4px; }
   border-top: none;
 }
 
+/* Telefonun adisyon listesi: arama üstte sabit, liste kendi içinde kayıyor. */
+.m-ads {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.m-ads-liste {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.m-ads-satir {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 4px;
+  border: none;
+  border-bottom: 1px solid var(--cizgi);
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.m-ads-satir:last-child {
+  border-bottom: none;
+}
+
+.m-ads-satir.eksik {
+  background: #fff6f3;
+}
+
+.m-ads-sol,
+.m-ads-sag {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.m-ads-sag {
+  align-items: flex-end;
+  flex: none;
+}
+
+.m-ads-sol b,
+.m-ads-sag b {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.m-ads-sol b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-ads-sag b.iptal {
+  text-decoration: line-through;
+}
+
+.m-ads-sol small {
+  font-size: 11.5px;
+  color: var(--soluk);
+}
+
 /* Küçük telefon: kutular sıkılaşıyor, fark grafikten düşüyor. Dört kutu tek
    sıraya dizilince "Masalarda açık" iki satıra kırılıp kutuları eziyordu. */
 @media (max-height: 700px) {
@@ -25713,6 +25906,69 @@ span.kys-daha { cursor: inherit; margin-top: 4px; }
 /* Tarih ekseni dar ekranda üst üste biniyordu; dönem zaten başlıkta yazıyor. */
 .analiz-ozet.mobil .gr-x {
   display: none;
+}
+
+/* Saatler penceresinde eksen gerekli: hangi saat olduğu başka yerde yazmıyor.
+   Üst boşluk, kılavuza ortalanan tepe rakamı pencerenin kenarında kesilmesin. */
+.analiz-ozet.mobil .m-oz-pencere .gr-x {
+  display: block;
+  height: 16px;
+}
+
+.analiz-ozet.mobil .m-oz-pencere .gr-sarmal {
+  padding-top: 9px;
+}
+
+/* Yoğunluk telefonda dönük: saatler satırda, gün başlıkları kayarken üstte kalıyor. */
+.ygn-dikey {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+/* Sağdaki boşluk kaydırma çubuğunun yeri: yoksa Toplam sütununun üstüne biniyor. */
+.ygn-dikey .ygn {
+  min-width: 0;
+  gap: 3px;
+  padding-right: 12px;
+}
+
+.ygn-dikey .ygn-kose,
+.ygn-dikey .ygn-saat {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--kart);
+}
+
+.ygn-dikey .ygn-kose {
+  z-index: 3;
+}
+
+.ygn-dikey .ygn-saat small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.ygn-dikey .ygn-gun {
+  padding-right: 6px;
+  font-size: 12px;
+}
+
+.ygn-dikey .ygn-hucre {
+  height: 24px;
+  border-radius: 6px;
+  font-size: 11.5px;
+}
+
+.ygn-dikey .ygn-satir-toplam,
+.ygn-dikey .ygn-sutun-toplam {
+  font-size: 12px;
+}
+
+.ygn-dikey .ygn-toplam-baslik,
+.ygn-dikey .ygn-satir-toplam {
+  padding-left: 4px;
 }
 
 .dokum-degisimli {
