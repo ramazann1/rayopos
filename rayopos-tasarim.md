@@ -130,6 +130,14 @@
 > tekrarla). Masalar için geçici koruma `masalar.ts`'te.
 >
 > Sonra sıradakiler:
+> 0. **"Yeni sürüm geldi, güncelle" uyarısı (8 Eki, Ramazan; Adisyo böyle
+>    yapıyor).** Başka bir bilgisayar 29 Eyl öncesi saklı kopyayı
+>    gösteriyordu (köprü indirme düğmesi sönük), Ctrl+Shift+R ile düzeldi.
+>    Şu an `vite.config.ts` → `VitePWA registerType: 'autoUpdate'`: yeni
+>    sürüm sessizce iniyor, sayfa yenilenmeden gelmiyor. Yerine uyarı şeridi
+>    + Güncelle düğmesi; sipariş ortasında kendiliğinden yenileme olmasın.
+>    Masaüstünde sürüm numarası da bir köşede görünsün (şimdi yalnız mobil
+>    Ben ekranında). Telefonda da aynısı.
 > 1. **Açık hesap tahsilatı ödendiği gün ciroya:** bu seansta açık hesap
 >    cirodan çıkarıldı (karar aşağıda); müşterinin sonradan ödediği borcun
 >    o gün ciroya eklenmesi henüz yapılmadı. Adisyo dönemindeki tahsilatlar
