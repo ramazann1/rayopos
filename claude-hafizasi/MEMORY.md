@@ -49,4 +49,5 @@
 - [Auto mod engeli](rayopos-auto-mod-engeli.md) — Adisyo çekimi ve canlı SQL Auto'da engelleniyor; önce Manual'a aldır.
 - [Canlı adres](rayopos-canli-adres.md) — rayopos.pages.dev; rayopos.net alındı (bağlanmadı); canlı iframe'de açılmaz.
 - [Canlıya sormadan gönderme](rayopos-canliya-sormadan-gonderme.md) — push öncesi her görevde "göndereyim mi?" diye sor, onay görev başına.
+- [Fiş yavaşlığında kaynak](rayopos-fis-yavasliginda-kaynak.md) — önce yazdirma_kuyrugu.kaynak yerel mi bulut mu, gecikme kaç sn.
 - [RLS sorgu başına bir kez](rayopos-rls-sorgu-basina-bir-kez.md) — politikada kişiye bağlı fonksiyon (select ...) içinde; satır başına çalışınca rapor dakikalar sürüyor.
