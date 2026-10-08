@@ -130,6 +130,16 @@
 > tekrarla). Masalar için geçici koruma `masalar.ts`'te.
 >
 > Sonra sıradakiler:
+> 00. **İkinci kasa bilgisayarında fiş yavaş (8 Eki gece, Deneme).** Köprü o
+>    bilgisayarda kurulu, uyarı yok. `yazdirma_kuyrugu` son 20 satır
+>    (03:24–03:43): mutfak fişleri çoğu `yerel`, gecikme 0. **Hesap
+>    fişlerinin hepsi `bulut`**, 2–2,5 sn, aynı saniyede çift kayıt (biri
+>    `basildi`, öteki `basarisiz`) → Deneme'de iki hesap yazıcısı mı var,
+>    yoksa `yerelBas` 1,5 sn zaman aşımına (`yerelYazdirma.ts` ZAMAN_ASIMI)
+>    takılıp buluta mı düşüyor? **#617 mutfak `bulut`, 72 sn** — köprü
+>    buluttaki fişi geç almış (canlı kanal düşmüş olabilir). Bakılacak: o
+>    bilgisayarın köprü günlüğü, Deneme yazıcı tanımları, hangi satır hangi
+>    bilgisayardan (kuyrukta cihaz bilgisi yok — eklenebilir).
 > 0. **"Yeni sürüm geldi, güncelle" uyarısı (8 Eki, Ramazan; Adisyo böyle
 >    yapıyor).** Başka bir bilgisayar 29 Eyl öncesi saklı kopyayı
 >    gösteriyordu (köprü indirme düğmesi sönük), Ctrl+Shift+R ile düzeldi.
