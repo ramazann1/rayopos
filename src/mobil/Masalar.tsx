@@ -64,6 +64,7 @@ import { devralabilir, masayiDevral, useMesguliyetler } from "../mesguliyet";
 import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
 import { paraGoster, paraKisa } from "../para";
 import type { Bolge, Masa } from "../types";
+import { RAYOPOS_SURUM } from "../surum";
 
 // İkram ve iptal sebepleri denetim defterine yazılıyor; hazır seçenekler
 // kasadakiyle aynı ki iki ekranın defteri aynı dille dolsun.
@@ -229,6 +230,42 @@ export default function MobilMasalar() {
   // kıpırdamıyor, yenilendi mi belli olmuyordu. Okuma çok hızlı biterse dönüş
   // görülmeden kayboluyor; en az yarım saniye sürüyor.
   // Bitince düğme kısa bir an yeşile yanıp sönüyor: "tazelendi".
+  // GEÇİCİ: vivo'da sayfa kaymıyor; başlığa 5 dokunuşta ölçüm.
+  const olcumSayaci = useRef({ adet: 0, zaman: 0 });
+  const olcumDokun = () => {
+    const s = olcumSayaci.current;
+    const simdi = Date.now();
+    s.adet = simdi - s.zaman < 800 ? s.adet + 1 : 1;
+    s.zaman = simdi;
+    if (s.adet < 5) return;
+    s.adet = 0;
+    const kutu = (ad: string, e: Element | null) => {
+      if (!e) return `${ad}: yok`;
+      const c = getComputedStyle(e);
+      return `${ad}: ov ${c.overflowY} · h ${e.clientHeight} · sh ${e.scrollHeight} · osb ${c.overscrollBehaviorY} · ta ${c.touchAction} · pos ${c.position}`;
+    };
+    const once = window.scrollY;
+    window.scrollBy(0, 100);
+    const sonra = window.scrollY;
+    window.scrollTo(0, once);
+    setUyari(
+      [
+        `RayoPOS ${RAYOPOS_SURUM}`,
+        `w ${innerWidth} · ih ${innerHeight} · vv ${Math.round(window.visualViewport?.height ?? 0)} · dpr ${devicePixelRatio}`,
+        `kaydırma deneme: ${once} → ${sonra}`,
+        `kaydırıcı: ${document.scrollingElement?.tagName}`,
+        kutu("html", document.documentElement),
+        kutu("body", document.body),
+        kutu("root", document.getElementById("root")),
+        kutu("kabuk", document.querySelector(".m-kabuk")),
+        kutu("icerik", document.querySelector(".m-icerik")),
+        kutu("masalar", document.querySelector(".m-masalar")),
+        `perde: ${document.querySelectorAll(".up-fon, .menu-perde").length}`,
+        navigator.userAgent,
+      ].join("\n")
+    );
+  };
+
   const [yenileniyor, setYenileniyor] = useState(false);
   const [yenilendi, setYenilendi] = useState(0);
   const yenile = async () => {
@@ -447,7 +484,7 @@ export default function MobilMasalar() {
   return (
     <>
       <header className="m-baslik">
-        <h1>Masalar</h1>
+        <h1 onClick={olcumDokun}>Masalar</h1>
         <button
           // Anahtar her yenilemede değişiyor ki yanıp sönme baştan oynasın.
           key={yenilendi}
