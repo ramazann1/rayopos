@@ -62,7 +62,7 @@ import { baglantiHatasi, baglantiVar, sureSinirli, useBaglanti } from "../baglan
 import { SINYAL, useCanli } from "../canli";
 import { devralabilir, masayiDevral, useMesguliyetler } from "../mesguliyet";
 import { tanimTazele, useTanimEtkisi } from "../tanimAbonelik";
-import { paraGoster } from "../para";
+import { paraGoster, paraKisa } from "../para";
 import type { Bolge, Masa } from "../types";
 
 // İkram ve iptal sebepleri denetim defterine yazılıyor; hazır seçenekler
@@ -132,10 +132,10 @@ export default function MobilMasalar() {
   });
 
   // Cihazda bekleyen sipariş en yenisi; son görülen hâlin üstüne biniyor.
-  const [adisyonlar, setAdisyonlar] = useState<Record<number, MasaOzeti>>(() => ({
-    ...sonHal().adisyonlar,
-    ...bekleyenMasalar(),
-  }));
+  const [adisyonlar, setAdisyonlar] = useState<Record<number, MasaOzeti>>(() => {
+    const bilinen = sonHal().adisyonlar;
+    return { ...bilinen, ...bekleyenMasalar(bilinen) };
+  });
   const [seciliBolge, setSeciliBolge] = useState<number | null>(bolgeOku);
   const [mesgulSorusu, setMesgulSorusu] = useState<{ masa: Masa; ad: string } | null>(null);
   const mesguliyetler = useMesguliyetler();
@@ -213,7 +213,8 @@ export default function MobilMasalar() {
     son = { isletmeId: acikOturum()?.isletmeId, bolgeler: b, adisyonlar: a ?? sonHal().adisyonlar };
     // Cihazda bekleyen siparişler sunucudakinin üstüne biniyor: masa dolu
     // görünsün, aynı masaya ikinci hesap açılmasın.
-    setAdisyonlar({ ...(baglantiVar() ? {} : kopyaMasalari()), ...(a ?? {}), ...bekleyenMasalar() });
+    const bilinen = { ...(baglantiVar() ? {} : kopyaMasalari()), ...(a ?? {}) };
+    setAdisyonlar({ ...bilinen, ...bekleyenMasalar(bilinen) });
     setSeciliBolge((s) => (b.some((x) => x.id === s) ? s : b[0]?.id ?? null));
 
     // Tanımadığı masaya hesap açılmışsa tanımlar o an okunuyor: başka bir
@@ -222,6 +223,19 @@ export default function MobilMasalar() {
       sonTanimOkumasi.current = Date.now();
       tanimTazele(BOLGE_ANAHTAR);
     }
+  };
+
+  // Yenile düğmesi okuma sürerken dönüyor: önceden basınca hiçbir şey
+  // kıpırdamıyor, yenilendi mi belli olmuyordu. Okuma çok hızlı biterse dönüş
+  // görülmeden kayboluyor; en az yarım saniye sürüyor.
+  // Bitince düğme kısa bir an yeşile yanıp sönüyor: "tazelendi".
+  const [yenileniyor, setYenileniyor] = useState(false);
+  const [yenilendi, setYenilendi] = useState(0);
+  const yenile = async () => {
+    setYenileniyor(true);
+    await Promise.all([oku(), new Promise((tamam) => setTimeout(tamam, 500))]);
+    setYenileniyor(false);
+    setYenilendi(Date.now());
   };
 
   useEffect(() => {
@@ -434,8 +448,15 @@ export default function MobilMasalar() {
     <>
       <header className="m-baslik">
         <h1>Masalar</h1>
-        <button className="m-ikon-dugme" onClick={() => oku()} aria-label="Yenile">
-          <RotateCw size={20} />
+        <button
+          // Anahtar her yenilemede değişiyor ki yanıp sönme baştan oynasın.
+          key={yenilendi}
+          className={yenilendi ? "m-ikon-dugme m-yenilendi" : "m-ikon-dugme"}
+          onClick={yenile}
+          disabled={yenileniyor}
+          aria-label="Yenile"
+        >
+          <RotateCw size={20} className={yenileniyor ? "doner" : undefined} />
         </button>
       </header>
 
@@ -577,14 +598,30 @@ export default function MobilMasalar() {
                         masaya yeni ürün girilirse işaret kendiliğinden kalkıyor. */}
                     {/* Rakamın uzunluğu CSS'e veriliyor: yazı kartın genişliğine
                         ve hane sayısına göre küçülüp tek satıra sığıyor. */}
+                    {/* Kısmi ödemede yalnız renk değişiyordu, ödeme alındığı
+                        kartta okunmuyordu: cüzdan ve "kalan / toplam" yazıyor.
+                        Satır uzadığı için yazı ona göre küçülüyor. */}
                     <span
                       className="m-masa-tutar"
-                      style={{ "--hane": odendi ? 8 : paraGoster(acik.tutar).length } as CSSProperties}
+                      style={
+                        {
+                          "--hane": odendi
+                            ? 8
+                            : odenen > 0
+                              ? `${paraKisa(kalan)} / ${paraKisa(acik.tutar)}`.length + 2
+                              : paraGoster(acik.tutar).length,
+                        } as CSSProperties
+                      }
                     >
                       {odendi ? (
                         <>
                           <CircleCheckBig size={16} />
                           Ödendi
+                        </>
+                      ) : odenen > 0 ? (
+                        <>
+                          <Wallet size="1em" />
+                          {paraKisa(kalan)} / {paraKisa(acik.tutar)}
                         </>
                       ) : (
                         paraGoster(acik.tutar)

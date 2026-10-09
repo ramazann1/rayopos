@@ -197,10 +197,10 @@ export default function Salon() {
   });
 
   // Cihazda bekleyen sipariş en yenisi; son görülen hâlin üstüne biniyor.
-  const [adisyonlar, setAdisyonlar] = useState<Record<number, Acik>>(() => ({
-    ...(sonHal()?.adisyonlar ?? tazeSalonKopyasi()),
-    ...bekleyenMasalar(),
-  }));
+  const [adisyonlar, setAdisyonlar] = useState<Record<number, Acik>>(() => {
+    const bilinen = sonHal()?.adisyonlar ?? tazeSalonKopyasi();
+    return { ...bilinen, ...bekleyenMasalar(bilinen) };
+  });
   // Sekme tarayıcıda saklanıyor: masaya girip dönünce veya sayfa yenilenince
   // garson kendini başka bölgede bulmasın.
   const [seciliId, setSeciliId] = useState<number | "tumu" | "masasiz" | null>(sekmeOku);
@@ -342,7 +342,8 @@ export default function Salon() {
     // Cihazda bekleyen siparişler sunucudakilerin üstüne biniyor: masa dolu
     // görünsün, garson aynı masaya ikinci hesap açmasın. Gönderilmiş kayıt
     // kuyruktan düştüğü için burada kendiliğinden sunucununki geçerli oluyor.
-    setAdisyonlar({ ...(baglantiVar() ? {} : kopyaMasalari()), ...(a ?? {}), ...bekleyenMasalar() });
+    const bilinen = { ...(baglantiVar() ? {} : kopyaMasalari()), ...(a ?? {}) };
+    setAdisyonlar({ ...bilinen, ...bekleyenMasalar(bilinen) });
     setMasasizlar([...(m ?? []), ...bekleyenMasasizlar()]);
     // Kayıtlı bölge silinmiş olabilir; öyleyse ilk bölgeye dönülüyor.
     setSeciliId((s) =>

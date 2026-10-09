@@ -230,28 +230,40 @@ export function cevrimdisiHesap(is: HesapHedefi) {
  * Salon için: kuyrukta bekleyen masaların özeti. Sunucu bu adisyonları henüz
  * bilmiyor; masa boş görünürse garson aynı masaya ikinci hesap açar.
  */
-export function bekleyenMasalar(): Record<number, MasaOzeti> {
+export function bekleyenMasalar(
+  /** Masaların sunucudan (ya da kopyadan) bilinen hâli. */
+  bilinen: Record<number, MasaOzeti> = {}
+): Record<number, MasaOzeti> {
   const sonuc: Record<number, MasaOzeti> = {};
   for (const k of [...duranlar, ...kuyruk]) {
     // Çevrimdışı kapatılan hesap masayı boşaltıyor; dolu göstermek garsonu
     // ödenmiş masaya geri yollardı.
     if (k.tip !== "masa" || k.kapat) continue;
     const ozet = adisyonOzeti(k.veri);
+    const an = new Date(k.zaman).toISOString();
+    // Hesap sunucuda zaten açıksa açılış, açan ve son sipariş oradan geliyor:
+    // yalnız Kaydet'e basmak masayı "şimdi" ve kaydedenin adıyla gösteriyordu.
+    // Kayıtta yeni ürün varsa masa gerçekten şimdi sipariş vermiş demektir.
+    const sunucuda = bilinen[k.masaId];
+    const yeniUrun = k.veri.sepet.some((s) => !s.id || s.id < 0);
     sonuc[k.masaId] = {
-      // Sunucudaki kimliği yok; kart yalnız tutar ve adet gösteriyor.
-      id: 0,
+      ...sunucuda,
+      // Yeni hesabın sunucuda kimliği yok; kart yalnız tutar ve adet gösteriyor.
+      id: sunucuda?.id ?? 0,
       tutar: ozet.toplam,
       odenen: ozet.odenen,
       kalan: ozet.kalan,
       adet: k.veri.sepet
         .filter((s) => (s.durum ?? "normal") !== "iptal")
         .reduce((t, s) => t + s.adet, 0),
-      acilis: new Date(k.zaman).toISOString(),
+      acilis: sunucuda?.acilis ?? an,
+      sonSiparis: yeniUrun ? an : sunucuda?.sonSiparis,
+      fisBasildi: yeniUrun ? false : sunucuda?.fisBasildi,
       ad: k.veri.ad || undefined,
       kisiSayisi: k.veri.kisiSayisi || undefined,
       // Yeni açılan hesabı kaydı gönderen kişi açmış oluyor; kart adı
       // sunucudan dönmesini beklemeden göstersin.
-      garson: k.veri.garson || kisaAd(acikOturum()?.ad ?? "") || undefined,
+      garson: sunucuda?.garson ?? (k.veri.garson || kisaAd(acikOturum()?.ad ?? "") || undefined),
       // Çevrimiçi gönderilen sipariş saniyeler içinde yazılıyor; kartta
       // "Gönderilmedi" yazması yanlış alarm olurdu. Reddedilip duran sipariş
       // ise gerçekten gönderilmedi.

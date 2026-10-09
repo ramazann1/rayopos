@@ -7216,20 +7216,19 @@ body {
   --durum: #77807f;
 }
 
-/* Kısmi ödemede hesap sürüyor ama tahsilat başladı. Sarı bantta beyaz yazı
-   okunmuyor, koyu yazı alıyor. */
-.masa-kart.dolu.kismi {
-  --durum: #f2b21c;
-  --durum-yazi: #2b2100;
-}
-
 /* Bir süredir sipariş vermeyen masa: hesap sürüyor ama masa duruyor. Süreyi
-   işletme belirliyor (Ayarlar → masa durgunluğu). Bu renk tahsilat renklerinin
-   önüne geçiyor — masanın ne kadardır beklediği daha acil bir bilgi, tahsilat
-   durumu kartta zaten rakamla yazıyor. Kural bu yüzden en sonda duruyor. */
+   işletme belirliyor (Ayarlar → masa durgunluğu). */
 .masa-kart.dolu.durgun {
   --durum: #8e5fc4;
   --durum-yazi: #fff;
+}
+
+/* Kısmi ödemede hesap sürüyor ama tahsilat başladı. Durgunluğun önünde: ödeme
+   başlamış masa beklemiyor, kalanı ödüyor. Sarı bantta beyaz yazı okunmuyor,
+   koyu yazı alıyor. */
+.masa-kart.dolu.kismi {
+  --durum: #f2b21c;
+  --durum-yazi: #2b2100;
 }
 
 /* Hesap fişi basılmış masa: müşteri hesabı istedi, ödeme bekleniyor. Bu bilgi
@@ -7258,7 +7257,7 @@ body {
   color: #fff;
 }
 
-.masa-kart.dolu.kismi:not(.odendi):not(.durgun):not(.fisli) ~ .masa-menu-tus {
+.masa-kart.dolu.kismi:not(.odendi):not(.fisli) ~ .masa-menu-tus {
   color: #2b2100;
 }
 
@@ -14115,6 +14114,20 @@ body {
   cursor: pointer;
 }
 
+/* Masalar tazelendi: düğme yeşil yanıp yavaşça eski hâline dönüyor. */
+.m-ikon-dugme.m-yenilendi {
+  animation: m-yenilendi 1.4s ease-out;
+}
+
+@keyframes m-yenilendi {
+  0%,
+  35% {
+    border-color: var(--yesil);
+    background: #e3f7ef;
+    color: var(--yesil);
+  }
+}
+
 /* Bölge çipleri tek satır, yatay kaydırmalı — bölge sayısı arttıkça ekran
    aşağı doğru büyümesin, masalar hep aynı yerde başlasın. */
 .m-bolgeler {
@@ -14187,17 +14200,19 @@ body {
 
 /* Durum renkleri kasadaki masa kartıyla aynı sırada yazılıyor: bir masaya
    birden fazla durum uyduğunda hangisinin kazandığı iki ekranda da aynı olsun.
-   Sıra en sakinden en baskına: kısmi ödeme, durgunluk, hesap fişi, ödendi. */
-.m-masa.dolu.kismi {
-  --m-durum: #f2b21c;
-  --m-durum-yazi: #2b2100;
-}
+   Sıra en sakinden en baskına: durgunluk, kısmi ödeme, hesap fişi, ödendi. */
 
 /* Bir süredir sipariş vermeyen masa. Trafik ışığı üçlüsüne katılmayan ayrı bir
    renk seçildi: sarı ve kırmızıyla karışmıyor, "burada hareket durdu" diyor. */
 .m-masa.dolu.durgun {
   --m-durum: #8e5fc4;
   --m-durum-yazi: #fff;
+}
+
+/* Ödeme başlamış masa durgun olsa da sarı: beklemiyor, kalanı ödüyor. */
+.m-masa.dolu.kismi {
+  --m-durum: #f2b21c;
+  --m-durum-yazi: #2b2100;
 }
 
 /* Hesap fişi basılmış masa: müşteri hesabı istedi, ödeme bekleniyor. */

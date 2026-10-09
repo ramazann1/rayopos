@@ -4,7 +4,7 @@
 ## 0. SIRADAKİ İŞ (9 Eki 2026 güncellendi)
 
 > **YENİ SEANSIN İLK İŞİ: aşağıdaki "Sonra sıradakiler" listesinin 00.
-> maddesi (ikinci kasada fiş yavaş).**
+> maddesi (canlıda kontrol), sonra 0. maddesi (yeni sürüm uyarısı).**
 >
 > **9 Eki: hesap güvenliği tamam (Ramazan yaptı).** Yeni Cloudflare hesabı
 > açıldı (egzozcafe'den ayrı e-posta). İki adımlı doğrulama doğrulama
@@ -143,22 +143,40 @@
 > o anki oturuma bakılıp tek merkezde çözülecek (anahtarı yenile, isteği
 > tekrarla). Masalar için geçici koruma `masalar.ts`'te.
 >
+> **9 Eki (2. seans) yapılanlar:**
+> - **Hesap fişi hızlandı (köprü 1.3.80, kasada denendi):** USB yazıcıda
+>   köprü her fişte PowerShell'i iki kez açıp C# sınıfını derliyordu (>2 sn),
+>   kasa programı 1,5 sn bekleyip buluta da gönderiyordu. Şimdi
+>   `ham-yazdir.ps1` köprüyle açık kalan tek süreç (satır başına istek/cevap);
+>   `/yazdir` 5 sn bekleniyor. Kuyrukta hesap fişleri artık `yerel`.
+> - **Sipariş fişi:** istasyon fişleri paralel (aynı yazıcıya düşenler
+>   sırayla), fiş künyesi kayıtla aynı anda okunuyor (Kaydet → kâğıt arası
+>   bir gidiş dönüş az). Tur + kalem tek RPC'ye indirilmedi (SQL, stok kuralı
+>   riski; gerekirse sonra).
+> - **Ödeme yetkisi hatası:** her kayıtta değişmemiş tahsilatlar da yeniden
+>   yazılıyordu; `tahsilat_yetkisi` tetikleyicisi UPDATE'te `odeme.al`
+>   istediği için yetkisiz garson kısmi ödemeli masaya hiçbir şey
+>   kaydedemiyordu. `ayniTahsilat` ile değişmeyen ödemeye dokunulmuyor.
+> - **Bekleyen kayıt kartı** (`kuyruk.ts → bekleyenMasalar(bilinen)`):
+>   sunucudaki açan/açılış/son sipariş/fiş korunuyor; Kaydet'te kart "kaydeden
+>   · şimdi" göstermiyor. Yeni ürün varsa son sipariş = şimdi.
+> - Kısmi ödeme morun önünde (karar aşağıda masa renkleri tablosunda).
+> - Telefon masa kartında kısmi ödeme: cüzdan + "kalan / toplam", kuruş
+>   sıfırsa yazılmıyor (`para.ts → paraKisa`, Ramazan kararı; yalnız bu
+>   satır). Telefon Masalar'da Yenile düğmesi dönüyor, bitince yeşil yanıp
+>   sönüyor.
+> - iPhone simgesi: kökte `apple-touch-icon.png` + `-precomposed.png` yoktu,
+>   site boş sayfa döndürüyordu → bazı iPhone'larda harfli simge (Ramazan'ın
+>   abisi, Safari). `ikon.js` üretiyor. **Doğrulanacak:** abisi kısayolu
+>   silip yeniden eklesin.
+>
 > Sonra sıradakiler:
-> 00. **Hesap fişi yavaş: kasada dene (9 Eki düzeltildi, 1.3.80).** Sebep:
->    USB yazıcıda köprü her fişte PowerShell'i iki kez açıyor, betik C#
->    sınıfını her seferinde derliyordu (>2 sn); kasa programı köprüyü 1,5 sn
->    bekleyip buluta da gönderiyordu (hesap fişleri hep `bulut`, 2–2,5 sn).
->    Şimdi `ham-yazdir.ps1` köprüyle açık kalan tek süreç (satır başına
->    istek/cevap, derleme bir kez); bu bilgisayarda fiş başına ~1,5 → ~0,3 sn.
->    `yerelYazdirma.ts` → `/yazdir` 5 sn bekliyor (`/durum` 1,5 sn kaldı).
->    Ağ yazıcıları (mutfak) zaten 0 sn, etkilenmedi. **Kâğıtla denenmedi**:
->    Ramazan kasaya 1.3.80 köprüsünü kurup hesap fişini 3 kez yazdıracak,
->    sonra kuyruk sorgusu (kaynak `yerel` olmalı, çift kâğıt çıkmamalı).
->    Çift kayıt: Deneme'de iki hesap yazıcısı vardı (3 eski kasanın, 10 yeni
->    bilgisayarın; 3 hep başarısız) — Ramazan kullanılmayanı pasif yapıyor,
->    tek kasa var. #617 (72 sn): iş JGCK52N köprüsüne düşmüş, o bilgisayar
->    mutfak yazıcısına geç ulaşıyor (#601 "yanıt vermedi") — hangi bilgisayar
->    olduğu sorulacak.
+> 00. **Canlıda kontrol (9 Eki gönderildi, 1.3.81):** Nuri'nin hesabında
+>    Ctrl+Shift+R, B3/B4'e girip Kaydet → bekleyen siparişler gitmeli
+>    ("Gönderilmedi" kalkmalı). Android'de "Ana ekrana ekle" simgesi bir kez
+>    denensin (maskable, denenmedi). JGCK52N hangi bilgisayar sorulacak:
+>    #617 mutfak fişi o köprüye düşüp 72 sn gecikti, #601 "yanıt vermedi"
+>    (evdeki bilgisayarsa köprüsü kapatılmalı).
 > 0. **"Yeni sürüm geldi, güncelle" uyarısı (8 Eki, Ramazan; Adisyo böyle
 >    yapıyor).** Başka bir bilgisayar 29 Eyl öncesi saklı kopyayı
 >    gösteriyordu (köprü indirme düğmesi sönük), Ctrl+Shift+R ile düzeldi.
@@ -3033,7 +3051,8 @@
 > Şablondan kalma `public/icons.svg` silindi. `index.html`: apple satırları,
 > `lang="tr"`, başlık `RayoPOS`. Manifest'ten **SVG girdisi çıkarıldı** —
 > Safari `sizes: any` girdisini seçip çeviremiyor olabilir diye.
-> **Açık kalan:** iPhone'da "Ana Ekrana Ekle" hâlâ harf simgesi veriyor.
+> **(9 Eki 2026: kökteki `apple-touch-icon.png` eksikti, eklendi — bkz.
+> Sıradaki iş.)** **Açık kalan:** iPhone'da "Ana Ekrana Ekle" hâlâ harf simgesi veriyor.
 > Sekme simgesi doğru, PNG'ler adresten açılıyor, manifest doğru üretiliyor —
 > yani dosyalar tamam. Kalan tek şüpheli, geliştirme sunucusunun kendi ürettiği
 > sertifikaya Safari'nin tam güvenmemesi. Gerçek sertifikalı sunucuda
@@ -5734,9 +5753,13 @@ dille. Sıra en acilden en sakine:
 |---|---|
 | Gri | Hesabı tamamen ödendi, masa henüz kalkmadı |
 | Kırmızı | Hesap fişi çıkarıldı, ödeme bekleniyor |
-| Mor | Bir süredir sipariş vermiyor |
 | Sarı | Kısmi tahsilat alındı |
+| Mor | Bir süredir sipariş vermiyor |
 | Yeşil | Olağan dolu masa |
+
+**Karar (9 Eki 2026, Ramazan): kısmi ödeme morun önünde.** Durgun masada
+kısmi ödeme alınınca kart morda kalıyordu; ödeme başlamış masa beklemiyor,
+sarı olur. Kırmızı (hesap fişi) sarının önünde kalmaya devam ediyor.
 
 **Durgunluk süresi işletme ayarı** (`masa_durgunluk_dk`, varsayılan 45 dk;
 Ayarlar → Genel). Ölçü açılış değil **son sipariş**: yeni ürün girilince sayaç

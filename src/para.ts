@@ -19,6 +19,16 @@ export const paraGoster = (v: number) =>
   "₺" +
   Math.abs(v).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/**
+ * Dar yerde para: kuruş sıfırsa yazılmıyor ("₺1.240"), varsa yazılıyor.
+ * Yalnız rakamın sığması gereken yerde (telefondaki masa kartı); geri kalan
+ * her yer `paraGoster`.
+ */
+export const paraKisa = (v: number) =>
+  Math.round(v * 100) % 100 === 0
+    ? (v < 0 ? "−" : "") + "₺" + Math.abs(Math.round(v)).toLocaleString("tr-TR")
+    : paraGoster(v);
+
 // Adet buçuklu olabiliyor (yarım porsiyon, tartılan ürün). Tam sayıda ondalık
 // gösterilmiyor: "1" yazması gerekirken "1,0" yazması rakamı ağırlaştırıyor.
 export const adetGoster = (v: number) =>

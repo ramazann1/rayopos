@@ -1089,6 +1089,12 @@ async function kalemleriYaz(
   /** Yolda olan başlık güncellemesi; kalemler yazılmadan önce bitmiş olmalı. */
   baslik?: PromiseLike<void>
 ): Promise<AdisyonVerisi> {
+  // Fişin künyesi (masa adı, numaralar) yeni ürün varsa baştan, kayıtla aynı
+  // anda okunuyor: kalemler yazıldıktan sonra okununca mutfak fişi bir gidiş
+  // dönüş daha bekliyordu.
+  let kunyeIstegi = veri.sepet.some((k) => !k.id || k.id < 0) ? fisKunyesi(adisyonId) : undefined;
+  const kunyeAl = () => (kunyeIstegi ??= fisKunyesi(adisyonId));
+
   // Okumalar birbirini beklemiyor: turlar, tahsilatlar, ikram adları ve
   // başlık güncellemesi aynı anda gidiyor.
   const [{ data: turSatirlari }, { data: eskiTahsilatlar }, odenmezAdlari] = await Promise.all([
@@ -1099,7 +1105,10 @@ async function kalemleriYaz(
       )
       .eq("adisyon_id", adisyonId)
       .order("sira"),
-    supabase.from("tahsilatlar").select("id, tip, tutar").eq("adisyon_id", adisyonId),
+    supabase
+      .from("tahsilatlar")
+      .select("id, tip, tutar, bahsis, kalem_adetleri, istemci_kimlik")
+      .eq("adisyon_id", adisyonId),
     // İkram deftere kimin adına yazıldığıyla düşüyor; ad tek sorguda çekiliyor.
     odenmezAdlariniGetir(veri.sepet.map((k) => k.odenmezId).filter((id): id is number => !!id)),
     baslik,
@@ -1301,7 +1310,7 @@ async function kalemleriYaz(
     // masada siparişi kimin aldığı ayrı bilgi ve tur zaten onun adına
     // açılıyor (turlar.garson_id). Adisyon fişinde masayı açan yazmaya devam.
     const kisi = kisaAd(acikOturum()?.ad ?? "") || veri.garson;
-    fisKunyesi(adisyonId)
+    kunyeAl()
       // Mutfak fişindeki büyük numara adisyonun değil, bu turun numarası:
       // aynı masadan üç sipariş gelirse üçü de ayrı numarayla düşüyor.
       .then((kunye) =>
@@ -1319,7 +1328,7 @@ async function kalemleriYaz(
   // ekranını kilitlemiyor.
   if (iptalEdilenler.length) {
     const kisi = kisaAd(acikOturum()?.ad ?? "") || veri.garson;
-    fisKunyesi(adisyonId)
+    kunyeAl()
       .then((kunye) =>
         iptalFisiYaz(
           { ...veri, ...kunye, id: adisyonId, garson: kisi || undefined },
@@ -1380,6 +1389,13 @@ async function kalemleriYaz(
 
     if (t.id) {
       const eski = ((eskiTahsilatlar as any[]) ?? []).find((e) => e.id === t.id);
+      // Değişmeyen ödemeye dokunulmuyor: her kayıtta yeniden yazılınca ödeme
+      // yetkisi olmayan garsonun kısmi ödemeli masaya ürün eklemesi bile
+      // "ödeme alma yetkiniz yok" diye reddediliyordu.
+      if (ayniTahsilat(eski, satir)) {
+        yazilanTahsilatlar.push(t);
+        continue;
+      }
       if (eski && eski.tip !== t.tip) {
         denetimler.push({
           islem: "tahsilat_tip_duzelt",
@@ -1608,6 +1624,30 @@ async function adisyonYeri(adisyonId: number) {
   const satir = data as any;
   if (satir.masa?.ad) return satir.masa.ad as string;
   return satir.tip === "paket" ? "Paket" : satir.tip === "gelal" ? "Gel Al" : undefined;
+}
+
+/** Tahsilatın kayıttaki hâli ile yazılacak hâli aynı mı (bkz. `ayniKalem`). */
+function ayniTahsilat(
+  eski: any,
+  yeni: {
+    tip: string;
+    tutar: number;
+    bahsis: number;
+    kalem_adetleri: Record<number, number> | null;
+    istemci_kimlik: string | null;
+  }
+) {
+  if (!eski) return false;
+  if (eski.tip !== yeni.tip) return false;
+  if (Number(eski.tutar) !== Number(yeni.tutar)) return false;
+  if (Number(eski.bahsis ?? 0) !== Number(yeni.bahsis)) return false;
+  if ((eski.istemci_kimlik ?? null) !== yeni.istemci_kimlik) return false;
+
+  const a: Record<string, unknown> = eski.kalem_adetleri ?? {};
+  const b: Record<string, unknown> = yeni.kalem_adetleri ?? {};
+  const anahtarlar = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const k of anahtarlar) if (Number(a[k] ?? 0) !== Number(b[k] ?? 0)) return false;
+  return (eski.kalem_adetleri == null) === (yeni.kalem_adetleri == null);
 }
 
 function gercekKimlikler(kalemler: Record<number, number>, es: Map<number, number>) {

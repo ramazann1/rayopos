@@ -633,10 +633,11 @@ async function istasyonlaraYaz(
 ) {
   if (!kalemler.length) return 0;
 
-  const [yazicilar, sablon, harita] = await Promise.all([
+  const [yazicilar, sablon, harita, istasyonlar] = await Promise.all([
     yazicilariOku(),
     sablonOku("mutfak"),
     urunIstasyonlari(),
+    istasyonlariGetir(),
   ]);
   const hedefler = turunYazicilari(yazicilar, "mutfak");
   if (!hedefler.length) return 0;
@@ -650,19 +651,33 @@ async function istasyonlaraYaz(
     gruplar.set(istasyon, liste);
   }
 
-  const istasyonAdi = new Map((await istasyonlariGetir()).map((i) => [i.id, i.ad]));
-  const isler: SiparisFisi[] = [];
-  for (const [istasyonId, liste] of gruplar) {
-    for (const y of hedefler.filter((h) => h.istasyonlar.includes(istasyonId))) {
-      // İçerik yazıcı başına üretiliyor: aynı istasyona 58 mm ve 80 mm yazıcı
-      // birlikte bağlıysa her biri kendi kâğıdına sığan fişi alıyor.
-      const icerik = fisPaketi(
-        fisIcerigi(sablon, adisyon, liste, siparisNo, iptal, y.kagitGenislik)
-      );
-      const kimlik = await kuyrugaEkle("mutfak", adisyon.id, y.id, icerik);
-      isler.push({ kimlik, istasyon: istasyonAdi.get(istasyonId) ?? "", yaziciId: y.id, icerik });
-    }
-  }
+  const istasyonAdi = new Map(istasyonlar.map((i) => [i.id, i.ad]));
+
+  // Yazıcılar birbirini beklemiyor: sırayla gönderilince barın fişi mutfağın
+  // bulut kaydı bitene kadar kâğıda dökülmüyordu. Aynı yazıcıya düşen fişler
+  // (iki tezgâha bağlı yazıcı) yine sırayla gidiyor; ağ yazıcısı çoğu zaman
+  // tek bağlantı kabul ediyor.
+  const yaziciIsleri = new Map<number, { istasyonId: number; liste: SepetKalemi[]; y: Yazici }[]>();
+  for (const [istasyonId, liste] of gruplar)
+    for (const y of hedefler.filter((h) => h.istasyonlar.includes(istasyonId)))
+      yaziciIsleri.set(y.id, [...(yaziciIsleri.get(y.id) ?? []), { istasyonId, liste, y }]);
+
+  const sonuclar = await Promise.all(
+    [...yaziciIsleri.values()].map(async (sira) => {
+      const bitenler: SiparisFisi[] = [];
+      for (const { istasyonId, liste, y } of sira) {
+        // İçerik yazıcı başına üretiliyor: aynı istasyona 58 mm ve 80 mm yazıcı
+        // birlikte bağlıysa her biri kendi kâğıdına sığan fişi alıyor.
+        const icerik = fisPaketi(
+          fisIcerigi(sablon, adisyon, liste, siparisNo, iptal, y.kagitGenislik)
+        );
+        const kimlik = await kuyrugaEkle("mutfak", adisyon.id, y.id, icerik);
+        bitenler.push({ kimlik, istasyon: istasyonAdi.get(istasyonId) ?? "", yaziciId: y.id, icerik });
+      }
+      return bitenler;
+    })
+  );
+  const isler = sonuclar.flat();
   // İptal fişi izlenmiyor: ürün zaten masadan çıktı, kâğıt gelmese de iş bozulmuyor.
   if (!iptal) siparisFisleriniIzle(isler, adisyon);
   return isler.length;

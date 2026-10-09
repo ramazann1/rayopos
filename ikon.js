@@ -39,6 +39,10 @@ const isler = [
   ["apple-icon-152.png", kare(0.86), 152],
   ["apple-icon-167.png", kare(0.86), 167],
   ["apple-icon-180.png", kare(0.86), 180],
+  // Sayfadaki bağlantıya bakmadan kökteki bu adlara giden iPhone'lar var; dosya
+  // yokken site boş sayfa döndürüyor, ana ekranda harfli simge çıkıyordu.
+  ["apple-touch-icon.png", kare(0.86), 180],
+  ["apple-touch-icon-precomposed.png", kare(0.86), 180],
 ];
 
 // Köprünün pencere, tepsi ve kurulum simgeleri de aynı çizimden.
