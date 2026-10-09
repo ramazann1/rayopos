@@ -515,14 +515,19 @@ export default function MobilSiparis() {
     }
   };
 
-  const gonder = async () => {
+  /** Tahsilat penceresindeki Kaydet ödemeleri buradan veriyor (state henüz güncellenmedi). */
+  const gonder = async (yeniTahsilatlar?: Tahsilat[]) => {
     if (ayarlar().kisiSayisiZorunlu && !kisiSayisi) {
       setKisiSorusu(true);
-      return;
+      return false;
     }
 
     setGonderiliyor(true);
-    const veri: AdisyonVerisi = { ...adisyon, ...(kisiSayisi ? { kisiSayisi } : {}) };
+    const veri: AdisyonVerisi = {
+      ...adisyon,
+      ...(yeniTahsilatlar ? { tahsilatlar: yeniTahsilatlar } : {}),
+      ...(kisiSayisi ? { kisiSayisi } : {}),
+    };
 
     // Kayıt yedi-sekiz sıralı istekle yazılıyor, telefon hattında iki saniyeyi
     // buluyordu. Sipariş kuyruğa girip arkada yazılıyor, garson hemen salona
@@ -536,7 +541,7 @@ export default function MobilSiparis() {
       } catch (e) {
         setGonderiliyor(false);
         setUyari(e instanceof Error ? e.message : "Stok yetersiz.");
-        return;
+        return false;
       }
     }
 
@@ -544,6 +549,7 @@ export default function MobilSiparis() {
     void kuyruguGonder();
     kilitKaldir();
     git("/mobil/masalar");
+    return true;
   };
 
   const kisiPenceresi = kisiSorusu && (
@@ -710,7 +716,7 @@ export default function MobilSiparis() {
               O hâlde garsonun sıradaki işi hesap: düğme adisyon ekranına
               geçiyor, yeni ürün girilince tekrar Gönder oluyor. */}
           {kirli ? (
-            <button className="m-gonder" disabled={gonderiliyor} onClick={gonder}>
+            <button className="m-gonder" disabled={gonderiliyor} onClick={() => gonder()}>
               {baglantiVar() ? <Send size={16} /> : <CloudOff size={16} />}
               Gönder
             </button>
@@ -911,7 +917,7 @@ export default function MobilSiparis() {
                     Sepet boşken ikisi de yok: gönderilecek ya da ödenecek bir şey
                     olmadan düğme yer kaplıyordu. */}
                 {kirli ? (
-                  <button className="m-dugme" disabled={gonderiliyor} onClick={gonder}>
+                  <button className="m-dugme" disabled={gonderiliyor} onClick={() => gonder()}>
                     {baglantiVar() ? <Send size={16} /> : <CloudOff size={16} />}
                     Gönder
                   </button>
@@ -1171,6 +1177,12 @@ export default function MobilSiparis() {
           onMusteriDegis={(m) => setBilgi((b) => musteriyiBagla(b, m))}
           onKapat={() => setTahsilatAcik(false)}
           onKaydet={(t) => tahsilatYaz(t)}
+          // Pencere salona geçilirken kapatılmıyor: kapanınca Masalar yüklenene
+          // kadar sipariş ekranı bir an görünüyordu. Yalnız kayıt durursa
+          // (stok, kişi sayısı) kapanıp sebep görünüyor.
+          onKaydetDon={async (t) => {
+            if (!(await gonder(t))) setTahsilatAcik(false);
+          }}
           onSil={(id, sebep) => silinenTahsilatlar.current.push({ id, sebep })}
           onIndirimDegis={(tutar) => setIndirim(tutar)}
           onKalemIndirim={(paylar, kaynak) =>

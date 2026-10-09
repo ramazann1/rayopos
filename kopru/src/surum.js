@@ -4,4 +4,4 @@
  * olmadığı için sürüm koda yazılı. Elle değiştirilmiyor: ana projedeki
  * `npm.cmd run surum` RayoPOS ile köprünün numarasını birlikte artırıyor.
  */
-export const SURUM = "1.3.81";
+export const SURUM = "1.3.82";

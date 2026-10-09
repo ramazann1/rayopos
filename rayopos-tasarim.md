@@ -165,13 +165,18 @@
 >   sıfırsa yazılmıyor (`para.ts → paraKisa`, Ramazan kararı; yalnız bu
 >   satır). Telefon Masalar'da Yenile düğmesi dönüyor, bitince yeşil yanıp
 >   sönüyor.
+> - **Tahsilat penceresindeki Kaydet doğrudan salona dönüyor** (1.3.82;
+>   bilgisayar + telefon): `onKaydetDon` → sipariş ekranının `kaydet`/`gonder`
+>   işlevi ödemelerle çağrılıyor. Pencere salona geçerken kapatılmıyor
+>   (kapanınca salon yüklenene kadar ~35 ms sipariş ekranı görünüyordu);
+>   kayıt durursa (stok, kişi sayısı) kapanıyor.
 > - iPhone simgesi: kökte `apple-touch-icon.png` + `-precomposed.png` yoktu,
 >   site boş sayfa döndürüyordu → bazı iPhone'larda harfli simge (Ramazan'ın
 >   abisi, Safari). `ikon.js` üretiyor. **Doğrulanacak:** abisi kısayolu
 >   silip yeniden eklesin.
 >
 > Sonra sıradakiler:
-> 00. **Canlıda kontrol (9 Eki gönderildi, 1.3.81):** Nuri'nin hesabında
+> 00. **Canlıda kontrol (9 Eki gönderildi, 1.3.82):** Nuri'nin hesabında
 >    Ctrl+Shift+R, B3/B4'e girip Kaydet → bekleyen siparişler gitmeli
 >    ("Gönderilmedi" kalkmalı). Android'de "Ana ekrana ekle" simgesi bir kez
 >    denensin (maskable, denenmedi). JGCK52N hangi bilgisayar sorulacak:

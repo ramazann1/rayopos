@@ -613,14 +613,15 @@ export default function Siparis() {
     }
   };
 
-  const kaydet = async () => {
+  /** Tahsilat penceresindeki Kaydet ödemeleri buradan veriyor (state henüz güncellenmedi). */
+  const kaydet = async (tahsilatlar: Tahsilat[] = kayitliTahsilatlar) => {
     // Soru masaya girerken zaten çıkıyor; buradaki emniyet kemeri, sayı
     // sonradan silinmişse kayıt yine de sayısız geçmesin.
     if (!masasiz && ayarlar().kisiSayisiZorunlu && !bilgi.kisiSayisi) {
       setKisiSorusu(true);
-      return;
+      return false;
     }
-    const veri = { sepet, indirim, indirimTanim, tahsilatlar: kayitliTahsilatlar };
+    const veri = { sepet, indirim, indirimTanim, tahsilatlar };
 
     // Kayıt sunucuya yedi-sekiz sıralı istekle yazılıyor; telefon hattında
     // iki saniyeyi buluyordu ve garson o sürede salona dönemiyordu. Sipariş
@@ -635,7 +636,7 @@ export default function Siparis() {
         await stokuOnceSor(veri);
       } catch (e) {
         setUyari(hataMesaji(e, "Stok yetersiz."));
-        return;
+        return false;
       }
     }
 
@@ -643,6 +644,7 @@ export default function Siparis() {
     void kuyruguGonder();
     kilitKaldir();
     navigate("/");
+    return true;
   };
 
   const salonaDon = () => {
@@ -999,7 +1001,7 @@ export default function Siparis() {
                 </>
               )}
             </div>
-            <button className="kaydet" onClick={kaydet}>
+            <button className="kaydet" onClick={() => kaydet()}>
               <Check size={16} />
               Kaydet
             </button>
@@ -1017,6 +1019,13 @@ export default function Siparis() {
           kdvSatirlari={kdvSatirlari}
           kayitliTahsilatlar={kayitliTahsilatlar}
           onKaydet={(t) => setKayitliTahsilatlar(t)}
+          // Pencere salona geçilirken kapatılmıyor: kapanınca salon yüklenene
+          // kadar sipariş ekranı bir an görünüyordu. Yalnız kayıt durursa
+          // (stok, kişi sayısı) kapanıp sebep görünüyor.
+          onKaydetDon={async (t) => {
+            setKayitliTahsilatlar(t);
+            if (!(await kaydet(t))) setTahsilatAcik(false);
+          }}
           onSil={(id, sebep) => silinenTahsilatlar.current.push({ id, sebep })}
           onIndirimDegis={(tutar, kaynak) => { setIndirim(tutar); setIndirimTanim(kaynak); }}
           onKalemIndirim={(paylar, kaynak) =>

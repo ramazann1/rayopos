@@ -57,6 +57,8 @@ type Props = {
   kdvSatirlari: KdvSatiri[];
   kayitliTahsilatlar: Tahsilat[];
   onKaydet: (tahsilatlar: Tahsilat[]) => void;
+  /** Penceredeki Kaydet: ödemeler adisyonla birlikte kaydedilip salona dönülür. */
+  onKaydetDon: (tahsilatlar: Tahsilat[]) => void;
   /** Kayıtlı bir tahsilat silindiğinde sebebiyle birlikte haber verilir. */
   onSil: (id: number, sebep?: string) => void;
   onIndirimDegis: (tutar: number, kaynak?: IndirimKaynagi) => void;
@@ -71,7 +73,7 @@ type Props = {
   onMusteriDegis?: (m: Musteri | null) => void;
 };
 
-export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, servis, kdvSatirlari, kayitliTahsilatlar, musteri, musteriId, onMusteriDegis, onKaydet, onSil, onIndirimDegis, onKalemIndirim, onKapat, onOdendi }: Props) {
+export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, servis, kdvSatirlari, kayitliTahsilatlar, musteri, musteriId, onMusteriDegis, onKaydet, onKaydetDon, onSil, onIndirimDegis, onKalemIndirim, onKapat, onOdendi }: Props) {
   const [tahsilatlar, setTahsilatlar] = useState<Tahsilat[]>(kayitliTahsilatlar ?? []);
   // Mobil ödemeyi alındığı anda kaydediyor; kayıttan dönen kimlikler buraya
   // gelmezse pencere ödemeyi kaydedilmemiş sanıp sebep sormadan siliyordu.
@@ -337,9 +339,11 @@ export default function TahsilatPanel({ kalemler, toplam, araToplam, indirim, se
           </div>
 
           {/* Hesap kapansa bile masa oturmaya devam ediyor olabilir; kapatmak
-              zorunlu değil, ödeme kaydedilip adisyon açık bırakılabiliyor. */}
+              zorunlu değil, ödeme kaydedilip adisyon açık bırakılabiliyor.
+              Kaydet doğrudan salona dönüyor: pencere kapanıp sipariş
+              ekranındaki ikinci Kaydet'e basmak her ödemede bir adım fazlaydı. */}
           <div className="th-eylemler">
-            <button className="th-eylem" onClick={() => { onKaydet(tahsilatlar); onKapat(); }}>
+            <button className="th-eylem" onClick={() => onKaydetDon(tahsilatlar)}>
               <Save size={16} />
               Kaydet
             </button>
