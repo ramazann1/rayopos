@@ -22,7 +22,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { MENU_ANAHTAR, menuGetir, agacUrunleri, altKategoriler, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
+import { MENU_ANAHTAR, menuGetir, menuKopyasi, agacUrunleri, altKategoriler, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
 import { useTanimEtkisi } from "../tanimAbonelik";
 import {
   CEVRIMDISI_ADISYON,
@@ -195,14 +195,22 @@ export default function Siparis() {
     return masasiz ? masasizGetir(kimlikCoz(adisyonId)) : adisyonGetir(masaId);
   };
   const navigate = useNavigate();
-  const [kategoriler, setKategoriler] = useState<MenuKategori[]>([]);
-  const [urunler, setUrunler] = useState<MenuUrun[]>([]);
+  // İlk çizim cihazdaki kopyadan; sunucudaki tazesi aşağıda üstüne yazılıyor.
+  const [ilkMenu] = useState(menuKopyasi);
+  const [kategoriler, setKategoriler] = useState<MenuKategori[]>(
+    () => ilkMenu?.kategoriler.filter((k) => k.satistaGorunur) ?? []
+  );
+  const [urunler, setUrunler] = useState<MenuUrun[]>(
+    () => ilkMenu?.urunler.filter((u) => u.satistaGorunur) ?? []
+  );
   // Menü içeriğindeki ürünler satışta gizli olabilir; adları yine de gösterilmeli.
-  const [tumUrunler, setTumUrunler] = useState<MenuUrun[]>([]);
-  const [gruplar, setGruplar] = useState<MenuSecenekGrubu[]>([]);
-  const [kdvler, setKdvler] = useState<MenuKdv[]>([]);
-  const [seciliId, setSeciliId] = useState<number | null>(null);
-  const [menuYukleniyor, setMenuYukleniyor] = useState(true);
+  const [tumUrunler, setTumUrunler] = useState<MenuUrun[]>(ilkMenu?.urunler ?? []);
+  const [gruplar, setGruplar] = useState<MenuSecenekGrubu[]>(ilkMenu?.gruplar ?? []);
+  const [kdvler, setKdvler] = useState<MenuKdv[]>(ilkMenu?.kdvler ?? []);
+  const [seciliId, setSeciliId] = useState<number | null>(
+    () => kategoriler.find((k) => !k.ustId)?.id ?? kategoriler[0]?.id ?? null
+  );
+  const [menuYukleniyor, setMenuYukleniyor] = useState(!ilkMenu);
   const [sepet, setSepet] = useState<SepetKalemi[]>([]);
   const [indirim, setIndirim] = useState(0);
   // İndirim ön tanımlıysa kaynağı da taşınıyor; rapor hangi indirim olduğunu görecek.

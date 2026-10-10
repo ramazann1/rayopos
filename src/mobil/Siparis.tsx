@@ -36,7 +36,7 @@ import MisafirSayisi from "../components/MisafirSayisi";
 import { kalemiUygula } from "./KalemIslemleri";
 import OnayModal from "../components/OnayModal";
 import IslemPenceresi from "./IslemPenceresi";
-import { MENU_ANAHTAR, agacUrunleri, menuGetir, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
+import { MENU_ANAHTAR, agacUrunleri, menuGetir, menuKopyasi, porsiyonFiyat, porsiyonKimligi, urunKdv } from "../menu";
 import { useTanimEtkisi } from "../tanimAbonelik";
 import { masaGetir } from "../masalar";
 import {
@@ -109,11 +109,19 @@ export default function MobilSiparis() {
   const [adres] = useSearchParams();
 
   const [masaAdi, setMasaAdi] = useState("");
-  const [kategoriler, setKategoriler] = useState<MenuKategori[]>([]);
-  const [urunler, setUrunler] = useState<MenuUrun[]>([]);
-  const [gruplar, setGruplar] = useState<MenuSecenekGrubu[]>([]);
-  const [kdvler, setKdvler] = useState<MenuKdv[]>([]);
-  const [seciliKategori, setSeciliKategori] = useState<number | null>(null);
+  // İlk çizim cihazdaki kopyadan; sunucudaki tazesi aşağıda üstüne yazılıyor.
+  const [ilkMenu] = useState(menuKopyasi);
+  const [kategoriler, setKategoriler] = useState<MenuKategori[]>(
+    () => ilkMenu?.kategoriler.filter((k) => k.satistaGorunur) ?? []
+  );
+  const [urunler, setUrunler] = useState<MenuUrun[]>(
+    () => ilkMenu?.urunler.filter((u) => u.satistaGorunur) ?? []
+  );
+  const [gruplar, setGruplar] = useState<MenuSecenekGrubu[]>(ilkMenu?.gruplar ?? []);
+  const [kdvler, setKdvler] = useState<MenuKdv[]>(ilkMenu?.kdvler ?? []);
+  const [seciliKategori, setSeciliKategori] = useState<number | null>(
+    () => kategoriler.find((k) => !k.ustId)?.id ?? kategoriler[0]?.id ?? null
+  );
   const [arama, setArama] = useState("");
   const [aramaAcik, setAramaAcik] = useState(false);
 
@@ -299,6 +307,8 @@ export default function MobilSiparis() {
     secimler?: string[],
     degisim?: ReceteDegisimi
   ) => {
+    // Hesap okunurken eklenen ürün, gelen hesap sepete yazılınca silinirdi.
+    if (yukleniyor) return;
     const anahtar = [urun.ad, porsiyon, ...(secimler ?? [])].join("|");
     const kdvOran = urunKdv(urun, kdvler)?.oran;
     setSepet((s) => {
@@ -565,7 +575,10 @@ export default function MobilSiparis() {
     />
   );
 
-  if (yukleniyor) {
+  // Boş masada ekran hesabın okunmasını beklemeden çiziliyor: misafir sayısı
+  // penceresi halkanın üstünde açılıp hesap gelince arkada bütün ekran
+  // birden beliriyordu. Okuma bitene kadar ürün eklenmiyor (bkz. ekle).
+  if (yukleniyor && !erkenSoruldu.current) {
     return (
       <div className="yukleniyor">
         <div className="cember" />

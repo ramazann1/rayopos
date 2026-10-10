@@ -1,10 +1,34 @@
 # RAYOPOS — Teknik Tasarım: Veri Modeli & Ekran Haritası
 *Restoran ve cafe'ler için bulut tabanlı satış ve işletme yönetim sistemi.*
 
-## 0. SIRADAKİ İŞ (9 Eki 2026 güncellendi)
+## 0. SIRADAKİ İŞ (10 Eki 2026 güncellendi)
 
 > **YENİ SEANSIN İLK İŞİ: aşağıdaki "Sonra sıradakiler" listesinin 00.
-> maddesi (canlıda kontrol), sonra 0. maddesi (yeni sürüm uyarısı).**
+> maddesi (1.3.84'ü dene), sonra 0. maddesi (yeni sürüm uyarısı — Ramazan
+> 10 Eki'de yeniden istedi: telefonlar güncellemeyi birkaç aç-kapa sonra
+> alıyor).**
+>
+> **10 Eki yapılanlar:**
+> - **Telefonda sayfa parmakla kaymıyordu (vivo V21e, Chrome 154; 1.3.83).**
+>   Ölçüldü: sayfa 1101 / ekran 798, kodla kaydırma çalışıyor, parmakla
+>   kıpırdamıyor. Sebep `.m-icerik` üstündeki `overscroll-behavior:
+>   contain`: kutu `overflow-y: auto` ama kendisi kaymıyor (sayfa kayıyor);
+>   yeni Chrome kaymayan kutuda da zinciri kesiyor. Kural kaldırıldı,
+>   `.m-icerik`'e "konmayacak" notu yazıldı. Eski Chrome'lu Android ve
+>   iPhone'da sorun yoktu. vivo'da denendi, kayıyor.
+> - **Sürüm numarası canlıya her gönderimde artıyor** (Ramazan kararı;
+>   aynı numarada telefonun yeni kodu alıp almadığı anlaşılmıyordu).
+> - **Kişi sayısı penceresinin arkasında ekran zıplıyordu (1.3.84,
+>   denenmedi):** menü boş başlayıp bir an sonra doluyordu. Sipariş ekranı
+>   (bilgisayar + telefon) menüyü ilk çizimde cihazdaki kopyadan alıyor
+>   (`menu.ts → menuKopyasi`). Telefonda ayrıca boş masada (misafir sayısı
+>   zorunluyken) tam ekran halka beklenmiyor, ekran hemen çiziliyor; hesap
+>   okunana kadar ürün eklenmiyor (`ekle` erken dönüyor).
+> - vivo'da ara ara Chrome'un "sunucu yanıt vermedi" sayfası çıkıyor
+>   (uygulama değil, telefon sunucuya ulaşamıyor; mobil veri 4.5G).
+>   Tekrar olursa: Wi-Fi mi veri mi, operatör, aynı anda google.com ve
+>   başka telefonda RayoPOS açılıyor mu. Yalnız bizim adres açılmıyorsa
+>   `rayopos.net`'e geçiş önem kazanır.
 >
 > **9 Eki: hesap güvenliği tamam (Ramazan yaptı).** Yeni Cloudflare hesabı
 > açıldı (egzozcafe'den ayrı e-posta). İki adımlı doğrulama doğrulama
@@ -176,12 +200,11 @@
 >   silip yeniden eklesin.
 >
 > Sonra sıradakiler:
-> 00. **Canlıda kontrol (9 Eki gönderildi, 1.3.82):** Nuri'nin hesabında
->    Ctrl+Shift+R, B3/B4'e girip Kaydet → bekleyen siparişler gitmeli
->    ("Gönderilmedi" kalkmalı). Android'de "Ana ekrana ekle" simgesi bir kez
->    denensin (maskable, denenmedi). JGCK52N hangi bilgisayar sorulacak:
->    #617 mutfak fişi o köprüye düşüp 72 sn gecikti, #601 "yanıt vermedi"
->    (evdeki bilgisayarsa köprüsü kapatılmalı).
+> 00. **1.3.84'ü dene:** boş masaya gir (bilgisayar + telefon) → misafir
+>    sayısı penceresinin arkasında menü hazır, zıplama yok; sayı seçince
+>    ürün eklenebiliyor. Android'de "Ana ekrana ekle" simgesi bir kez
+>    denensin (maskable, denenmedi). (9 Eki kontrolleri — Nuri'nin bekleyen
+>    siparişleri, JGCK52N köprüsü — 10 Eki Ramazan: sorun yok.)
 > 0. **"Yeni sürüm geldi, güncelle" uyarısı (8 Eki, Ramazan; Adisyo böyle
 >    yapıyor).** Başka bir bilgisayar 29 Eyl öncesi saklı kopyayı
 >    gösteriyordu (köprü indirme düğmesi sönük), Ctrl+Shift+R ile düzeldi.

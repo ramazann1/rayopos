@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 import { satirDenetle, yazmayiDenetle } from "./yazmaDenetimi";
-import { hataysaFirlat, onbellekliGetir } from "./onbellek";
+import { hataysaFirlat, onbellekliGetir, onbellekOku } from "./onbellek";
 import { tazeleyiciTanit } from "./tanimAbonelik";
 import { receteYaz } from "./recete";
 import type { ReceteMaliyeti, ReceteSatiri } from "./recete";
@@ -155,6 +155,15 @@ export const MENU_ANAHTAR = "menu";
 
 export function menuGetir() {
   return onbellekliGetir(MENU_ANAHTAR, menuOku, true);
+}
+
+/**
+ * Cihazdaki menü kopyası, beklemeden. Sipariş ekranı ilk çizimde bununla
+ * açılıyor: menü boş başlayıp bir an sonra dolunca, masaya girer girmez çıkan
+ * misafir sayısı penceresinin arkasında ekran zıplıyordu.
+ */
+export function menuKopyasi() {
+  return onbellekOku<Awaited<ReturnType<typeof menuOku>>>(MENU_ANAHTAR)?.veri ?? null;
 }
 
 /**
