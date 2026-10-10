@@ -14036,6 +14036,9 @@ body {
      kaldığı için sekme çubuğunun altına düşüyor, son satırları çubuğun arkasında
      kayboluyordu. Bilgisayarın telefon görünümünde bu davranış yok, hata orada
      görünmüyor. iOS 13'ten beri akıcı kaydırma zaten varsayılan. */
+  /* `overscroll-behavior: contain` da KONMAYACAK. Bu kutu kendisi kaymıyor,
+     kayan sayfa; yeni Chrome (154, vivo'da görüldü) kaymayan kutuda da zinciri
+     kesiyor ve parmakla sayfa hiç kıpırdamıyordu. */
 }
 
 /* Sekme çubuğunun katı açıkça yazılıyor. Yazılmadığında tarayıcı sıralamayı
@@ -19819,7 +19822,6 @@ body {
 .kp-govde,
 .kp-kip,
 .kuyruk-onizleme,
-.m-icerik,
 .m-sayfa-icerik,
 .m-serit-bekleyen,
 .m-urunler,
